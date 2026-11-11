@@ -1,14 +1,11 @@
-# cPanel "Git Version Control" runs these tasks when you press "Deploy HEAD Commit".
-# This file lives on the `deploy` branch (copied there by GitHub Actions).
-#
-# cPanel user: viorowzb. DEPLOYPATH must be the
-# "Application root" of your Node.js app and must NOT be inside public_html.
 ---
+# cPanel "Git Version Control" runs these tasks on "Deploy HEAD Commit".
+# This file lives on the `deploy` branch (copied there by GitHub Actions).
+# DEPLOYPATH is the Node.js app's "Application root" (cPanel user viorowzb), not inside public_html.
 deployment:
   tasks:
     - export DEPLOYPATH=/home/viorowzb/niche-engine-app/
     - /bin/mkdir -p $DEPLOYPATH
     - /bin/cp -R ./apps ./packages ./niches ./node_modules ./package.json ./REVISION $DEPLOYPATH
     - /bin/mkdir -p ${DEPLOYPATH}tmp
-    # Passenger restarts the app when this file's timestamp changes.
     - /bin/touch ${DEPLOYPATH}tmp/restart.txt

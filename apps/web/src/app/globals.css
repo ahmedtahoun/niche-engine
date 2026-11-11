@@ -113,6 +113,9 @@ details p { margin: 6px 0 0; color: var(--muted); }
 .qty button { border: 0; background: var(--surface-2); width: 32px; height: 32px; font-weight: 700; }
 .qty span { min-width: 26px; text-align: center; }
 .box { border: 1px solid var(--line); border-radius: 14px; padding: 12px; display: grid; gap: 8px; }
+.soon { text-align: center; justify-items: center; padding: 28px 16px; gap: 12px; }
+.soon b { font-family: var(--f-display), serif; font-size: 22px; color: var(--primary); }
+.soon .muted { max-width: 34ch; }
 .row { display: flex; justify-content: space-between; gap: 10px; font-size: 14px; }
 .row.total { font-weight: 700; font-size: 16px; border-top: 1px solid var(--line); padding-top: 8px; }
 .note { border-radius: 12px; padding: 10px 12px; font-size: 13.5px; }

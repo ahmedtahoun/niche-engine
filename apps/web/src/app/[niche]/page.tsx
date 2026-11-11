@@ -31,15 +31,27 @@ export default async function Home({ params }: { params: Promise<{ niche: string
         </section>
       )}
       <div className="how">
-        <div><b>1. اطلب</b>من غير حساب، في دقيقة</div>
-        <div><b>2. أكد على واتساب</b>ضغطة واحدة</div>
+        <div><b>1. اطلب في دقيقة</b>وحسابك بيتعمل برقم موبايلك</div>
+        <div><b>2. يوصلك تأكيد</b>رسالة من بوسطة فيها رقم التتبع</div>
         <div><b>3. استلم في 2–4 أيام</b>والدفع كاش عند الباب</div>
       </div>
-      <nav className="chips" aria-label="الأقسام">
-        {cfg.categories.map((c) => <Link key={c.id} className="chip" href={`/${cfg.id}/search?cat=${c.id}`}>{c.labelAr}</Link>)}
-      </nav>
-      <h2 className="sec">{SECTION[cfg.id]}</h2>
-      <div className="grid">{products.map((p) => <ProductCard key={p.id} p={p} seller={cat.sellerOf(p)} />)}</div>
+      {products.length ? (
+        <>
+          <nav className="chips" aria-label="الأقسام">
+            {cfg.categories.map((c) => <Link key={c.id} className="chip" href={`/${cfg.id}/search?cat=${c.id}`}>{c.labelAr}</Link>)}
+          </nav>
+          <h2 className="sec">{SECTION[cfg.id]}</h2>
+          <div className="grid">{products.map((p) => <ProductCard key={p.id} p={p} seller={cat.sellerOf(p)} />)}</div>
+        </>
+      ) : (
+        <section className="box soon">
+          <b>{cfg.brand.nameAr} بتفتح قريب</b>
+          <span className="muted">بنجهز أول مجموعة من أحسن البائعين في مصر. ارجعولنا قريب، أو تابعونا عشان تعرفوا أول ما نفتح.</span>
+          <div className="chips" style={{ flexWrap: 'wrap', justifyContent: 'center' }}>
+            {cfg.categories.map((c) => <span key={c.id} className="chip">{c.labelAr}</span>)}
+          </div>
+        </section>
+      )}
       <Footer cfg={cfg} />
     </main>
   );

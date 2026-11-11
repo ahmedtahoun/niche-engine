@@ -1,8 +1,8 @@
 {
   "/_not-found/page": "/_not-found",
   "/api/bosta/route": "/api/bosta",
-  "/robots.txt/route": "/robots.txt",
   "/api/telegram/route": "/api/telegram",
+  "/robots.txt/route": "/robots.txt",
   "/api/health/route": "/api/health",
   "/admin/login/page": "/admin/login",
   "/dev/bot/page": "/dev/bot",
@@ -14,9 +14,9 @@
   "/[niche]/order/[id]/page": "/[niche]/order/[id]",
   "/[niche]/account/page": "/[niche]/account",
   "/[niche]/search/page": "/[niche]/search",
-  "/admin/(panel)/orders/page": "/admin/orders",
   "/admin/(panel)/payouts/page": "/admin/payouts",
-  "/admin/(panel)/products/page": "/admin/products",
+  "/admin/(panel)/orders/page": "/admin/orders",
   "/admin/(panel)/page": "/admin",
-  "/admin/(panel)/sellers/page": "/admin/sellers"
+  "/admin/(panel)/sellers/page": "/admin/sellers",
+  "/admin/(panel)/products/page": "/admin/products"
 }

@@ -29,12 +29,18 @@ In `deploy/cpanel/.cpanel.yml` on `main`, replace `CPANEL_USER` with your cPanel
 
 ## 3. Connect cPanel to GitHub
 
-1. cPanel → **SSH Access → Manage SSH Keys → Generate a New Key** (no passphrase). Open the **public** key and copy it.
-2. GitHub → this repository → **Settings → Deploy keys → Add deploy key**. Paste it. Leave "Allow write access" **off**.
-3. cPanel → **Git Version Control → Create**:
-   - Clone URL: `git@github.com:ahmedtahoun/niche-engine.git`
+The repository is public, so cPanel can clone it over HTTPS with no SSH key.
+
+1. cPanel → **Git Version Control → Create**:
+   - Clone a Repository: **on**
+   - Clone URL: `https://github.com/ahmedtahoun/niche-engine.git`
    - Repository path: `/home/CPANEL_USER/repositories/niche-engine`
-   - After it clones, open **Manage → Basic Information** and set the **Checked-Out Branch** to `deploy`.
+   - Repository name: `niche-engine`
+2. After it clones, open **Manage → Basic Information** and set the **Checked-Out Branch** to `deploy`.
+
+Never put keys or passwords in the repository: it is public. They live only in the Node app's environment variables in cPanel.
+
+(If you make the repository private again, cPanel needs an SSH deploy key: cPanel → SSH Access → generate a key, add its public part in GitHub → Settings → Deploy keys with write access off, and clone with `git@github.com:ahmedtahoun/niche-engine.git`.)
 
 ## 4. Create the Node.js app
 

@@ -10,13 +10,13 @@
   "/[niche]/p/[slug]/page": "app/[niche]/p/[slug]/page.js",
   "/[niche]/page": "app/[niche]/page.js",
   "/[niche]/cart/page": "app/[niche]/cart/page.js",
-  "/[niche]/checkout/page": "app/[niche]/checkout/page.js",
   "/[niche]/account/page": "app/[niche]/account/page.js",
+  "/[niche]/checkout/page": "app/[niche]/checkout/page.js",
   "/[niche]/order/[id]/page": "app/[niche]/order/[id]/page.js",
   "/[niche]/search/page": "app/[niche]/search/page.js",
-  "/admin/(panel)/payouts/page": "app/admin/(panel)/payouts/page.js",
   "/admin/(panel)/orders/page": "app/admin/(panel)/orders/page.js",
+  "/admin/(panel)/payouts/page": "app/admin/(panel)/payouts/page.js",
   "/admin/(panel)/page": "app/admin/(panel)/page.js",
-  "/admin/(panel)/products/page": "app/admin/(panel)/products/page.js",
-  "/admin/(panel)/sellers/page": "app/admin/(panel)/sellers/page.js"
+  "/admin/(panel)/sellers/page": "app/admin/(panel)/sellers/page.js",
+  "/admin/(panel)/products/page": "app/admin/(panel)/products/page.js"
 }

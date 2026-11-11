@@ -99,7 +99,7 @@
         "transform": "lodash/{{member}}"
       }
     },
-    "outputFileTracingRoot": "/Users/mr.rootnobody/Documents/GitHub/niche-engine/",
+    "outputFileTracingRoot": "/home/runner/work/niche-engine/niche-engine/",
     "experimental": {
       "useSkewCookie": false,
       "cacheLife": {
@@ -158,7 +158,7 @@
       "middlewarePrefetch": "flexible",
       "optimisticClientCache": true,
       "manualClientBasePath": false,
-      "cpus": 7,
+      "cpus": 3,
       "memoryBasedWorkersCount": false,
       "imgOptConcurrency": null,
       "imgOptTimeoutInSeconds": 7,
@@ -291,10 +291,10 @@
       "@niche-engine/core"
     ],
     "turbopack": {
-      "root": "/Users/mr.rootnobody/Documents/GitHub/niche-engine/"
+      "root": "/home/runner/work/niche-engine/niche-engine/"
     }
   },
-  "appDir": "/Users/mr.rootnobody/Documents/GitHub/niche-engine/apps/web",
+  "appDir": "/home/runner/work/niche-engine/niche-engine/apps/web",
   "relativeAppDir": "apps/web",
   "files": [
     ".next/routes-manifest.json",

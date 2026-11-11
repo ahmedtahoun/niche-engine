@@ -9,7 +9,7 @@ Supabase is the only source of truth: every request reads and writes it, and mon
 ## 1. Supabase (database)
 
 1. Create a project. Pick the region closest to Egypt (Frankfurt, `eu-central-1`).
-2. Open **SQL Editor** and run `supabase/migrations/0001_init.sql`, then `0002_database_first.sql`, then `0003_product_photos.sql`, then `0004_seller_profile.sql`, then `0005_english.sql` (each once, in order).
+2. Open **SQL Editor** and run `supabase/migrations/0001_init.sql`, then `0002_database_first.sql`, then `0003_product_photos.sql`, then `0004_seller_profile.sql`, then `0005_english_and_taste.sql` (each once, in order).
 3. From **Project Settings → API Keys**, copy the **Project URL** and the **secret** key (`sb_secret_…` or legacy `service_role`). The service-role key is a server secret: it goes only into the host's environment, never into the browser or a chat.
 4. Before real money flows, turn on daily backups (a paid Supabase plan).
 

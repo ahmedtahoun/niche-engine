@@ -9,6 +9,8 @@ export interface Line {
   sellerId: string;
   unitPrice: number;
   qty: number;
+  /** Wholesale price agreed with the seller: the seller gets exactly this and the platform keeps the rest (no commission rate). */
+  unitCost?: number;
 }
 
 export interface CartInput {
@@ -80,12 +82,22 @@ export interface OrderMoney {
   delivered: boolean;
 }
 
-/** Commission base for a seller = their line value minus any discount they funded. */
+/**
+ * What the platform keeps from each seller's lines. Commission lines: (line value − any
+ * discount the seller funded) × the niche rate. Wholesale lines (unitCost set): price − cost.
+ */
 export function commissionBySeller(o: OrderMoney, cfg: NicheConfig): Record<string, number> {
   const rate = commissionRate(o.type, cfg);
+  const base: Record<string, number> = {};
+  const margin: Record<string, number> = {};
+  for (const l of o.lines) {
+    if (l.unitCost !== undefined) margin[l.sellerId] = (margin[l.sellerId] ?? 0) + (l.unitPrice - l.unitCost) * l.qty;
+    else base[l.sellerId] = (base[l.sellerId] ?? 0) + l.unitPrice * l.qty;
+  }
   const out: Record<string, number> = {};
-  for (const l of o.lines) out[l.sellerId] = (out[l.sellerId] ?? 0) + l.unitPrice * l.qty;
-  for (const s of Object.keys(out)) out[s] = round2(Math.max(0, out[s] - (o.sellerDiscount?.[s] ?? 0)) * rate);
+  for (const s of new Set([...Object.keys(base), ...Object.keys(margin)])) {
+    out[s] = round2(Math.max(0, (base[s] ?? 0) - (o.sellerDiscount?.[s] ?? 0)) * rate + (margin[s] ?? 0));
+  }
   return out;
 }
 

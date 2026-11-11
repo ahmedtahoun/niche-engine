@@ -1,6 +1,6 @@
 import { catalog } from '@/lib/catalog';
 import { getNiche } from '@/lib/niches';
-import { approveProductAction, approveSellerAction, setProductStatus, setSellerStatus } from '../../actions';
+import { approveProductAction, approveSellerAction, setProductStatus, setSellerStatus, setStock } from '../../actions';
 import { EGP, NicheTabs, Pill, pickNiche } from '../shared';
 
 export const metadata = { title: 'Products & review' };
@@ -60,7 +60,7 @@ export default async function Products({ searchParams }: { searchParams: Promise
       <section className="panel">
         <h2>Catalog</h2>
         <div className="tbl"><table className="t">
-          <thead><tr><th>Product</th><th>Seller</th><th className="r">Price</th><th>Stock</th><th className="r">Views</th><th>Price confirmed</th><th>Status</th><th></th></tr></thead>
+          <thead><tr><th>Product</th><th>Seller</th><th className="r">Price</th><th>Margin</th><th>Stock</th><th className="r">Views</th><th>Price confirmed</th><th>Status</th><th></th></tr></thead>
           <tbody>{list.filter((p) => p.status !== 'review').map((p) => {
             const d = daysSince(p.priceConfirmedAt);
             const status = p.status ?? 'live';
@@ -69,7 +69,24 @@ export default async function Products({ searchParams }: { searchParams: Promise
                 <td className="ar"><div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>{p.images?.[0] ? <img className="thumb" src={p.images[0]} alt="" loading="lazy" /> : <span className="thumb none">no photo</span>}<b>{p.nameAr}</b></div></td>
                 <td className="ar">{seller(p.sellerId)?.name}</td>
                 <td className="r">{EGP(p.price)}</td>
-                <td><div className="stock">{p.variants.map((v) => <span key={v.label} className={`sc ${v.stock <= 3 ? 'low' : ''}`}><span className="ar">{v.label}</span>: {v.stock}</span>)}</div></td>
+                <td><div className="stock">{p.variants.map((v) => {
+                  const price = v.price ?? p.price;
+                  const cost = p.cost?.[v.label];
+                  return cost === undefined
+                    ? <span key={v.label} className="sub">commission</span>
+                    : <span key={v.label} className={`sc ${price - cost < price * 0.12 ? 'low' : ''}`} title={`price ${price} − cost ${cost}`}><span className="ar">{v.label}</span>: {EGP(price - cost)} · {Math.round(((price - cost) / price) * 100)}%</span>;
+                })}</div></td>
+                <td>
+                  <form action={setStock.bind(null, p.id)} className="stock" style={{ alignItems: 'center' }}>
+                    {p.variants.map((v) => (
+                      <label key={v.label} className={`sc ${v.stock <= 3 ? 'low' : ''}`} style={{ display: 'inline-flex', gap: 4, alignItems: 'center' }}>
+                        <span className="ar">{v.label}</span>
+                        <input name={`stock:${v.label}`} defaultValue={v.stock} inputMode="numeric" aria-label={`Stock ${v.label}`} style={{ width: 52 }} />
+                      </label>
+                    ))}
+                    <button className="mini">Save</button>
+                  </form>
+                </td>
                 <td className="r">{p.views.toLocaleString('en-US')}</td>
                 <td>{d > 14 ? <Pill kind="warn">{d} days ago</Pill> : <span className="sub">{d === 0 ? 'today' : `${d}d ago`}</span>}</td>
                 <td><Pill kind={status === 'live' ? 'ok' : 'mute'}>{status}</Pill></td>

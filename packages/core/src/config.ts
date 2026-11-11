@@ -89,6 +89,10 @@ export interface NicheConfig {
     icon?: string;
     /** Short line next to the name in the header. */
     tagline?: Bilingual;
+    /** 1200 × 630 social card (path under the site's public folder). */
+    ogImage?: string;
+    /** One-paragraph description for search engines and AI answers. */
+    description?: Bilingual;
   };
   categories: { id: string; labelAr: string; labelEn?: string }[];
   attributes: {
@@ -124,9 +128,15 @@ export interface NicheConfig {
   acceptsSellers?: boolean;
   /** Arabic voice: "f" speaks to women (اختاري), default speaks to everyone (اختار). */
   voice?: 'f' | 'm';
+  /** Short trust promises shown on the home page (only true ones). */
+  trust?: (Bilingual & { icon?: 'seal' | 'cash' | 'truck' | 'return' | 'star' })[];
   /** Small text on the home page: above the hero, and the products heading. */
   homeEyebrow?: Bilingual;
   homeSection?: Bilingual;
+  /** Taste families customers shop by (coffee: "chocolate and nuts", "fruity"...). Products point to one. */
+  tasteFamilies?: { id: string; labelAr: string; labelEn?: string; hintAr?: string; hintEn?: string }[];
+  /** 1–5 scales drawn on product pages (coffee: body, acidity), with the words at each end. */
+  profileScales?: { id: string; labelAr: string; labelEn?: string; lowAr: string; highAr: string; lowEn?: string; highEn?: string }[];
   /** Shown on the empty search page. English terms should map to catalog words through searchSynonyms. */
   popularSearches?: { ar: string[]; en?: string[] };
 }

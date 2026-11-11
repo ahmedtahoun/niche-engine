@@ -1,7 +1,7 @@
 'use server';
 
 import { normalizeEgyptPhone } from '@niche-engine/core';
-import { catalog } from '@/lib/catalog';
+import { catalog, publicQuote } from '@/lib/catalog';
 import { getNiche } from '@/lib/niches';
 import { applyStatus, draftOrder, getOrder, mutateOrder, ordersFor } from '@/lib/orders';
 import { accountByPhone, createAccount, MIN_PASSWORD, saveAddress, signIn } from '@/lib/customers';
@@ -27,7 +27,7 @@ export async function quoteCart(niche: string, cart: CartLine[], promoCode: stri
   const me = await currentCustomer();
   const [cat, wallet, previous] = await Promise.all([catalog(), me ? walletOf(me.phone, niche) : null, me ? ordersFor(me.phone, niche) : []]);
   const walletBalance = wallet?.balance ?? 0;
-  return cat.quote(cfg, cart, { promoCode: promoCode || undefined, isFirstOrder: previous.length === 0, walletBalance, useWallet: useWallet && walletBalance > 0, lang: await getLang() });
+  return publicQuote(cat.quote(cfg, cart, { promoCode: promoCode || undefined, isFirstOrder: previous.length === 0, walletBalance, useWallet: useWallet && walletBalance > 0, lang: await getLang() }));
 }
 
 export interface CheckoutForm {

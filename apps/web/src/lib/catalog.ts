@@ -31,6 +31,25 @@ export function resolveVariant(p: Product, wanted: string): string {
 /** Price of one option of a product (options may cost more, e.g. a bigger bag). */
 export const priceOf = (p: Product, label: string) => p.variants.find((v) => v.label === label)?.price ?? p.price;
 
+/** Grams in an option label like "250 جم", "1 كجم", "250 g" or "1 kg" (null when it isn't a weight). */
+export function gramsOf(label: string): number | null {
+  const m = label.replace(/[٠-٩]/g, (d) => String('٠١٢٣٤٥٦٧٨٩'.indexOf(d))).match(/(\d+(?:\.\d+)?)\s*(كجم|كيلو|kg|جم|جرام|g)/i);
+  if (!m) return null;
+  return Number(m[1]) * (/كجم|كيلو|kg/i.test(m[2]) ? 1000 : 1);
+}
+
+/** Best price per 100 g across a product's weights (null for products sold by size, not weight). */
+export function bestPer100g(p: Product): number | null {
+  const per = p.variants.flatMap((v) => { const g = gramsOf(v.label); return g ? [((v.price ?? p.price) / g) * 100] : []; });
+  return per.length ? Math.min(...per) : null;
+}
+
+/** Wholesale cost of one option, if the product has one (private). */
+const costOf = (p: Product, label: string) => p.cost?.[label];
+
+/** A quote safe to send to the browser: wholesale costs removed. */
+export const publicQuote = (q: Quote): Quote => ({ ...q, items: q.items.map(({ unitCost: _c, ...i }) => i) });
+
 /** Lowest and highest option price (cards say "من" when they differ). */
 export function priceRange(p: Product): { min: number; max: number } {
   const all = p.variants.length ? p.variants.map((v) => v.price ?? p.price) : [p.price];
@@ -96,7 +115,7 @@ export class Catalog {
     return this.productsOf(niche).find((p) => p.slug === slug) ?? null;
   }
 
-  search(cfg: NicheConfig, opts: { q?: string; cat?: string; sort?: SortKey; price?: PriceBand }): Product[] {
+  search(cfg: NicheConfig, opts: { q?: string; cat?: string; sort?: SortKey; price?: PriceBand; family?: string }): Product[] {
     const terms = searchTerms(opts.q ?? '', cfg.searchSynonyms);
     const label = (c: string) => cfg.categories.find((x) => x.id === c)?.labelAr ?? '';
     const [lo, hi] = BANDS[opts.price ?? 'all'];
@@ -108,8 +127,9 @@ export class Catalog {
     };
     return this.productsOf(cfg.id)
       .filter((p) => !opts.cat || p.category === opts.cat)
+      .filter((p) => !opts.family || p.profile?.family === opts.family)
       .filter((p) => p.price >= lo && p.price <= hi)
-      .filter((p) => !terms.length || matches([p.nameAr, p.leadAr, label(p.category), this.sellerOf(p).name, ...Object.values(p.attributes), p.en?.name ?? '', p.en?.lead ?? '', this.sellerOf(p).nameEn ?? ''].join(' '), terms))
+      .filter((p) => !terms.length || matches([p.nameAr, p.leadAr, label(p.category), this.sellerOf(p).name, ...Object.values(p.attributes), ...(p.profile?.notes ?? []), ...(p.profile?.notesEn ?? []), p.en?.name ?? '', p.en?.lead ?? '', this.sellerOf(p).nameEn ?? ''].join(' '), terms))
       .sort(sorters[opts.sort ?? 'best']);
   }
 
@@ -155,8 +175,8 @@ export class Catalog {
         if (variant.stock < qty) problems.push(`low_stock:${line.slug}:${variant.label}`);
         const unit = variant.price ?? p.price;
         const label = [line.variant, ...extra].join(' · ');
-        coreLines.push({ sellerId: p.sellerId, unitPrice: unit, qty });
-        items.push({ sellerId: p.sellerId, productId: p.id, name: p.nameAr, variant: label, qty, unitPrice: unit });
+        coreLines.push({ sellerId: p.sellerId, unitPrice: unit, qty, ...(costOf(p, line.variant) !== undefined ? { unitCost: costOf(p, line.variant) } : {}) });
+        items.push({ sellerId: p.sellerId, productId: p.id, name: p.nameAr, variant: label, qty, unitPrice: unit, ...(costOf(p, line.variant) !== undefined ? { unitCost: costOf(p, line.variant) } : {}) });
         priced.push({ key: `${i}`, title: [sp.product(p), sp.variant(p, line.variant), ...shownChoices(p, line.choice)].join(' · '), by: this.sellerOf(p) ? sp.seller(this.sellerOf(p)) : '', art: p.art, color: p.color, qty, amount: unit * qty, isBundle: false, ...(p.images?.[0] ? { image: p.images[0] } : {}) });
       } else {
         const bv = this.bundleView(cfg, line.id);
@@ -166,10 +186,10 @@ export class Catalog {
           const label = resolveVariant(pt.product, pt.variant ?? line.variant);
           const extra = choiceLabels(cfg, pt.product, line.choice);
           if (!extra) return void problems.push(`choice_missing:${line.id}`);
-          rows.push({ sellerId: pt.product.sellerId, productId: pt.product.id, name: pt.product.nameAr, variant: [label, ...extra].join(' · '), qty: pt.qty * qty, unitPrice: priceOf(pt.product, label) });
+          rows.push({ sellerId: pt.product.sellerId, productId: pt.product.id, name: pt.product.nameAr, variant: [label, ...extra].join(' · '), qty: pt.qty * qty, unitPrice: priceOf(pt.product, label), ...(costOf(pt.product, label) !== undefined ? { unitCost: costOf(pt.product, label) } : {}) });
         }
         for (const r of rows) {
-          coreLines.push({ sellerId: r.sellerId, unitPrice: r.unitPrice, qty: r.qty });
+          coreLines.push({ sellerId: r.sellerId, unitPrice: r.unitPrice, qty: r.qty, ...(r.unitCost !== undefined ? { unitCost: r.unitCost } : {}) });
           items.push(r);
         }
         const full = rows.reduce((a, r) => a + r.unitPrice * r.qty, 0);

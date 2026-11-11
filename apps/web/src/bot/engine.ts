@@ -51,7 +51,7 @@ const row = (...b: [string, string][]) => b.map(([text, data]) => ({ text, data 
 const lastThursday = (now = new Date()) => { const d = new Date(now); d.setHours(0, 0, 0, 0); d.setDate(d.getDate() - ((d.getDay() - 4 + 7) % 7)); return d; };
 
 function money(o: Order): OrderMoney {
-  return { type: o.type, lines: o.items.map((i) => ({ sellerId: i.sellerId, unitPrice: i.unitPrice, qty: i.qty })), platformDiscount: o.quote.bundleDiscount + o.quote.promoDiscount, wallet: o.quote.wallet, delivered: o.status === 'delivered' };
+  return { type: o.type, lines: o.items.map((i) => ({ sellerId: i.sellerId, unitPrice: i.unitPrice, qty: i.qty, ...(i.unitCost !== undefined ? { unitCost: i.unitCost } : {}) })), platformDiscount: o.quote.bundleDiscount + o.quote.promoDiscount, wallet: o.quote.wallet, delivered: o.status === 'delivered' };
 }
 
 function shareText(cfg: NicheConfig, price: number) {
@@ -90,6 +90,14 @@ async function route(m: Incoming, ctx: Ctx): Promise<Outgoing[]> {
   if (active?.flow === 'apply') return applyStep(m, active, ctx);
   if (active?.flow === 'add' && seller) return addStep(m, seller, active, ctx);
 
+  // "Apply" link from a store's sell page (t.me/bot?start=apply_coffee): start that niche's application at once.
+  const deep = /^\/start apply_([a-z0-9-]+)$/.exec(text);
+  if (!seller && deep && openNiches().some((c) => c.id === deep[1])) {
+    ctx.alerts.push(`🚀 بدأ التقديم كبائع (من صفحة البيع): ${whoIs(m)}`);
+    const s: Session = { flow: 'apply', step: 1, data: { niche: deep[1] } };
+    ctx.session = s;
+    return applyAsk(m.chatId, s);
+  }
   if (!seller) return applyIntro(m.chatId, ctx);
   if (seller.status === 'applied') return [msg(m.chatId, 'طلبك لسه بيتراجع ✅ هنرد عليك خلال 48 ساعة بعد الطلب التجريبي.')];
   if (seller.status === 'suspended' || seller.status === 'declined') return [msg(m.chatId, 'حسابك موقوف حالياً. كلمنا على واتساب خدمة البائعين لو عندك سؤال.')];
@@ -427,9 +435,11 @@ export function notifyOrder(o: Order, cat: Catalog): Outgoing[] {
     const s = cat.sellerById(sid);
     if (!s?.telegramChatId) return [];
     const items = itemsOfSeller(o, sid);
-    const share = items.reduce((a, i) => a + i.unitPrice * i.qty * (1 - cfg.commission[o.type]), 0);
+    // Wholesale items pay the agreed cost; the rest pay price minus the commission rate.
+    const share = items.reduce((a, i) => a + (i.unitCost !== undefined ? i.unitCost : i.unitPrice * (1 - cfg.commission[o.type])) * i.qty, 0);
+    const wholesale = items.every((i) => i.unitCost !== undefined);
     const multi = Object.keys(o.sellerState).length > 1 ? ' (جزء من طلب فيه أكتر من بائع)' : '';
-    return [msg(s.telegramChatId, `🔔 طلب جديد #${o.id}${multi}\n${items.map((i) => `• ${i.name} | ${i.variant} | × ${i.qty}`).join('\n')}\nالعميل: ${o.customer.name.split(' ')[0]} — ${o.customer.governorate}\nالاستلام: بكرة من 12 لـ 4\nنصيبك: ${egp(share)} (${tag})`, [row(['✅ قبول', `acc:${o.id}`], ['❌ مش متاح', `rej:${o.id}`])])];
+    return [msg(s.telegramChatId, `🔔 طلب جديد #${o.id}${multi}\n${items.map((i) => `• ${i.name} | ${i.variant} | × ${i.qty}`).join('\n')}\nالعميل: ${o.customer.name.split(' ')[0]} — ${o.customer.governorate}\nالاستلام: بكرة من 12 لـ 4\nنصيبك: ${egp(share)} (${wholesale ? 'سعر الجملة المتفق عليه' : tag})`, [row(['✅ قبول', `acc:${o.id}`], ['❌ مش متاح', `rej:${o.id}`])])];
   });
 }
 

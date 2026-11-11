@@ -1,7 +1,7 @@
 // Placeholder product drawings until real seller photos are uploaded.
 import type { ArtKind } from '@/lib/types';
 
-const SHAPES: Record<Exclude<ArtKind, 'kit'>, string> = {
+const SHAPES: Record<Exclude<ArtKind, 'kit' | 'coffee'>, string> = {
   abaya: 'M40 12 Q50 7 60 12 L70 20 L88 54 L80 58 L68 40 L75 93 L25 93 L32 40 L20 58 L12 54 L30 20 Z',
   niqab: 'M27 16 Q50 2 73 16 L78 62 Q50 84 22 62 Z M33 33 L67 33 L67 40 L33 40 Z',
   khimar: 'M50 7 Q72 9 76 33 L91 90 L9 90 L24 33 Q28 9 50 7 Z M40 28 Q50 20 60 28 L60 43 Q50 51 40 43 Z',
@@ -10,6 +10,25 @@ const SHAPES: Record<Exclude<ArtKind, 'kit'>, string> = {
   bag: 'M28 18 L72 18 L76 30 L80 92 L20 92 L24 30 Z M36 46 L64 46 L64 66 L36 66 Z',
   tool: 'M18 22 L82 22 L60 62 L40 62 Z M42 66 L58 66 L58 72 L42 72 Z M30 78 L70 78 L70 84 L30 84 Z',
 };
+
+/** A stand-up coffee pouch (kraft, valve, zip) with a label in the coffee's color: 100 × 100 grid. */
+function CoffeeBag({ color }: { color: string }) {
+  return (
+    <g>
+      <path d="M23 17 L77 17 L81 91 Q50 96 19 91 Z" fill="#CFAF86" stroke="rgba(0,0,0,.22)" strokeWidth="1.2" />
+      <path d="M23 17 L77 17 L77.6 26 L22.4 26 Z" fill="#B8956A" />
+      <path d="M22 30 L78 30" stroke="#A9865C" strokeWidth="1.4" strokeDasharray="2.5 2" />
+      <circle cx="66" cy="37" r="3.2" fill="#A9865C" />
+      <rect x="29" y="45" width="42" height="36" rx="4" fill={color} />
+      <path d="M43 77 V60 C43 55 46 52 50 49 C54 52 57 55 57 60 V77" fill="none" stroke="#F3E9D8" strokeWidth="1.8" />
+      <ellipse cx="50" cy="66.5" rx="3.6" ry="5.4" fill="#F3E9D8" transform="rotate(-24 50 66.5)" />
+      <path d="M50 61.5 C48 63.5 52 65 50 67 C48 69 52 70 50 72" fill="none" stroke={color} strokeWidth="1" transform="rotate(-24 50 66.5)" />
+    </g>
+  );
+}
+
+const Shape = ({ kind, color }: { kind: Exclude<ArtKind, 'kit'>; color: string }) =>
+  kind === 'coffee' ? <CoffeeBag color={color} /> : <path d={SHAPES[kind]} fill={color} fillRule="evenodd" stroke="rgba(0,0,0,.22)" strokeWidth="1.2" />;
 
 export function Art({ kind, color, kitColors, image, alt = '' }: { kind: ArtKind; color: string; kitColors?: string[]; image?: string; alt?: string }) {
   // eslint-disable-next-line @next/next/no-img-element
@@ -26,7 +45,7 @@ export function Art({ kind, color, kitColors, image, alt = '' }: { kind: ArtKind
   }
   return (
     <svg viewBox="0 0 100 100" aria-hidden="true">
-      <path d={SHAPES[kind]} fill={color} fillRule="evenodd" stroke="rgba(0,0,0,.22)" strokeWidth="1.2" />
+      <Shape kind={kind} color={color} />
     </svg>
   );
 }
@@ -42,12 +61,21 @@ export function BundleArt({ parts }: { parts: { art: ArtKind; color: string }[] 
     <svg viewBox="0 0 120 100" aria-hidden="true">
       {parts.slice(0, 3).map((p, i) => (
         <g key={i} transform={slots[i].t}>
-          <path d={SHAPES[p.art === 'kit' ? 'bag' : p.art]} fill={p.color} fillRule="evenodd" stroke="rgba(0,0,0,.25)" />
+          <Shape kind={p.art === 'kit' ? 'bag' : p.art} color={p.color} />
         </g>
       ))}
     </svg>
   );
 }
+
+/** Small line icons for the trust bar (24 × 24, drawn in the brand color). */
+export const TrustIcon: Record<string, React.ReactNode> = {
+  seal: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round"><path d="M12 2.8l2.3 1.7 2.8-.2.9 2.7 2.3 1.6-.9 2.7.9 2.7-2.3 1.6-.9 2.7-2.8-.2L12 21.2l-2.3-1.7-2.8.2-.9-2.7-2.3-1.6.9-2.7-.9-2.7 2.3-1.6.9-2.7 2.8.2z" /><path d="M8.6 12.2l2.3 2.3 4.5-4.6" strokeLinecap="round" /></svg>,
+  cash: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round"><rect x="2.5" y="6" width="19" height="12" rx="2.5" /><circle cx="12" cy="12" r="2.8" /><path d="M6 9.5v5M18 9.5v5" strokeLinecap="round" /></svg>,
+  truck: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round"><path d="M2.5 6.5h11v9h-11zM13.5 9.5h4l3 3v3h-7z" /><circle cx="7" cy="17.5" r="1.8" fill="var(--surface)" /><circle cx="17" cy="17.5" r="1.8" fill="var(--surface)" /></svg>,
+  return: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M4 9h11a5 5 0 010 10H9" /><path d="M8 5L4 9l4 4" /></svg>,
+  star: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round"><path d="M12 3l2.7 5.6 6.1.8-4.5 4.2 1.1 6.1L12 16.8l-5.4 2.9 1.1-6.1-4.5-4.2 6.1-.8z" /></svg>,
+};
 
 export const Icon = {
   search: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9"><circle cx="11" cy="11" r="6.5" /><path d="M20 20l-4.2-4.2" /></svg>,

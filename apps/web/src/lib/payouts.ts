@@ -7,7 +7,7 @@ import { store } from './store/index.ts';
 export function moneyOf(o: Order): OrderMoney {
   return {
     type: o.type,
-    lines: o.items.map((i) => ({ sellerId: i.sellerId, unitPrice: i.unitPrice, qty: i.qty })),
+    lines: o.items.map((i) => ({ sellerId: i.sellerId, unitPrice: i.unitPrice, qty: i.qty, ...(i.unitCost !== undefined ? { unitCost: i.unitCost } : {}) })),
     platformDiscount: o.quote.bundleDiscount + o.quote.promoDiscount,
     wallet: o.quote.wallet,
     delivered: o.status === 'delivered',

@@ -10,7 +10,7 @@ export async function generateMetadata() { return { title: (await speaker()).t('
 const SORTS: SortKey[] = ['best', 'low', 'high', 'rating'];
 const BANDS: Exclude<PriceBand, 'all'>[] = ['lt300', 'mid', 'gt900'];
 
-type SP = { q?: string; cat?: string; sort?: string; price?: string };
+type SP = { q?: string; cat?: string; sort?: string; price?: string; family?: string };
 
 export default async function SearchPage({ params, searchParams }: { params: Promise<{ niche: string }>; searchParams: Promise<SP> }) {
   const cfg = getNiche((await params).niche);
@@ -20,13 +20,14 @@ export default async function SearchPage({ params, searchParams }: { params: Pro
   const sp = await searchParams;
   const q = (sp.q ?? '').slice(0, 80);
   const cat = cfg.categories.some((c) => c.id === sp.cat) ? sp.cat : undefined;
+  const family = cfg.tasteFamilies?.find((f) => f.id === sp.family);
   const sort = (SORTS.find((k) => k === sp.sort) ?? 'best') as SortKey;
   const price = (BANDS.find((b) => b === sp.price) ?? 'all') as PriceBand;
   const catl = await catalog();
-  const results = q || cat ? catl.search(cfg, { q, cat, sort, price }) : [];
+  const results = q || cat || family ? catl.search(cfg, { q, cat, sort, price, family: family?.id }) : [];
   const link = (patch: Partial<SP>) => {
     const u = new URLSearchParams();
-    const next = { q, cat, sort: sort === 'best' ? undefined : sort, price: price === 'all' ? undefined : price, ...patch };
+    const next = { q, cat, family: family?.id, sort: sort === 'best' ? undefined : sort, price: price === 'all' ? undefined : price, ...patch };
     for (const [k, v] of Object.entries(next)) if (v) u.set(k, v);
     return `/${cfg.id}/search?${u}`;
   };
@@ -44,7 +45,8 @@ export default async function SearchPage({ params, searchParams }: { params: Pro
         ))}
       </nav>
 
-      {!q && !cat ? (
+      {family && <div className="chips"><Link className="chip" aria-current="true" href={link({ family: undefined })}>{(s.en && family.labelEn) || family.labelAr} ✕</Link></div>}
+      {!q && !cat && !family ? (
         <section style={{ display: 'grid', gap: 10 }}>
           <h2 className="h4">{t('popular')}</h2>
           <div className="chips" style={{ flexWrap: 'wrap' }}>

@@ -102,6 +102,22 @@ export async function setProductStatus(id: string, status: 'live' | 'hidden', re
   done();
 }
 
+/** Stock per option from the admin form (fields "stock:<option label>"); whole numbers 0–100000. */
+export async function setStock(id: string, form: FormData) {
+  await guard();
+  const found = (await catalog()).productById(id);
+  if (!found) return;
+  const p = structuredClone(found);
+  for (const v of p.variants) {
+    const raw = form.get(`stock:${v.label}`);
+    if (raw === null || String(raw).trim() === '') continue;
+    const n = Math.floor(Number(String(raw).replace(/[٠-٩]/g, (d) => String('٠١٢٣٤٥٦٧٨٩'.indexOf(d)))));
+    if (Number.isFinite(n) && n >= 0 && n <= 100000) v.stock = n;
+  }
+  await saveProduct(p);
+  done();
+}
+
 // ---------- payouts ----------
 export async function markPaidAction(sellerId: string) {
   await guard();

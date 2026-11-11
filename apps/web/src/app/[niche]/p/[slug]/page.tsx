@@ -2,19 +2,22 @@ import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { AddToCart } from '@/components/AddToCart';
 import { Art } from '@/components/Art';
-import { catalog, choicesFor, freshnessOf, priceRange } from '@/lib/catalog';
+import { TasteProfile } from '@/components/Taste';
+import { bestPer100g, catalog, choicesFor, freshnessOf, priceRange } from '@/lib/catalog';
 import { etaDate } from '@/lib/eta';
 import { speaker } from '@/lib/lang';
 import { getNiche } from '@/lib/niches';
+import { jsonLd, pageMeta, siteUrl } from '@/lib/site';
 
 type P = { params: Promise<{ niche: string; slug: string }> };
 
 export async function generateMetadata({ params }: P): Promise<Metadata> {
   const { niche, slug } = await params;
   const p = (await catalog()).productBySlug(niche, slug);
-  if (!p) return {};
-  const s = await speaker(getNiche(niche));
-  return { title: s.product(p), description: s.lead(p) };
+  const cfg = getNiche(niche);
+  if (!p || !cfg) return {};
+  const s = await speaker(cfg);
+  return pageMeta(cfg, s.lang, `/p/${p.slug}`, { title: s.product(p), description: s.lead(p), image: p.images?.[0] });
 }
 
 const SIZE_CHART = [['1', '135', '56'], ['2', '140', '58'], ['3', '145', '61'], ['4', '150', '64']];
@@ -30,30 +33,38 @@ export default async function ProductPage({ params }: P) {
   const finder = p.category === 'abaya' ? 'size' : null;
   const choices = choicesFor(cfg, p);
   const range = priceRange(p);
+  const per100 = bestPer100g(p);
   const fresh = freshnessOf(cfg, p);
   const name = s.product(p);
   const lead = s.lead(p);
   const attrs = s.attrs(p);
   const faq = s.faqOf(p);
-  const jsonLd = {
+  const productLd = {
     '@context': 'https://schema.org', '@type': 'Product', name, description: lead, ...(p.images?.length ? { image: p.images } : {}),
     brand: { '@type': 'Brand', name: s.seller(seller) },
     additionalProperty: Object.entries(attrs).map(([n, value]) => ({ '@type': 'PropertyValue', name: n, value })),
+    sku: p.id, url: siteUrl(cfg, `/p/${p.slug}`, s.lang),
     offers: {
-      '@type': 'Offer', priceCurrency: 'EGP', price: range.min,
+      '@type': 'AggregateOffer', priceCurrency: 'EGP', lowPrice: range.min, highPrice: range.max, offerCount: p.variants.length,
       availability: p.variants.some((v) => v.stock) ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock',
       shippingDetails: { '@type': 'OfferShippingDetails', shippingRate: { '@type': 'MonetaryAmount', value: cfg.shippingEgp, currency: 'EGP' } },
       hasMerchantReturnPolicy: { '@type': 'MerchantReturnPolicy', merchantReturnDays: 14, returnFees: 'https://schema.org/FreeReturn' },
     },
     ...(p.reviews.length ? { aggregateRating: { '@type': 'AggregateRating', ratingValue: seller.rating, reviewCount: p.reviews.length } } : {}),
   };
+  const catLabel = cfg.categories.find((c) => c.id === p.category);
+  const breadcrumb = { '@context': 'https://schema.org', '@type': 'BreadcrumbList', itemListElement: [
+    { '@type': 'ListItem', position: 1, name: s.brand(cfg), item: siteUrl(cfg, '/', s.lang) },
+    ...(catLabel ? [{ '@type': 'ListItem', position: 2, name: s.category(catLabel), item: siteUrl(cfg, `/search?cat=${catLabel.id}`, s.lang) }] : []),
+    { '@type': 'ListItem', position: catLabel ? 3 : 2, name, item: siteUrl(cfg, `/p/${p.slug}`, s.lang) },
+  ] };
   const freshText = !fresh ? null
     : fresh.kind === 'to_order' ? (s.en && cfg.freshness?.madeToOrderEn) || fresh.text
     : fresh.days === 0 ? s.t('roastedToday') : s.t('roastedDays', { n: fresh.days, unit: fresh.days <= 10 ? 'أيام' : 'يوم' });
 
   return (
     <main className="page product">
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replace(/</g, '\\u003c') }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={jsonLd([productLd, breadcrumb, ...(faq.length ? [{ '@context': 'https://schema.org', '@type': 'FAQPage', mainEntity: faq.map(([q, a]) => ({ '@type': 'Question', name: q, acceptedAnswer: { '@type': 'Answer', text: a } })) }] : [])])} />
       {p.images?.length ? (
         <>
           <div className="gallery" aria-label={s.t('photos')}>
@@ -67,6 +78,7 @@ export default async function ProductPage({ params }: P) {
         <h1 className="title">{name}</h1>
         <div className="muted">{/* eslint-disable-next-line @next/next/no-img-element */}{seller.logo && <img className="slogo" src={seller.logo} alt="" />}{s.t('by', { name: '' })}<b>{s.seller(seller)}</b> · <span style={{ color: 'var(--ok)', fontWeight: 700 }}>{s.t('verified')}</span> · {seller.rating ? `⭐ ${seller.rating}` : s.t('newSeller')}</div>
         <div className="pprice num" style={{ fontSize: 21 }}>{range.min !== range.max ? s.t('from', { price: s.egp(range.min) }) : s.egp(range.min)}</div>
+        {per100 && <div className="per100 num">{s.t('per100', { x: s.egp(per100) })}</div>}
         {freshText && <div className="small" style={{ color: 'var(--ok)', fontWeight: 700 }}>{freshText}</div>}
       </div>
       <div className="eta">
@@ -77,6 +89,7 @@ export default async function ProductPage({ params }: P) {
         <a href="#sec-sizes">{finder === 'size' ? s.t('sec.size') : s.t('sec.options')}</a><a href="#sec-specs">{s.t('sec.specs')}</a><a href="#sec-revs">{s.t('sec.reviews')}</a>{faq.length > 0 && <a href="#sec-faq">{s.t('sec.faq')}</a>}
       </nav>
       {lead && <p className="lead" style={{ margin: 0 }}>{lead}</p>}
+      <TasteProfile p={p} cfg={cfg} s={s} />
       <AddToCart niche={niche} slug={p.slug} price={p.price} variants={p.variants} finder={finder} axes={cfg.optionAxes} choices={choices} />
       <section id="sec-specs">
         <h2 className="h4">{s.t('sec.specs')}</h2>

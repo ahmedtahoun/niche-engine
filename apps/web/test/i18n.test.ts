@@ -43,5 +43,5 @@ test('an English cart shows English titles while the order items stay Arabic for
   assert.equal(ar.lines[0].title, 'إثيوبيا ليمو · 1 كجم');
   assert.equal(en.total, ar.total);
   // English search finds products by their English names too.
-  assert.equal(cat.search(cfg, { q: 'cerrado' })[0]?.slug, 'bonds-brazil-cerrado');
+  assert.equal(cat.search(cfg, { q: 'catuai' })[0]?.slug, 'bonds-brazil-red-catuai');
 });

@@ -180,6 +180,16 @@ const lean = (w, h, body, bg) => `<svg xmlns="http://www.w3.org/2000/svg" viewBo
 writeFileSync(path.join(site, 'mark.svg'), lean(200, 240, mark(onLight)));
 writeFileSync(path.join(site, 'icon.svg'), lean(280, 280, mark({ ...onDark, x: 40, y: 20 }), C.espresso));
 
+// Social card for links shared on WhatsApp, Facebook, X and in search (1200 × 630).
+files['social/og.svg'] = svg(1200, 630, `
+${mark({ ...onDark, x: 860, y: 150, s: 1.4 })}
+<text x="760" y="250" text-anchor="end" class="en" font-size="76" letter-spacing="6" fill="${C.sand}">CAIRO ROAST</text>
+${ar(760, 340, 64, 'محمصة القاهرة', C.brass)}
+${ar(760, 430, 38, 'قهوة مختصة طازة · الدفع عند الاستلام', C.sand, 'tx')}
+<text x="760" y="490" text-anchor="end" class="tx" font-size="30" fill="${C.sand}" opacity=".8">Fresh specialty coffee · Cash on delivery in Egypt</text>
+<rect x="0" y="600" width="1200" height="30" fill="${C.roast}"/>`, C.espresso);
+writeFileSync(out('social/og.svg'), files['social/og.svg']);
+
 // ---------- PNG exports ----------
 const CHROME = ['/Applications/Google Chrome.app/Contents/MacOS/Google Chrome', '/Applications/Brave Browser.app/Contents/MacOS/Brave Browser'].find(existsSync);
 const sizeOf = (s) => s.match(/viewBox="0 0 (\d+) (\d+)"/).slice(1).map(Number);
@@ -193,4 +203,5 @@ if (CHROME) {
     execFileSync('rm', [html]);
   }
   console.log(`Rendered ${Object.keys(files).length} PNGs`);
+  execFileSync('cp', [out('social/og.png'), path.join(site, 'og.png')]);
 } else console.log('Chrome not found: SVGs written, PNGs skipped');

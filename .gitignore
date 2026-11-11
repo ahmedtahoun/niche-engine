@@ -10,3 +10,8 @@ dist/
 next-env.d.ts
 bundle/
 out/
+
+# Private business data (supplier costs, margins): never commit, the repository is public
+*.local.json
+*.local.sql
+research/private/

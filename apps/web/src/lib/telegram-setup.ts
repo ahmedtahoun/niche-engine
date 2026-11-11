@@ -64,3 +64,19 @@ export async function connectWebhook(): Promise<{ ok: boolean; message: string }
     return { ok: false, message: `Could not reach Telegram from the server: ${(e as Error).message}` };
   }
 }
+
+const g = globalThis as unknown as { __botName?: { at: number; name: string | null } };
+
+/** The bot's @username for public "open the bot" links (asked once a day; null if not set up). */
+export async function botUsername(): Promise<string | null> {
+  if (process.env.TELEGRAM_BOT_USERNAME) return process.env.TELEGRAM_BOT_USERNAME.replace(/^@/, '');
+  if (!process.env.TELEGRAM_BOT_TOKEN) return null;
+  if (g.__botName && Date.now() - g.__botName.at < 864e5) return g.__botName.name;
+  try {
+    const me = await call<{ username: string }>('getMe');
+    g.__botName = { at: Date.now(), name: me.ok && me.result ? me.result.username : null };
+  } catch {
+    g.__botName = { at: Date.now() - 864e5 + 6e5, name: null }; // retry in 10 minutes
+  }
+  return g.__botName.name;
+}

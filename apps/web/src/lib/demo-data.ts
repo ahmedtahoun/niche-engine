@@ -1,6 +1,11 @@
 // DEMO DATA ONLY. Replaced by Supabase reads once the keys are in place.
 import type { Product, Seller } from './types.ts';
-import { BONDS, BONDS_PRODUCTS } from './seeds/bonds.ts';
+import { existsSync, readFileSync } from 'node:fs';
+import { BONDS, BONDS_PRODUCTS, withCosts } from './seeds/bonds.ts';
+
+// Private wholesale costs, when the local file exists (git-ignored; the demo works without it).
+const COSTS_FILE = new URL('./seeds/costs.local.json', import.meta.url);
+const costKg: Record<string, number> = (() => { try { return existsSync(COSTS_FILE) ? JSON.parse(readFileSync(COSTS_FILE, 'utf8')) : {}; } catch { return {}; } })();
 
 const v = (o: Record<string, number>) => Object.entries(o).map(([label, stock]) => ({ label, stock }));
 
@@ -49,5 +54,5 @@ export const PRODUCTS: Product[] = [
     reviews: [{ name: 'أم يوسف', tags: ['L', 'مظبوط'], text: 'القطن تقيل وبيشرب العرق.' }], faq: [] },
 
   // ---------- Coffee (Cairo Roast) ----------
-  ...BONDS_PRODUCTS,
+  ...withCosts(BONDS_PRODUCTS, costKg),
 ];

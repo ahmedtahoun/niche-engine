@@ -1,6 +1,6 @@
 // Shapes shared by server and client code.
 
-export type ArtKind = 'abaya' | 'niqab' | 'khimar' | 'hijab' | 'ihram' | 'bag' | 'tool' | 'kit';
+export type ArtKind = 'abaya' | 'niqab' | 'khimar' | 'hijab' | 'ihram' | 'bag' | 'tool' | 'kit' | 'coffee';
 
 export interface Seller {
   id: string;
@@ -27,6 +27,8 @@ export interface Seller {
   samplePhotos?: string[];
   /** Store name for the English site. */
   nameEn?: string;
+  /** The seller's story, shown on the store ("meet the roaster"). */
+  about?: { ar: string; en?: string };
 }
 
 export interface Variant {
@@ -67,6 +69,10 @@ export interface Product {
   faq: [string, string][];
   /** English texts for the English site; anything missing shows in Arabic. */
   en?: { name?: string; lead?: string; attributes?: Record<string, string>; faq?: [string, string][] };
+  /** Wholesale price per option label, agreed with the seller (private: admin and payouts only). */
+  cost?: Record<string, number>;
+  /** Taste profile (coffee): tasting notes, a family from the niche's tasteFamilies, 1–5 scales. Only what the maker states. */
+  profile?: { notes?: string[]; notesEn?: string[]; family?: string; scales?: Record<string, number> };
 }
 
 /** What the browser keeps in its cart. Prices are never trusted from here. */
@@ -96,6 +102,8 @@ export interface OrderItem {
   variant: string;
   qty: number;
   unitPrice: number;
+  /** Wholesale cost for this unit (private: never sent to the browser). The seller is paid this. */
+  unitCost?: number;
 }
 
 export interface Quote {

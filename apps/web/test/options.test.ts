@@ -89,7 +89,7 @@ test('Cairo Roast: the Bonds seed SQL loads into real Postgres, re-runs keep sto
   await db.exec(seed);
   const products = (await db.query<Record<string, unknown>>('select * from products order by id')).rows.map((r) => rowToProduct(r as never));
   const sellers = (await db.query<Record<string, unknown>>('select * from sellers')).rows.map((r) => rowToSeller(r as never));
-  assert.equal(products.length, 5);
+  assert.equal(products.length, 7);
   const chrome = products.find((p) => p.id === 'bonds-chrome')!;
   assert.equal(chrome.variants[0].stock, 7);
   assert.deepEqual(chrome.variants.map((v) => v.price), [225, 900]);
@@ -98,7 +98,32 @@ test('Cairo Roast: the Bonds seed SQL loads into real Postgres, re-runs keep sto
   assert.deepEqual(live.bundleProblems(coffeeCfg), []);
   const q = live.quote(coffeeCfg, [{ kind: 'item', slug: 'bonds-ethiopia-limu', variant: '1 كجم', qty: 1 }, { kind: 'bundle', id: 'discovery_box', variant: '', qty: 1 }], opts);
   assert.deepEqual(q.problems, []);
-  assert.equal(q.subtotal, 1140 + 225 + 285 + 297);
-  assert.equal(q.bundleDiscount, 57);
-  assert.equal(live.search(coffeeCfg, { q: 'بن اثيوبي' })[0]?.slug, 'bonds-ethiopia-limu');
+  // Price list (1 kg): Limu 1,200; box = Chrome 225 + Limu 300 + Brazil 325 at 250 g, minus 60.
+  assert.equal(q.subtotal, 1200 + 225 + 300 + 325);
+  assert.equal(q.bundleDiscount, 60);
+  assert.equal(q.shipping, 100);
+  assert.deepEqual(live.search(coffeeCfg, { q: 'بن اثيوبي' }).map((p) => p.slug).sort(), ['bonds-ethiopia-guji', 'bonds-ethiopia-limu']);
+  assert.deepEqual(products.find((p) => p.id === 'bonds-ethiopia-guji')!.variants.map((v) => v.price), [500, 2000]);
+  assert.equal(products.find((p) => p.id === 'bonds-amber')!.images?.[0], '/products/coffee/amber.webp');
+});
+
+test('wholesale coffee: Bonds is paid exactly the agreed cost, Cairo Roast keeps the margin, and the cost never reaches the browser', async () => {
+  const { sellerPayout, platformNet, commissionBySeller } = await import('@niche-engine/core');
+  const { publicQuote } = await import('../src/lib/catalog.ts');
+  const { BONDS, BONDS_PRODUCTS, withCosts } = await import('../src/lib/seeds/bonds.ts');
+  const coffeeCfg = getNiche('coffee')!;
+  const live = new Catalog([BONDS], withCosts(BONDS_PRODUCTS, { 'bonds-chrome': 720, 'bonds-ethiopia-guji': 1650 }));
+  const q = live.quote(coffeeCfg, [{ kind: 'item', slug: 'bonds-chrome', variant: '1 كجم', qty: 2 }, { kind: 'item', slug: 'bonds-ethiopia-guji', variant: '250 جم', qty: 1 }], { isFirstOrder: false, walletBalance: 0, useWallet: false });
+  // Made-up costs: real supplier prices never go in this public repository.
+  assert.deepEqual(q.items.map((i) => i.unitCost), [720, 413]);
+  const money = { type: 'repeat' as const, lines: q.items.map((i) => ({ sellerId: i.sellerId, unitPrice: i.unitPrice, qty: i.qty, unitCost: i.unitCost })), platformDiscount: 0, wallet: 0, delivered: true };
+  // Chrome: (900 − 720) × 2 = 360; Guji 250 g: 500 − 413 = 87. The 6% repeat rate does not apply.
+  assert.equal(commissionBySeller(money, coffeeCfg).bonds, 447);
+  const cycle = sellerPayout('bonds', [money], coffeeCfg);
+  assert.equal(cycle.net, 720 * 2 + 413, 'Bonds gets the cost');
+  // Platform net = margin − 4% cashback on goods.
+  assert.equal(platformNet(money, coffeeCfg), 447 - (1800 + 500) * 0.04);
+  const pub = publicQuote(q);
+  assert.ok(!JSON.stringify(pub).includes('unitCost'), 'no cost in what the browser gets');
+  assert.equal(pub.total, q.total);
 });

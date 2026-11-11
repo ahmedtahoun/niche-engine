@@ -6,6 +6,7 @@ import { etaDate } from '@/lib/eta';
 import { speaker } from '@/lib/lang';
 import { getNiche } from '@/lib/niches';
 import { getOrder } from '@/lib/orders';
+import { publicQuote } from '@/lib/catalog';
 import Link from 'next/link';
 import { currentCustomer } from '@/lib/current-customer';
 
@@ -59,7 +60,7 @@ export default async function OrderPage({ params }: { params: Promise<{ niche: s
           </div>
         ))}
       </div>
-      <Summary q={o.quote} />
+      <Summary q={publicQuote(o.quote)} />
       {o.status !== 'cancelled' && <div className="row total"><span>{t('payAtDoor')}</span><span className="num">{egp(o.payment === 'cod' ? toPayAtDoor : 0)}</span></div>}
       <div className="box small">
         <b>{t('deliverTo')}</b>

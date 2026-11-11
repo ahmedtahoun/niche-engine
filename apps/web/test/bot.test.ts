@@ -20,7 +20,8 @@ freshStore();
 test('a new seller applies with owner, contact, logo and pickup address, and is approved', async () => {
   const chat = 7777;
   assert.match(last(await say(chat, '/start')).text, /ابدأ التقديم|5 دقايق/);
-  assert.match(last(await tap(chat, 'ap:start')).text, /1\/11 · اسم المتجر/, 'one niche: no niche question');
+  assert.match(last(await tap(chat, 'ap:start')).text, /1\/12 · بتبيع إيه/, 'two open niches: asks which');
+  assert.match(last(await tap(chat, 'ap:v:niche:umrah')).text, /2\/12 · اسم المتجر/);
   assert.match(last(await say(chat, 'نور للخمارات')).text, /اسمك/);
   const phoneQ = last(await say(chat, 'نور'));
   assert.match(phoneQ.text, /رقم موبايل/);
@@ -198,4 +199,15 @@ test('team alerts: start, application begun and finished, product submitted', as
   assert.match((await handle({ chatId: 4444, text: '/myid' }))[0].text, /4444/);
   delete process.env.ADMIN_TELEGRAM_CHAT_IDS;
   assert.equal((await handle({ chatId: 4445, text: '/start' })).length, 1, 'no admin chats set: no alerts');
+});
+
+test("the Apply link on a store's sell page starts that store's application directly", async () => {
+  const chat = 7788;
+  const r = last(await say(chat, '/start apply_coffee'));
+  assert.match(r.text, /2\/12 · اسم المتجر/, 'no niche question: the link already says coffee');
+  await say(chat, 'محمصة النيل');
+  const s = (await import('../src/lib/store/index.ts')).store();
+  const session = await s.getBotSession<{ data: Record<string, string> }>(chat);
+  assert.equal(session?.data.niche, 'coffee');
+  assert.match(last(await say(7789, '/start apply_nope')).text, /5 دقايق/, 'an unknown or closed store shows the normal intro');
 });

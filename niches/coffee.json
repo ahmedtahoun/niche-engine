@@ -1,7 +1,7 @@
 {
   "id": "coffee",
   "status": "draft",
-  "acceptsSellers": false,
+  "acceptsSellers": true,
   "brand": {
     "nameAr": "محمصة القاهرة",
     "nameEn": "Cairo Roast",
@@ -16,6 +16,11 @@
     "tagline": {
       "ar": "قهوة مختصة طازة",
       "en": "Fresh specialty coffee"
+    },
+    "ogImage": "/brands/coffee/og.png",
+    "description": {
+      "ar": "محمصة القاهرة متجر قهوة مختصة أونلاين في مصر: حبوب قهوة من محامص مختارة زي بوندز، بلندات وقهوة أحادية المصدر بوزن 250 جم و1 كجم، والدفع عند الاستلام مع توصيل لكل مصر.",
+      "en": "Cairo Roast is an online specialty coffee store in Egypt: whole-bean coffee from selected roasters such as Bonds, blends and single origins in 250 g and 1 kg, with cash on delivery across Egypt."
     }
   },
   "categories": [
@@ -53,10 +58,10 @@
     "percent": 0.1,
     "days": 30
   },
-  "shippingEgp": 65,
+  "shippingEgp": 100,
   "risk": {
     "depositAboveEgp": 1500,
-    "depositEgp": 65,
+    "depositEgp": 100,
     "requireWhatsappConfirm": false,
     "openBeforePay": true
   },
@@ -107,12 +112,12 @@
           "variant": "250 جم"
         },
         {
-          "product": "bonds-brazil-cerrado",
+          "product": "bonds-brazil-red-catuai",
           "qty": 1,
           "variant": "250 جم"
         }
       ],
-      "discountEgp": 57,
+      "discountEgp": 60,
       "nameEn": "Discovery box: 3 Bonds coffees"
     }
   ],
@@ -144,5 +149,65 @@
       "Brazil",
       "Chocolate"
     ]
-  }
+  },
+  "tasteFamilies": [
+    {
+      "id": "chocolate",
+      "labelAr": "شوكولاتة ومكسرات",
+      "labelEn": "Chocolate & nuts",
+      "hintAr": "ناعمة ومريحة، حلوة سادة أو باللبن",
+      "hintEn": "Smooth and comforting, lovely black or with milk"
+    },
+    {
+      "id": "caramel",
+      "labelAr": "كراميل وحلاوة",
+      "labelEn": "Caramel & sweet",
+      "hintAr": "حلاوة طبيعية زي التوفي والقيقب",
+      "hintEn": "Natural sweetness like toffee and maple"
+    },
+    {
+      "id": "fruity",
+      "labelAr": "فواكه وشاي",
+      "labelEn": "Fruity & tea-like",
+      "hintAr": "أخف وأكثر تعقيد، لمسة برتقال وشاي",
+      "hintEn": "Lighter and more complex, hints of orange and tea"
+    }
+  ],
+  "profileScales": [
+    {
+      "id": "body",
+      "labelAr": "القوام",
+      "labelEn": "Body",
+      "lowAr": "خفيف",
+      "highAr": "تقيل",
+      "lowEn": "Light",
+      "highEn": "Full"
+    },
+    {
+      "id": "acidity",
+      "labelAr": "الحموضة",
+      "labelEn": "Acidity",
+      "lowAr": "منخفضة",
+      "highAr": "عالية",
+      "lowEn": "Low",
+      "highEn": "Bright"
+    }
+  ],
+  "trust": [
+    {
+      "icon": "seal",
+      "ar": "أصلية ومقفولة من المحمصة",
+      "en": "Original, sealed from the roastery"
+    },
+    {
+      "icon": "cash",
+      "ar": "الدفع عند الاستلام",
+      "en": "Cash on delivery"
+    },
+    {
+      "icon": "truck",
+      "ar": "توصيل 2–4 أيام لكل مصر",
+      "en": "2–4 day delivery across Egypt"
+    }
+  ]
 }

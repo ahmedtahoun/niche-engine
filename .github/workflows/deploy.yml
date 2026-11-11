@@ -20,6 +20,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - uses: actions/setup-node@v4
         with:
@@ -54,6 +56,13 @@ jobs:
             git clone --quiet --depth 1 --branch deploy "$URL" out
           else
             mkdir out && git -C out init --quiet -b deploy && git -C out remote add origin "$URL"
+          fi
+          # A late run must never replace a newer build (e.g. one published with npm run publish:deploy).
+          if [ -f out/REVISION ]; then
+            DEPLOYED=$(cat out/REVISION)
+            if [ "$DEPLOYED" != "$GITHUB_SHA" ] && git merge-base --is-ancestor "$GITHUB_SHA" "$DEPLOYED" 2>/dev/null; then
+              echo "deploy already has newer build $DEPLOYED; skipping"; exit 0
+            fi
           fi
           rsync -a --delete --exclude .git bundle/ out/
           cd out

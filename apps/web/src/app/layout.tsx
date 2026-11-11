@@ -22,6 +22,10 @@ export const viewport: Viewport = { width: 'device-width', initialScale: 1, view
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="ar" dir="rtl">
+      <head>
+        {/* Product photos come from Supabase Storage: open that connection early. */}
+        {process.env.SUPABASE_URL && <link rel="preconnect" href={new URL(process.env.SUPABASE_URL).origin} crossOrigin="" />}
+      </head>
       <body>{children}</body>
     </html>
   );

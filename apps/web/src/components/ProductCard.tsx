@@ -9,7 +9,7 @@ export function ProductCard({ p, seller: s }: { p: Product; seller: Seller }) {
       <div className="pimg"><Art kind={p.art} color={p.color} image={p.images?.[0]} alt={p.nameAr} /></div>
       <div className="pname">{p.nameAr}</div>
       <div className="pby">من {s.name}</div>
-      <div className="pmeta">⭐ {s.rating} · يوصل {etaLabel('القاهرة').split('،')[0]}</div>
+      <div className="pmeta">{s.rating ? `⭐ ${s.rating}` : 'بائع جديد'} · يوصل {etaLabel('القاهرة').split('،')[0]}</div>
       <div className="pprice num">{egp(p.price)}</div>
     </Link>
   );

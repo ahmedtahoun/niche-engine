@@ -17,7 +17,7 @@ export default async function AccountPage({ params }: { params: Promise<{ niche:
   const me = await currentCustomer();
   if (!me) {
     return (
-      <main className="page">
+      <main className="page narrow">
         <h1 className="title">حسابك</h1>
         <p className="muted" style={{ margin: 0 }}>ادخل برقم موبايلك وكلمة السر عشان تشوف طلباتك، وعنوانك بيتحفظ للطلب الجاي.</p>
         <AuthForms />
@@ -29,7 +29,7 @@ export default async function AccountPage({ params }: { params: Promise<{ niche:
   const KIND: Record<string, string> = { cashback: 'كاش باك', spend: 'استخدمته في طلب', refund: 'رجعلك من طلب اتلغى', adjust: 'رصيد من الفريق' };
   const day = (iso: string) => new Date(iso).toLocaleDateString('ar-EG-u-nu-latn', { day: 'numeric', month: 'long' });
   return (
-    <main className="page">
+    <main className="page narrow">
       <h1 className="title">أهلاً {me.name.split(' ')[0]}</h1>
       <section className="hero" style={{ gridTemplateColumns: '1fr' }}>
         <span className="small" style={{ opacity: 0.85 }}>رصيد محفظتك</span>

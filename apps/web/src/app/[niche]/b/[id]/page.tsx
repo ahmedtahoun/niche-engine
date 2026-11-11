@@ -15,7 +15,7 @@ export default async function BundlePage({ params }: { params: Promise<{ niche: 
   const sellers = new Set(bv.parts.map((p) => p.product.sellerId)).size;
   const pickLabel = bv.pickVariantsFrom?.category === 'abaya' ? 'مقاس العباية' : 'الطحنة';
   return (
-    <main className="page">
+    <main className="page narrow">
       <div className="big" style={{ aspectRatio: '1 / .7' }}><BundleArt parts={bv.parts.map((p) => p.product)} /></div>
       <h1 className="title">{bv.bundle.nameAr}</h1>
       <div className="price num"><b style={{ color: 'var(--primary)' }}>{egp(bv.price)}</b><s className="muted">{egp(bv.fullPrice)}</s><span className="muted">وفّرت {egp(bv.bundle.discountEgp)}</span></div>

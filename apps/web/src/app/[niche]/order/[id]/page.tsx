@@ -23,7 +23,7 @@ export default async function OrderPage({ params }: { params: Promise<{ niche: s
   const me = await currentCustomer();
   if (!me || me.phone !== o.customer.phone) {
     return (
-      <main className="page">
+      <main className="page narrow">
         <h1 className="title">طلب #{o.id}</h1>
         <p className="muted" style={{ margin: 0 }}>ادخل لحسابك عشان تشوف تفاصيل الطلب.</p>
         <Link className="btn primary block" href={`/${niche}/account`}>دخول</Link>
@@ -33,7 +33,7 @@ export default async function OrderPage({ params }: { params: Promise<{ niche: s
   const r = RANK[o.status];
   const toPayAtDoor = o.quote.total - (o.quote.depositRequired && o.payment === 'cod' ? o.quote.deposit : 0);
   return (
-    <main className="page">
+    <main className="page narrow">
       <h1 className="title">طلب #{o.id}</h1>
       {o.status === 'confirmed' && <div className="note ok">طلبك وصل للبائعين وبيتجهز. بوسطة هتبعتلك رسالة فيها رقم التتبع.</div>}
       {o.status === 'awaiting_confirm' && <div className="note warn">فاضل خطوة: أكد طلبك عشان نبدأ نجهزه.</div>}

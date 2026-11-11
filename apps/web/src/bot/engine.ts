@@ -39,7 +39,7 @@ const VARIANT_PRESETS: Record<string, [string, string[]][]> = {
 // ---------- sessions (wizard state per chat) ----------
 type Session =
   | { flow: 'apply'; step: number; data: Record<string, string>; logoId?: string; sampleIds?: string[] }
-  | { flow: 'add'; step: number; niche: string; data: Record<string, string>; variants: string[]; attrs: string[]; attrIndex: number; values: Record<string, string>; photos: number; photoIds?: string[] };
+  | { flow: 'add'; step: number; niche: string; data: Record<string, string>; variants: string[]; attrs: string[]; attrIndex: number; values: Record<string, string>; photos: number; photoIds?: string[]; colors?: string[] };
 /** Per-message context: the seller's flow state (saved after the reply if it changed) and the catalog. */
 interface Ctx { session: Session | null; cat: Catalog }
 
@@ -261,7 +261,29 @@ function startAdd(seller: Seller, ctx: Ctx): Outgoing[] {
   return [msg(seller.telegramChatId!, 'يلا 👌 المنتج ده في أنهي قسم؟', [cfg.categories.map((c) => ({ text: c.labelAr, data: `ad:v:category:${c.id}` }))])];
 }
 
-const ADD_STEPS = ['category', 'photos', 'name', 'price', 'variants', 'stock', 'attrs', 'preview'] as const;
+const ADD_STEPS = ['category', 'photos', 'name', 'description', 'price', 'variants', 'colors', 'stock', 'attrs', 'preview'] as const;
+const ONE_SIZE = 'مقاس واحد';
+const KNOWN_COLORS = ['اسود', 'ابيض', 'رمادي', 'كحلي', 'بيج', 'بني', 'زيتي', 'نبيتي', 'جملي', 'سكري', 'موف', 'لبني', 'وردي', 'روز', 'كافيه', 'اوف وايت', 'منت', 'زيتوني', 'عسلي', 'فيروزي', 'احمر', 'اخضر', 'ازرق', 'اصفر', 'برتقالي', 'بنفسجي', 'فضي', 'دهبي', 'كريمي', 'هافان'];
+const plainAr = (t: string) => t.replace(/[أإآ]/g, 'ا').replace(/ة$/, 'ه').replace(/ى$/, 'ي').trim();
+/** "أسود ورمادي، كحلي" → ["أسود", "رمادي", "كحلي"] (keeps the seller's spelling). */
+export function parseColors(text: string): string[] {
+  const joined = text.replace(/[أا]وف\s+وايت/g, (m) => m.replace(/\s+/, '_'));
+  const words = joined.split(/[,،/+\-\s]+/).map((w) => w.replace(/_/g, ' ').trim()).filter(Boolean);
+  const out: string[] = [];
+  for (let w of words) {
+    if (w === 'و') continue;
+    // "ورمادي" = "و" + "رمادي", but "وردي" is a color of its own.
+    if (w.startsWith('و') && !KNOWN_COLORS.includes(plainAr(w)) && KNOWN_COLORS.includes(plainAr(w.slice(1)))) w = w.slice(1);
+    if (!out.some((x) => plainAr(x) === plainAr(w))) out.push(w.slice(0, 20));
+  }
+  return out.slice(0, 8);
+}
+/** Options = every color × every size, each with the same starting stock. */
+function buildVariants(sizes: string[], colors: string[], stock: number): Product['variants'] {
+  if (!colors.length) return sizes.map((label) => ({ label, stock, size: label }));
+  const oneSize = sizes.length === 1 && sizes[0] === ONE_SIZE;
+  return colors.flatMap((color) => (oneSize ? [{ label: color, stock, color }] : sizes.map((size) => ({ label: `${color} · ${size}`, stock, color, size }))));
+}
 /** The question an add-product button belongs to (each attribute counts as its own question). */
 const addToken = (s: Extract<Session, { flow: 'add' }>) => (ADD_STEPS[s.step] === 'attrs' ? `a-${s.attrs[s.attrIndex]}` : ADD_STEPS[s.step]);
 /** Arabic-Indic and Persian digits → 0-9 (Egyptian keyboards type ٩٠٠). */
@@ -271,10 +293,12 @@ function addAsk(chatId: number, s: Extract<Session, { flow: 'add' }>): Outgoing[
   const cfg = getNiche(s.niche)!;
   switch (ADD_STEPS[s.step]) {
     case 'photos': return [msg(chatId, 'ابعت من 1 لـ 5 صور للمنتج على خلفية فاتحة.')];
-    case 'name': return [msg(chatId, 'اسم المنتج؟ (مثلاً: عباية كتان — زيتي)')];
+    case 'name': return [msg(chatId, 'اسم المنتج؟ (مثلاً: عباية كتان قصة كلوش)')];
+    case 'description': return [msg(chatId, 'وصف قصير يساعد العميلة تقرر: الخامة، القصة، تتلبس في إيه. (سطرين كفاية)', [[{ text: 'تخطي', data: 'ad:v:description:skip' }]])];
     case 'price': return [msg(chatId, 'السعر للعميل بالجنيه؟\nلازم يكون نفس سعر الإنستجرام بالظبط.')];
     case 'variants': return [msg(chatId, 'المتاح منه إيه؟ اختار، أو اكتبهم مفصولين بمسافة.', [(VARIANT_PRESETS[cfg.id] ?? []).map(([label], i) => ({ text: label, data: `ad:v:variants:preset${i}` }))])];
-    case 'stock': return [msg(chatId, `كام قطعة متاحة من كل نوع؟ (${s.variants.join('، ')})`, [row(['3', 'ad:v:stock:3'], ['5', 'ad:v:stock:5'], ['10', 'ad:v:stock:10'])])];
+    case 'colors': return [msg(chatId, 'الألوان المتاحة؟ اكتبها مفصولة بفاصلة أو مسافة (مثلاً: أسود، كحلي، بيج).\nالعميلة هتختار اللون بنفسها.', [[{ text: 'لون واحد بس', data: 'ad:v:colors:one' }]])];
+    case 'stock': return [msg(chatId, `كام قطعة متاحة من كل ${s.colors?.length ? 'لون ومقاس' : 'نوع'}؟ (${buildVariants(s.variants, s.colors ?? [], 0).map((v) => v.label).join('، ')})`, [row(['3', 'ad:v:stock:3'], ['5', 'ad:v:stock:5'], ['10', 'ad:v:stock:10'])])];
     case 'attrs': {
       const key = s.attrs[s.attrIndex];
       const a = ATTR[key] ?? { label: key };
@@ -282,7 +306,7 @@ function addAsk(chatId: number, s: Extract<Session, { flow: 'add' }>): Outgoing[
     }
     case 'preview': {
       const lines = s.attrs.map((k) => `• ${ATTR[k]?.label.split(' (')[0] ?? k}: ${s.values[k]}`).join('\n');
-      return [msg(chatId, `✨ جاهز للمراجعة:\n${s.data.name}\n📷 ${s.photos} ${s.photos === 1 ? 'صورة' : 'صور'}\n💰 سعر العميل: ${egp(Number(s.data.price))}\n${shareText(cfg, Number(s.data.price))}\nالمتاح: ${s.variants.join('، ')} (${s.data.stock} من كل نوع)\n${lines}`, [row(['✅ ابعته للمراجعة', 'ad:publish'], ['❌ الغي', 'ad:cancel'])])];
+      return [msg(chatId, `✨ جاهز للمراجعة:\n${s.data.name}\n📷 ${s.photos} ${s.photos === 1 ? 'صورة' : 'صور'}${s.data.description ? `\n📝 ${s.data.description}` : ''}\n💰 سعر العميل: ${egp(Number(s.data.price))}\n${shareText(cfg, Number(s.data.price))}\nالمقاسات: ${s.variants.join('، ')}${s.colors?.length ? `\nالألوان: ${s.colors.join('، ')}` : ''} (${s.data.stock} من كل نوع)\n${lines}`, [row(['✅ ابعته للمراجعة', 'ad:publish'], ['❌ الغي', 'ad:cancel'])])];
     }
     default: return [];
   }
@@ -305,6 +329,11 @@ async function addStep(m: Incoming, seller: Seller, s: Extract<Session, { flow: 
     case 'category': if (!choice || !cfg.categories.some((c) => c.id === choice)) return [msg(id, 'اختار القسم من الأزرار.')]; s.data.category = choice; break;
     case 'photos': if (!m.photos) return retry('محتاجين صور المنتج.'); s.photoIds = (m.photoIds ?? []).slice(0, 5); s.photos = Math.max(m.photos, s.photoIds.length); break;
     case 'name': if (text.length < 4) return retry('الاسم قصير أوي.'); s.data.name = text.slice(0, 80); break;
+    case 'description':
+      if (choice === 'skip') { s.data.description = ''; break; }
+      if (text.length < 8) return retry('اكتب وصف أطول شوية، أو دوس تخطي.');
+      s.data.description = text.slice(0, 500);
+      break;
     case 'price': { const p = Number(latinDigits(text).replace(/[^\d.]/g, '')); if (!(p >= 10 && p <= 100000)) return retry('اكتب السعر رقم بس، مثلاً: 850'); s.data.price = String(Math.round(p)); break; }
     case 'variants': {
       const preset = choice?.startsWith('preset') ? VARIANT_PRESETS[cfg.id]?.at(Number(choice.slice(6)))?.[1] : null;
@@ -313,6 +342,14 @@ async function addStep(m: Incoming, seller: Seller, s: Extract<Session, { flow: 
       s.variants = list;
       // One size: no size chart to ask for.
       if (list.length === 1) s.attrs = s.attrs.filter((a) => a !== 'size_chart_cm');
+      break;
+    }
+    case 'colors': {
+      const colors = choice === 'one' ? [] : parseColors(text);
+      if (choice !== 'one' && !colors.length) return retry('اكتب الألوان، أو دوس "لون واحد بس".');
+      if (colors.length === 1) s.values.color = colors[0]; // one color: no need to ask it again
+      s.colors = colors.length > 1 ? colors : [];
+      if (colors.length) s.attrs = s.attrs.filter((a) => a !== 'color');
       break;
     }
     case 'stock': { const digits = choice ?? latinDigits(text).replace(/[^\d]/g, ''); const n = Number(digits); if (!digits || !(n >= 0 && n <= 999)) return retry('اكتب عدد القطع رقم، مثلاً: 5'); s.data.stock = String(n); break; }
@@ -332,11 +369,13 @@ async function addStep(m: Incoming, seller: Seller, s: Extract<Session, { flow: 
       ctx.session = null;
       const pid = `u${Date.now().toString(36)}${Math.random().toString(36).slice(2, 5)}`;
       const attributes = Object.fromEntries(s.attrs.map((k) => [ATTR[k]?.label.split(' (')[0] ?? k, s.values[k]]));
+      if (s.colors?.length) attributes['اللون'] = s.colors.join('، ');
+      else if (s.values.color && !s.attrs.includes('color')) attributes['اللون'] = s.values.color;
       const product: Product = {
         id: pid, niche: cfg.id, slug: `${cfg.id}-${pid}`, sellerId: seller.id, category: s.data.category,
         art: cfg.id === 'coffee' ? (s.data.category === 'tools' ? 'tool' : 'bag') : (['abaya', 'niqab', 'khimar', 'hijab', 'ihram'].includes(s.data.category) ? s.data.category as Product['art'] : 'abaya'),
-        color: '#B9A98F', nameAr: s.data.name, leadAr: `${s.data.name}. ${Object.entries(attributes).slice(0, 3).map(([k, v]) => `${k}: ${v}`).join('، ')}.`,
-        price: Number(s.data.price), attributes, variants: s.variants.map((label) => ({ label, stock: Number(s.data.stock) })),
+        color: '#B9A98F', nameAr: s.data.name, leadAr: s.data.description ?? '',
+        price: Number(s.data.price), attributes, variants: buildVariants(s.variants, s.colors ?? [], Number(s.data.stock)),
         status: 'review', priceConfirmedAt: new Date().toISOString(), views: 0, reviews: [], faq: [],
       };
       const images = await storeProductPhotos(pid, s.photoIds ?? []);

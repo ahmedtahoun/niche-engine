@@ -63,8 +63,10 @@ test('one-size product: no size chart question', async () => {
   await tap(chat, 'ad:v:category:niqab');
   await handle({ chatId: chat, photos: 1, photoIds: ['n1'] });
   await say(chat, 'نقاب سادة');
+  await tap(chat, 'ad:v:description:skip');
   await say(chat, '300');
   await tap(chat, 'ad:v:variants:preset1');
+  await tap(chat, 'ad:v:colors:one');
   await tap(chat, 'ad:v:stock:5');
   const session = await store().getBotSession<{ attrs: string[] }>(chat);
   assert.ok(session && !session.attrs.includes('size_chart_cm'));
@@ -150,13 +152,14 @@ test('a seller adds a product that waits for review, then goes live', async () =
   assert.deepEqual(await handle({ chatId: chat, photos: 1, photoIds: ['tg-photo-2'] }), [], 'album photos are collected quietly');
   assert.deepEqual((await store().getBotSession<{ photoIds: string[] }>(chat))?.photoIds, ['tg-photo-1', 'tg-photo-2']);
   await say(chat, 'عباية كتان — زيتي');
+  assert.match(last(await say(chat, 'كتان طبيعي تقيل، قصة واسعة ومريحة للعمرة')).text, /السعر/, 'description, then price');
   assert.ok((await say(chat, 'غالي')).some((m) => /رقم/.test(m.text)), 'non-numeric price is refused');
   await say(chat, '٧٥٠');
   await tap(chat, 'ad:v:variants:preset0');
+  assert.match(last(await say(chat, 'اسود ورمادي')).text, /لون ومقاس/, 'colors, then stock per color and size');
   await tap(chat, 'ad:v:stock:5');
   assert.match((await tap(chat, 'ad:v:stock:3'))[0].text, /سؤال قديم/, 'a second tap on an old stock button is not taken as the fabric');
   await say(chat, 'كتان طبيعي');
-  await say(chat, 'زيتي');
   await say(chat, '1=135، 2=140، 3=145، 4=150');
   await say(chat, '140');
   const preview = last(await tap(chat, 'ad:v:a-opacity:غير شفاف'));
@@ -165,7 +168,10 @@ test('a seller adds a product that waits for review, then goes live', async () =
   const find = async () => (await catalog()).products.find((x) => x.nameAr === 'عباية كتان — زيتي')!;
   const p = await find();
   assert.equal(p.status, 'review');
-  assert.deepEqual(p.variants.map((v) => v.label), ['1', '2', '3', '4']);
+  assert.equal(p.variants.length, 8, '2 colors × 4 sizes');
+  assert.deepEqual(p.variants.slice(0, 2), [{ label: 'اسود · 1', stock: 5, color: 'اسود', size: '1' }, { label: 'اسود · 2', stock: 5, color: 'اسود', size: '2' }]);
+  assert.equal(p.attributes['اللون'], 'اسود، رمادي');
+  assert.equal(p.leadAr, 'كتان طبيعي تقيل، قصة واسعة ومريحة للعمرة', 'the seller\'s description, not a generated one');
   assert.match((await approveProduct(p.id))[0].text, /اتنشر/);
   assert.equal((await find()).status, 'live');
 });

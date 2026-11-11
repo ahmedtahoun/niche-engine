@@ -38,7 +38,7 @@ export default async function ProductPage({ params }: P) {
   };
 
   return (
-    <main className="page">
+    <main className="page product">
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replace(/</g, '\\u003c') }} />
       {p.images?.length ? (
         <>
@@ -46,12 +46,12 @@ export default async function ProductPage({ params }: P) {
             {/* eslint-disable-next-line @next/next/no-img-element */}
             {p.images.map((src, i) => <img key={src} src={src} alt={`${p.nameAr} · صورة ${i + 1}`} loading={i ? 'lazy' : 'eager'} decoding="async" />)}
           </div>
-          {p.images.length > 1 && <span className="small muted" style={{ textAlign: 'center' }}>اسحبي لباقي الصور · {p.images.length} صور</span>}
+          {p.images.length > 1 && <span className="small muted gallery-hint" style={{ textAlign: 'center' }}>اسحبي لباقي الصور · {p.images.length} صور</span>}
         </>
       ) : <div className="big"><Art kind={p.art} color={p.color} /></div>}
       <div style={{ display: 'grid', gap: 6 }}>
         <h1 className="title">{p.nameAr}</h1>
-        <div className="muted">{/* eslint-disable-next-line @next/next/no-img-element */}{s.logo && <img className="slogo" src={s.logo} alt="" />}من <b>{s.name}</b> · <span style={{ color: 'var(--ok)', fontWeight: 700 }}>✓ بائع موثّق</span> · ⭐ {s.rating}</div>
+        <div className="muted">{/* eslint-disable-next-line @next/next/no-img-element */}{s.logo && <img className="slogo" src={s.logo} alt="" />}من <b>{s.name}</b> · <span style={{ color: 'var(--ok)', fontWeight: 700 }}>✓ بائع موثّق</span> · {s.rating ? `⭐ ${s.rating}` : 'بائع جديد'}</div>
         <div className="pprice num" style={{ fontSize: 21 }}>{egp(p.price)}</div>
       </div>
       <div className="eta">
@@ -61,7 +61,7 @@ export default async function ProductPage({ params }: P) {
       <nav className="jump" aria-label="أقسام الصفحة">
         <a href="#sec-sizes">{finder === 'grind' ? 'الطحنة' : 'المقاس'}</a><a href="#sec-specs">المواصفات</a><a href="#sec-revs">الآراء</a>{p.faq.length > 0 && <a href="#sec-faq">أسئلة</a>}
       </nav>
-      <p className="lead" style={{ margin: 0 }}>{p.leadAr}</p>
+      {p.leadAr && <p className="lead" style={{ margin: 0 }}>{p.leadAr}</p>}
       <AddToCart niche={niche} slug={p.slug} price={p.price} variants={p.variants} finder={finder} />
       <section id="sec-specs">
         <h2 className="h4">المواصفات</h2>

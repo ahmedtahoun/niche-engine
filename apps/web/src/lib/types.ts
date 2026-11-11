@@ -28,8 +28,13 @@ export interface Seller {
 }
 
 export interface Variant {
+  /** Unique option name, e.g. "أسود · 2" (what the cart and orders store). */
   label: string;
   stock: number;
+  /** Set when the product comes in several colors. */
+  color?: string;
+  /** Size part of the option, when there is one. */
+  size?: string;
 }
 
 export interface Product {

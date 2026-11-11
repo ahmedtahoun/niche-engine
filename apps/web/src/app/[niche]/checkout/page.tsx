@@ -16,7 +16,7 @@ export default async function CheckoutPage({ params, searchParams }: { params: P
   const w = a ? await walletOf(a.phone, cfg.id) : null;
   const me = a ? { name: a.name, phone: a.phone, governorate: a.governorate, area: a.area, address: a.address, landmark: a.landmark } : null;
   return (
-    <main className="page">
+    <main className="page narrow">
       <CheckoutForm niche={cfg.id} governorates={GOVERNORATES} initialPromo={promo} openBeforePay={cfg.risk.openBeforePay} depositAbove={cfg.risk.depositAboveEgp} deposit={cfg.risk.depositEgp} eta={eta} me={me} wallet={w ? { balance: w.balance, nextExpiry: w.nextExpiry } : null} />
     </main>
   );

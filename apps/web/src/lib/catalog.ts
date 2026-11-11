@@ -1,7 +1,8 @@
 // Catalog reads + server-side pricing.
 //
-// Sellers and products are read from the database through a short cache (10 s):
-// pages stay fast, and a change made by another process shows up within seconds.
+// Sellers and products are read from the database through a short cache (60 s):
+// pages stay fast (the database is a round trip away), and a change made by
+// another process shows up within a minute. This process's own writes show at once.
 // Writes go straight to the database and clear this process's cache.
 import { cartTotals, matches, searchTerms, type Bundle, type NicheConfig } from '@niche-engine/core';
 import { store } from './store/index.ts';
@@ -127,7 +128,7 @@ export class Catalog {
 }
 
 // ---------- cache ----------
-const TTL_MS = 10_000;
+const TTL_MS = 60_000;
 const g = globalThis as unknown as { __catalog?: { at: number; store: unknown; value: Promise<Catalog> } };
 
 /** The current catalog (cached for a few seconds; always fresh with the in-process demo store). */

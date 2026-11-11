@@ -176,6 +176,12 @@
       "namedRegex": "^/admin/sellers(?:/)?$"
     },
     {
+      "page": "/admin/telegram",
+      "regex": "^/admin/telegram(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/admin/telegram(?:/)?$"
+    },
+    {
       "page": "/dev/bot",
       "regex": "^/dev/bot(?:/)?$",
       "routeKeys": {},

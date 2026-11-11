@@ -13,7 +13,8 @@
   },
   "scripts": {
     "test": "node --test \"packages/*/test/*.test.ts\" \"apps/*/test/*.test.ts\"",
-    "check:niches": "node packages/core/scripts/check-niches.ts"
+    "check:niches": "node packages/core/scripts/check-niches.ts",
+    "publish:deploy": "bash scripts/publish-deploy.sh"
   },
   "devDependencies": {
     "@electric-sql/pglite": "0.5.12"

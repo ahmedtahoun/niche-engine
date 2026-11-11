@@ -15,7 +15,7 @@ The hosting server never builds anything. If a test fails on GitHub, nothing new
 
 The app keeps its working data in memory and writes every change to Supabase, so it must run as **one process that stays up**. cPanel runs Node apps with Passenger, which may start several processes or stop the app when idle. Send your host support this message:
 
-> For my Node.js application at `/home/CPANEL_USER/niche-engine-app`, please limit Passenger to **one process** (max instances = 1) and **keep it running when idle** (min instances = 1 / no idle shutdown). Also confirm Node.js **20 or 22** is available in "Setup Node.js App" and that my account has about **512 MB of RAM** for it.
+> For my Node.js application at `/home/viorowzb/niche-engine-app`, please limit Passenger to **one process** (max instances = 1) and **keep it running when idle** (min instances = 1 / no idle shutdown). Also confirm Node.js **20 or 22** is available in "Setup Node.js App" and that my account has about **512 MB of RAM** for it.
 
 If they can't guarantee one process, use a container host instead (see `DEPLOY.md`); the code is the same.
 
@@ -25,7 +25,7 @@ Same as `DEPLOY.md` step 1: create the project (Frankfurt), run `supabase/migrat
 
 ## 2. Edit `.cpanel.yml` once
 
-In `deploy/cpanel/.cpanel.yml` on `main`, replace `CPANEL_USER` with your cPanel username. Commit and push. GitHub rebuilds the `deploy` branch with it.
+Done: `deploy/cpanel/.cpanel.yml` already uses the cPanel user `viorowzb`. If the username ever changes, edit it on `main` and push. The file only exists on the `deploy` branch, so cPanel must check out `deploy`, not `main`.
 
 ## 3. Connect cPanel to GitHub
 
@@ -34,7 +34,7 @@ The repository is public, so cPanel can clone it over HTTPS with no SSH key.
 1. cPanel → **Git Version Control → Create**:
    - Clone a Repository: **on**
    - Clone URL: `https://github.com/ahmedtahoun/niche-engine.git`
-   - Repository path: `/home/CPANEL_USER/repositories/niche-engine`
+   - Repository path: `/home/viorowzb/repositories/niche-engine`
    - Repository name: `niche-engine`
 2. After it clones, open **Manage → Basic Information** and set the **Checked-Out Branch** to `deploy`.
 

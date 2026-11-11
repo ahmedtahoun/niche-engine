@@ -16,7 +16,7 @@
   "/[niche]/search/page": "/[niche]/search",
   "/admin/(panel)/orders/page": "/admin/orders",
   "/admin/(panel)/payouts/page": "/admin/payouts",
-  "/admin/(panel)/page": "/admin",
+  "/admin/(panel)/products/page": "/admin/products",
   "/admin/(panel)/sellers/page": "/admin/sellers",
-  "/admin/(panel)/products/page": "/admin/products"
+  "/admin/(panel)/page": "/admin"
 }

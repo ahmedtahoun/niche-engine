@@ -25,7 +25,7 @@ export function writeCart(niche: string, lines: CartLine[]) {
 
 export function addLine(niche: string, line: CartLine) {
   const lines = readCart(niche);
-  const same = lines.find((l) => l.kind === line.kind && (l.kind === 'item' ? l.slug === (line as typeof l).slug : l.id === (line as typeof l).id) && l.variant === line.variant);
+  const same = lines.find((l) => l.kind === line.kind && (l.kind === 'item' ? l.slug === (line as typeof l).slug : l.id === (line as typeof l).id) && l.variant === line.variant && JSON.stringify(l.choice ?? {}) === JSON.stringify(line.choice ?? {}));
   if (same) same.qty = Math.min(5, same.qty + line.qty);
   else lines.push(line);
   writeCart(niche, lines);

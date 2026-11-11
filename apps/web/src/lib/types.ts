@@ -35,6 +35,10 @@ export interface Variant {
   color?: string;
   /** Size part of the option, when there is one. */
   size?: string;
+  /** Price of this option when it differs from the product price (e.g. 1 kg vs 250 g). */
+  price?: number;
+  /** Option values by the niche's option axes, e.g. { roast: "وسط", weight: "250 جم" }. */
+  opts?: Record<string, string>;
 }
 
 export interface Product {
@@ -61,8 +65,8 @@ export interface Product {
 
 /** What the browser keeps in its cart. Prices are never trusted from here. */
 export type CartLine =
-  | { kind: 'item'; slug: string; variant: string; qty: number }
-  | { kind: 'bundle'; id: string; variant: string; qty: number };
+  | { kind: 'item'; slug: string; variant: string; qty: number; choice?: Record<string, string> }
+  | { kind: 'bundle'; id: string; variant: string; qty: number; choice?: Record<string, string> };
 
 export interface PricedLine {
   key: string;

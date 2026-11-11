@@ -4,7 +4,8 @@
 // pages stay fast (the database is a round trip away), and a change made by
 // another process shows up within a minute. This process's own writes show at once.
 // Writes go straight to the database and clear this process's cache.
-import { cartTotals, matches, searchTerms, type Bundle, type NicheConfig } from '@niche-engine/core';
+import { cartTotals, matches, searchTerms, type Bundle, type Choice, type NicheConfig } from '@niche-engine/core';
+import { getNiche } from './niches.ts';
 import { store } from './store/index.ts';
 import type { CartLine, OrderItem, PricedLine, Product, Quote, Seller } from './types.ts';
 
@@ -26,6 +27,42 @@ export function resolveVariant(p: Product, wanted: string): string {
   return p.variants.length === 1 ? p.variants[0].label : wanted;
 }
 
+/** Price of one option of a product (options may cost more, e.g. a bigger bag). */
+export const priceOf = (p: Product, label: string) => p.variants.find((v) => v.label === label)?.price ?? p.price;
+
+/** Lowest and highest option price (cards say "من" when they differ). */
+export function priceRange(p: Product): { min: number; max: number } {
+  const all = p.variants.length ? p.variants.map((v) => v.price ?? p.price) : [p.price];
+  return { min: Math.min(...all), max: Math.max(...all) };
+}
+
+/** Per-order choices (e.g. the grind) that apply to this product. */
+export const choicesFor = (cfg: NicheConfig, p: Product): Choice[] => (cfg.choices ?? []).filter((c) => c.categories.includes(p.category));
+
+/** Checks a line's choices for a product; returns the labels to print on the order, or null if one is missing or unknown. */
+export function choiceLabels(cfg: NicheConfig, p: Product, picked: Record<string, string> | undefined): string[] | null {
+  const out: string[] = [];
+  for (const c of choicesFor(cfg, p)) {
+    const v = c.values.find((x) => x.id === picked?.[c.id]);
+    if (!v) return null;
+    out.push(v.labelAr);
+  }
+  return out;
+}
+
+const DAY = 864e5;
+
+/** How fresh a product is, for niches with a freshness rule. */
+export function freshnessOf(cfg: NicheConfig, p: Product, now = Date.now()): { kind: 'to_order'; text: string } | { kind: 'dated'; days: number; stale: boolean } | null {
+  const f = cfg.freshness;
+  if (!f) return null;
+  const raw = p.attributes[f.attribute];
+  const at = raw && /^\d{4}-\d{2}-\d{2}$/.test(raw) ? Date.parse(raw) : NaN;
+  if (Number.isNaN(at)) return { kind: 'to_order', text: f.madeToOrderAr };
+  const days = Math.max(0, Math.floor((now - at) / DAY));
+  return { kind: 'dated', days, stale: days > f.maxAgeDays };
+}
+
 /** A snapshot of sellers and products. Treat it as read-only: copy before editing. */
 export class Catalog {
   readonly sellers: Seller[];
@@ -42,7 +79,13 @@ export class Catalog {
   sellerOf = (p: Product): Seller => this.sellerMap.get(p.sellerId)!;
   productById = (id: string) => this.products.find((p) => p.id === id) ?? null;
 
-  private visible = (p: Product) => (p.status ?? 'live') === 'live' && ['active', 'warning'].includes(this.sellerById(p.sellerId)?.status ?? '');
+  private visible = (p: Product) => {
+    if ((p.status ?? 'live') !== 'live' || !['active', 'warning'].includes(this.sellerById(p.sellerId)?.status ?? '')) return false;
+    // A dated fresh product (e.g. coffee by roast date) is hidden once it is too old.
+    const cfg = getNiche(p.niche);
+    const f = cfg && freshnessOf(cfg, p);
+    return !(f && f.kind === 'dated' && f.stale);
+  };
 
   productsOf(niche: string): Product[] {
     return this.products.filter((p) => p.niche === niche && this.visible(p));
@@ -85,7 +128,7 @@ export class Catalog {
     if (!bundle) return null;
     const parts = bundle.parts.map((pt) => ({ product: this.productBySlug(cfg.id, pt.product), qty: pt.qty, variant: pt.variant }));
     if (parts.some((pt) => !pt.product)) return null;
-    const full = parts.reduce((a, pt) => a + pt.product!.price * pt.qty, 0);
+    const full = parts.reduce((a, pt) => a + (pt.variant === null ? pt.product!.price : priceOf(pt.product!, resolveVariant(pt.product!, pt.variant))) * pt.qty, 0);
     const pick = parts.find((pt) => pt.variant === null)?.product ?? null;
     return { bundle, parts: parts as BundleView['parts'], fullPrice: full, price: full - bundle.discountEgp, pickVariantsFrom: pick };
   }
@@ -104,19 +147,32 @@ export class Catalog {
         const p = this.productBySlug(cfg.id, line.slug);
         const variant = p?.variants.find((x) => x.label === line.variant);
         if (!p || !variant) return void problems.push(`item_unavailable:${line.slug}`);
+        const extra = choiceLabels(cfg, p, line.choice);
+        if (!extra) return void problems.push(`choice_missing:${line.slug}`);
         if (variant.stock < qty) problems.push(`low_stock:${line.slug}:${variant.label}`);
-        coreLines.push({ sellerId: p.sellerId, unitPrice: p.price, qty });
-        items.push({ sellerId: p.sellerId, productId: p.id, name: p.nameAr, variant: line.variant, qty, unitPrice: p.price });
-        priced.push({ key: `${i}`, title: `${p.nameAr} · ${line.variant}`, by: this.sellerOf(p).name, art: p.art, color: p.color, qty, amount: p.price * qty, isBundle: false, ...(p.images?.[0] ? { image: p.images[0] } : {}) });
+        const unit = variant.price ?? p.price;
+        const label = [line.variant, ...extra].join(' · ');
+        coreLines.push({ sellerId: p.sellerId, unitPrice: unit, qty });
+        items.push({ sellerId: p.sellerId, productId: p.id, name: p.nameAr, variant: label, qty, unitPrice: unit });
+        priced.push({ key: `${i}`, title: `${p.nameAr} · ${label}`, by: this.sellerOf(p).name, art: p.art, color: p.color, qty, amount: unit * qty, isBundle: false, ...(p.images?.[0] ? { image: p.images[0] } : {}) });
       } else {
         const bv = this.bundleView(cfg, line.id);
         if (!bv) return void problems.push(`bundle_unavailable:${line.id}`);
+        const rows: OrderItem[] = [];
         for (const pt of bv.parts) {
-          coreLines.push({ sellerId: pt.product.sellerId, unitPrice: pt.product.price, qty: pt.qty * qty });
-          items.push({ sellerId: pt.product.sellerId, productId: pt.product.id, name: pt.product.nameAr, variant: resolveVariant(pt.product, pt.variant ?? line.variant), qty: pt.qty * qty, unitPrice: pt.product.price });
+          const label = resolveVariant(pt.product, pt.variant ?? line.variant);
+          const extra = choiceLabels(cfg, pt.product, line.choice);
+          if (!extra) return void problems.push(`choice_missing:${line.id}`);
+          rows.push({ sellerId: pt.product.sellerId, productId: pt.product.id, name: pt.product.nameAr, variant: [label, ...extra].join(' · '), qty: pt.qty * qty, unitPrice: priceOf(pt.product, label) });
         }
+        for (const r of rows) {
+          coreLines.push({ sellerId: r.sellerId, unitPrice: r.unitPrice, qty: r.qty });
+          items.push(r);
+        }
+        const full = rows.reduce((a, r) => a + r.unitPrice * r.qty, 0);
+        const picked = (cfg.choices ?? []).flatMap((c) => c.values.find((v) => v.id === line.choice?.[c.id])?.labelAr ?? []);
         bundleDiscount += bv.bundle.discountEgp * qty;
-        priced.push({ key: `${i}`, title: `${bv.bundle.nameAr}${line.variant ? ` · ${line.variant}` : ''}`, by: `من ${new Set(bv.parts.map((x) => x.product.sellerId)).size} بائعين`, art: 'kit', color: '', qty, amount: bv.fullPrice * qty, isBundle: true, parts: bv.parts.map((x) => ({ art: x.product.art, color: x.product.color })) });
+        priced.push({ key: `${i}`, title: [bv.bundle.nameAr, line.variant, ...picked].filter(Boolean).join(' · '), by: `من ${new Set(bv.parts.map((x) => x.product.sellerId)).size} بائعين`, art: 'kit', color: '', qty, amount: full, isBundle: true, parts: bv.parts.map((x) => ({ art: x.product.art, color: x.product.color })) });
       }
     });
 

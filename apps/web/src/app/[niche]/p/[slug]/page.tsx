@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { AddToCart } from '@/components/AddToCart';
 import { Art } from '@/components/Art';
-import { catalog } from '@/lib/catalog';
+import { catalog, choicesFor, freshnessOf, priceRange } from '@/lib/catalog';
 import { egp, etaLabel } from '@/lib/eta';
 import { getNiche } from '@/lib/niches';
 
@@ -23,13 +23,16 @@ export default async function ProductPage({ params }: P) {
   const p = cfg && cat.productBySlug(niche, slug);
   if (!cfg || !p) notFound();
   const s = cat.sellerOf(p);
-  const finder = p.category === 'abaya' ? 'size' : cfg.id === 'coffee' && p.variants.length > 1 ? 'grind' : null;
+  const finder = p.category === 'abaya' ? 'size' : null;
+  const choices = choicesFor(cfg, p);
+  const range = priceRange(p);
+  const fresh = freshnessOf(cfg, p);
   const jsonLd = {
     '@context': 'https://schema.org', '@type': 'Product', name: p.nameAr, description: p.leadAr, ...(p.images?.length ? { image: p.images } : {}),
     brand: { '@type': 'Brand', name: s.name },
     additionalProperty: Object.entries(p.attributes).map(([name, value]) => ({ '@type': 'PropertyValue', name, value })),
     offers: {
-      '@type': 'Offer', priceCurrency: 'EGP', price: p.price,
+      '@type': 'Offer', priceCurrency: 'EGP', price: range.min,
       availability: p.variants.some((v) => v.stock) ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock',
       shippingDetails: { '@type': 'OfferShippingDetails', shippingRate: { '@type': 'MonetaryAmount', value: cfg.shippingEgp, currency: 'EGP' } },
       hasMerchantReturnPolicy: { '@type': 'MerchantReturnPolicy', merchantReturnDays: 14, returnFees: 'https://schema.org/FreeReturn' },
@@ -52,17 +55,18 @@ export default async function ProductPage({ params }: P) {
       <div style={{ display: 'grid', gap: 6 }}>
         <h1 className="title">{p.nameAr}</h1>
         <div className="muted">{/* eslint-disable-next-line @next/next/no-img-element */}{s.logo && <img className="slogo" src={s.logo} alt="" />}من <b>{s.name}</b> · <span style={{ color: 'var(--ok)', fontWeight: 700 }}>✓ بائع موثّق</span> · {s.rating ? `⭐ ${s.rating}` : 'بائع جديد'}</div>
-        <div className="pprice num" style={{ fontSize: 21 }}>{egp(p.price)}</div>
+        <div className="pprice num" style={{ fontSize: 21 }}>{range.min !== range.max ? `من ${egp(range.min)}` : egp(range.min)}</div>
+        {fresh && <div className="small" style={{ color: 'var(--ok)', fontWeight: 700 }}>{fresh.kind === 'to_order' ? fresh.text : fresh.days === 0 ? 'اتحمص النهارده' : `اتحمص من ${fresh.days} ${fresh.days <= 10 ? 'أيام' : 'يوم'}`}</div>}
       </div>
       <div className="eta">
         <div><b>يوصل {etaLabel('القاهرة')}</b> للقاهرة والجيزة</div>
         <span>الشحن {egp(cfg.shippingEgp)} بس · مفيش أي رسوم تانية{cfg.risk.openBeforePay ? ' · افتح وشوف قبل ما تدفع' : ''}</span>
       </div>
       <nav className="jump" aria-label="أقسام الصفحة">
-        <a href="#sec-sizes">{finder === 'grind' ? 'الطحنة' : 'المقاس'}</a><a href="#sec-specs">المواصفات</a><a href="#sec-revs">الآراء</a>{p.faq.length > 0 && <a href="#sec-faq">أسئلة</a>}
+        <a href="#sec-sizes">{finder === 'size' ? 'المقاس' : 'الاختيارات'}</a><a href="#sec-specs">المواصفات</a><a href="#sec-revs">الآراء</a>{p.faq.length > 0 && <a href="#sec-faq">أسئلة</a>}
       </nav>
       {p.leadAr && <p className="lead" style={{ margin: 0 }}>{p.leadAr}</p>}
-      <AddToCart niche={niche} slug={p.slug} price={p.price} variants={p.variants} finder={finder} />
+      <AddToCart niche={niche} slug={p.slug} price={p.price} variants={p.variants} finder={finder} axes={cfg.optionAxes} choices={choices} />
       <section id="sec-specs">
         <h2 className="h4">المواصفات</h2>
         <table className="spec"><tbody>

@@ -38,6 +38,32 @@ export interface Promo {
   minOrderEgp: number;
 }
 
+/** One option a product's variants vary by (e.g. roast, weight). Labels shown to customers. */
+export interface OptionAxis {
+  id: string;
+  labelAr: string;
+}
+
+/**
+ * A choice made per order that is not stocked (e.g. the grind: the seller
+ * grinds after the order). Applies to products in the listed categories.
+ */
+export interface Choice {
+  id: string;
+  labelAr: string;
+  categories: string[];
+  values: { id: string; labelAr: string; hintAr?: string }[];
+}
+
+/** Fresh products: a date attribute, and how old a product may get before it is hidden. */
+export interface Freshness {
+  /** Attribute holding the date (YYYY-MM-DD), e.g. "roast_date". Without it the product is made to order. */
+  attribute: string;
+  maxAgeDays: number;
+  /** Line shown when the product is made after the order. */
+  madeToOrderAr: string;
+}
+
 export interface NicheConfig {
   id: string;
   status: 'draft' | 'live';
@@ -72,6 +98,11 @@ export interface NicheConfig {
   partners: string[];
   /** Human description of the reorder trigger, implemented per niche in the messaging service. */
   reorderTrigger: string;
+  /** Option axes for products whose variants carry `opts` (in display order). */
+  optionAxes?: OptionAxis[];
+  /** Per-order choices that are not stocked. */
+  choices?: Choice[];
+  freshness?: Freshness;
 }
 
 const isFraction = (n: unknown) => typeof n === 'number' && n >= 0 && n < 1;
@@ -96,5 +127,17 @@ export function validateNiche(c: NicheConfig): string[] {
   for (const pr of c.promos ?? []) {
     if (pr.kind === 'percent' && !isFraction(pr.value)) p.push(`promo ${pr.code}: percent value must be a fraction`);
   }
+  const cats = new Set((c.categories ?? []).map((x) => x.id));
+  const axisIds = (c.optionAxes ?? []).map((a) => a.id);
+  if (new Set(axisIds).size !== axisIds.length) p.push('optionAxes ids must be unique');
+  for (const ch of c.choices ?? []) {
+    if (!ch.id || !ch.labelAr) p.push('every choice needs id and labelAr');
+    if (!ch.values?.length) p.push(`choice ${ch.id}: needs at least one value`);
+    const ids = (ch.values ?? []).map((v) => v.id);
+    if (new Set(ids).size !== ids.length) p.push(`choice ${ch.id}: value ids must be unique`);
+    for (const k of ch.categories ?? []) if (!cats.has(k)) p.push(`choice ${ch.id}: unknown category ${k}`);
+    if (axisIds.includes(ch.id)) p.push(`choice ${ch.id}: same id as an option axis`);
+  }
+  if (c.freshness && !(c.freshness.maxAgeDays > 0 && c.freshness.attribute && c.freshness.madeToOrderAr)) p.push('freshness needs attribute, maxAgeDays > 0 and madeToOrderAr');
   return p;
 }

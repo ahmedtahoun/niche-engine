@@ -99,7 +99,7 @@ export async function placeOrder(niche: string, cart: CartLine[], form: Checkout
     const [wallet, previous] = await Promise.all([me ? walletOf(me.phone, niche) : null, ordersFor(phone!, niche)]);
     const walletBalance = wallet?.balance ?? 0;
     const q = cat.quote(cfg, cart, { promoCode: form.promoCode || undefined, isFirstOrder: previous.length === 0, walletBalance, useWallet: Boolean(me && form.useWallet && walletBalance > 0) });
-    if (q.problems.some((p) => p.startsWith('item_unavailable') || p.startsWith('bundle_unavailable'))) {
+    if (q.problems.some((p) => p.startsWith('item_unavailable') || p.startsWith('bundle_unavailable') || p.startsWith('choice_missing'))) {
       return { ok: false, errors: { cart: 'في منتج في السلة مبقاش متاح. راجع السلة.' } };
     }
     const order = await store().createOrder(draftOrder({

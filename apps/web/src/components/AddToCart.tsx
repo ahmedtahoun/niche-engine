@@ -1,6 +1,7 @@
 'use client';
 import { useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import type { Choice, OptionAxis } from '@niche-engine/core';
 import type { Variant } from '@/lib/types';
 import { addLine } from './cart-store';
 
@@ -40,8 +41,58 @@ function GrindFinder({ variants, onPick }: { variants: Variant[]; onPick: (v: st
   );
 }
 
-export function AddToCart({ niche, slug, price, variants, finder }: { niche: string; slug: string; price: number; variants: Variant[]; finder: 'size' | 'grind' | null }) {
+const remembered = (niche: string, id: string) => { try { return localStorage.getItem(`choice:${niche}:${id}`); } catch { return null; } };
+const remember = (niche: string, id: string, v: string) => { try { localStorage.setItem(`choice:${niche}:${id}`, v); } catch { /* storage blocked */ } };
+
+/** Per-order choices (e.g. "how do you make your coffee?" → grind). The last answer is remembered. */
+function ChoicePicker({ niche, choices, picked, setPicked }: { niche: string; choices: Choice[]; picked: Record<string, string>; setPicked: (p: Record<string, string>) => void }) {
+  useEffect(() => {
+    const init: Record<string, string> = {};
+    for (const c of choices) { const r = remembered(niche, c.id); if (r && c.values.some((v) => v.id === r)) init[c.id] = r; }
+    if (Object.keys(init).length) setPicked({ ...init });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [niche]);
+  return (
+    <>
+      {choices.map((c) => {
+        const cur = c.values.find((v) => v.id === picked[c.id]);
+        return (
+          <div key={c.id} style={{ display: 'grid', gap: 8 }}>
+            <h2 className="h4">{c.labelAr}</h2>
+            <div className="sizes">
+              {c.values.map((v) => (
+                <button key={v.id} type="button" className="sz" aria-pressed={picked[c.id] === v.id} onClick={() => { remember(niche, c.id, v.id); setPicked({ ...picked, [c.id]: v.id }); }}>{v.labelAr}</button>
+              ))}
+            </div>
+            {cur?.hintAr && <span className="muted small">{cur.hintAr}</span>}
+          </div>
+        );
+      })}
+    </>
+  );
+}
+
+/** Variants described by the niche's option axes (e.g. roast → weight). Sold-out combinations are disabled. */
+function useAxes(variants: Variant[], axes: OptionAxis[]) {
+  const values = (id: string) => [...new Set(variants.map((v) => v.opts?.[id]).filter((x): x is string => Boolean(x)))];
+  const fits = (v: Variant, sel: Record<string, string>, skip?: string) => axes.every((a) => a.id === skip || !sel[a.id] || v.opts?.[a.id] === sel[a.id]);
+  const [sel, setSel] = useState<Record<string, string>>(() => {
+    const out: Record<string, string> = {};
+    for (const a of axes) { const ok = values(a.id).filter((x) => variants.some((v) => v.opts?.[a.id] === x && v.stock > 0)); if (ok.length === 1) out[a.id] = ok[0]; }
+    return out;
+  });
+  const chosen = variants.find((v) => axes.every((a) => v.opts?.[a.id] === sel[a.id])) ?? null;
+  const ok = (id: string, x: string) => variants.some((v) => v.opts?.[id] === x && v.stock > 0 && fits(v, sel, id));
+  const missing = axes.find((a) => !sel[a.id]);
+  return { values, sel, setSel, chosen, ok, missing };
+}
+
+export function AddToCart({ niche, slug, price, variants, finder, axes = [], choices = [] }: { niche: string; slug: string; price: number; variants: Variant[]; finder: 'size' | 'grind' | null; axes?: OptionAxis[]; choices?: Choice[] }) {
   const router = useRouter();
+  const generic = axes.length > 0 && variants.some((v) => v.opts);
+  const ax = useAxes(generic ? variants : [], generic ? axes : []);
+  const [picked, setPicked] = useState<Record<string, string>>({});
+  const choiceMissing = choices.find((c) => !picked[c.id]);
   // Products with colors: pick a color, then a size (when there are sizes).
   const colors = [...new Set(variants.map((v) => v.color).filter((c): c is string => Boolean(c)))];
   const sizes = [...new Set(variants.map((v) => v.size).filter((x): x is string => Boolean(x)))];
@@ -51,24 +102,44 @@ export function AddToCart({ niche, slug, price, variants, finder }: { niche: str
   const [color, setColor] = useState<string | null>(() => first(colors, (c) => inStock(c)));
   const [size, setSize] = useState<string | null>(() => (sizes.length ? first(sizes, (x) => inStock(undefined, x)) : null));
   const [plain, setPlain] = useState<string | null>(variants.length === 1 ? variants[0].label : null);
-  const chosen = twoStep ? variants.find((v) => v.color === color && (!sizes.length || v.size === size)) : variants.find((v) => v.label === plain);
-  const variant = chosen && chosen.stock > 0 ? chosen.label : null;
+  const chosen = generic ? ax.chosen : twoStep ? variants.find((v) => v.color === color && (!sizes.length || v.size === size)) : variants.find((v) => v.label === plain);
+  const variant = chosen && chosen.stock > 0 && !choiceMissing ? chosen.label : null;
+  const shown = chosen?.price ?? price;
   const [added, setAdded] = useState(false);
   const pick = (sz: string) => { if (twoStep) setSize(sz); else if (variants.some((x) => x.label === sz && x.stock > 0)) setPlain(sz); };
   const add = (go: boolean) => {
     if (!variant) return;
-    addLine(niche, { kind: 'item', slug, variant, qty: 1 });
+    addLine(niche, { kind: 'item', slug, variant, qty: 1, ...(choices.length ? { choice: Object.fromEntries(choices.map((c) => [c.id, picked[c.id]])) } : {}) });
     if (go) router.push(`/${niche}/checkout`);
     else setAdded(true);
   };
   const left = (v?: Variant) => (!v || !v.stock ? 'خلص' : v.stock <= 3 ? `فاضل ${v.stock}` : 'متاح');
-  const missing = twoStep ? (!color ? 'اختاري اللون الأول' : sizes.length && !size ? 'اختاري المقاس' : 'المقاس ده خلص في اللون ده') : 'اختاري الأول';
+  const missing = generic
+    ? (ax.missing ? `اختار ${ax.missing.labelAr}` : !chosen || !chosen.stock ? 'الاختيار ده خلص' : choiceMissing ? choiceMissing.labelAr : '')
+    : choiceMissing && chosen?.stock ? choiceMissing.labelAr
+    : twoStep ? (!color ? 'اختاري اللون الأول' : sizes.length && !size ? 'اختاري المقاس' : 'المقاس ده خلص في اللون ده') : 'اختاري الأول';
   return (
     <>
       {finder === 'size' && <SizeFinder variants={twoStep ? sizes.map((x) => ({ label: x, stock: inStock(color ?? undefined, x) ? 1 : 0 })) : variants} onPick={pick} />}
       {finder === 'grind' && <GrindFinder variants={variants} onPick={pick} />}
       <section id="sec-sizes" style={{ display: 'grid', gap: 12 }}>
-        {twoStep ? (
+        {generic ? (
+          axes.map((a) => (
+            <div key={a.id} style={{ display: 'grid', gap: 8 }}>
+              <h2 className="h4">{a.labelAr}</h2>
+              <div className="sizes">
+                {ax.values(a.id).map((x) => {
+                  const v = variants.find((y) => y.opts?.[a.id] === x && axes.every((b) => b.id === a.id || y.opts?.[b.id] === ax.sel[b.id]));
+                  return (
+                    <button key={x} type="button" className="sz" aria-pressed={ax.sel[a.id] === x} disabled={!ax.ok(a.id, x)} onClick={() => ax.setSel({ ...ax.sel, [a.id]: x })}>
+                      {x}<small>{!ax.ok(a.id, x) ? 'خلص' : v?.price && v.price !== price ? `${Math.round(v.price).toLocaleString('en-US')} ج` : 'متاح'}</small>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          ))
+        ) : twoStep ? (
           <>
             <div style={{ display: 'grid', gap: 8 }}>
               <h2 className="h4">اللون{color ? <span className="muted" style={{ fontWeight: 400 }}> · {color}</span> : null}</h2>
@@ -109,13 +180,14 @@ export function AddToCart({ niche, slug, price, variants, finder }: { niche: str
             </div>
           </>
         )}
+        {choices.length > 0 && <ChoicePicker niche={niche} choices={choices} picked={picked} setPicked={setPicked} />}
       </section>
       <div className="sticky">
         {added && <div className="note ok" role="status">اتضاف للسلة. <a href={`/${niche}/cart`} style={{ fontWeight: 700 }}>افتح السلة</a></div>}
         <div style={{ display: 'flex', gap: 8 }}>
           <button type="button" className="btn ghost" disabled={!variant} onClick={() => add(false)}>للسلة</button>
           <button type="button" className="btn primary" style={{ flex: 1 }} disabled={!variant} onClick={() => add(true)}>
-            {variant ? `اطلب دلوقتي · ${Math.round(price).toLocaleString('en-US')} ج` : missing}
+            {variant ? `اطلب دلوقتي · ${Math.round(shown).toLocaleString('en-US')} ج` : missing}
           </button>
         </div>
         <span className="muted" style={{ textAlign: 'center' }}>كاش عند الاستلام · استبدال مجاني خلال 14 يوم</span>
@@ -124,9 +196,11 @@ export function AddToCart({ niche, slug, price, variants, finder }: { niche: str
   );
 }
 
-export function AddBundle({ niche, id, variants, label }: { niche: string; id: string; variants: Variant[] | null; label: string }) {
+export function AddBundle({ niche, id, variants, label, choices = [] }: { niche: string; id: string; variants: Variant[] | null; label: string; choices?: Choice[] }) {
   const router = useRouter();
   const [variant, setVariant] = useState<string>(variants ? '' : '-');
+  const [picked, setPicked] = useState<Record<string, string>>({});
+  const choiceMissing = choices.find((c) => !picked[c.id]);
   return (
     <>
       {variants && (
@@ -137,9 +211,10 @@ export function AddBundle({ niche, id, variants, label }: { niche: string; id: s
           </div>
         </section>
       )}
+      {choices.length > 0 && <section style={{ display: 'grid', gap: 12 }}><ChoicePicker niche={niche} choices={choices} picked={picked} setPicked={setPicked} /></section>}
       <div className="sticky">
-        <button type="button" className="btn primary block" disabled={!variant} onClick={() => { addLine(niche, { kind: 'bundle', id, variant: variant === '-' ? '' : variant, qty: 1 }); router.push(`/${niche}/cart`); }}>
-          {variant ? 'ضيفه للسلة' : `اختار ${label} الأول`}
+        <button type="button" className="btn primary block" disabled={!variant || Boolean(choiceMissing)} onClick={() => { addLine(niche, { kind: 'bundle', id, variant: variant === '-' ? '' : variant, qty: 1, ...(choices.length ? { choice: Object.fromEntries(choices.map((c) => [c.id, picked[c.id]])) } : {}) }); router.push(`/${niche}/cart`); }}>
+          {!variant ? `اختار ${label} الأول` : choiceMissing ? choiceMissing.labelAr : 'ضيفه للسلة'}
         </button>
       </div>
     </>

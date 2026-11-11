@@ -1,4 +1,4 @@
-// Maps each domain to its niche: sakina.eg/p/x → /umrah/p/x internally.
+// Maps each domain to its niche: sakinaeg.com/p/x → /umrah/p/x internally.
 // On localhost, open /umrah or /coffee directly; "/" falls back to DEFAULT_NICHE.
 import { NextResponse, type NextRequest } from 'next/server';
 

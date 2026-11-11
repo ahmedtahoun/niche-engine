@@ -45,7 +45,7 @@ cPanel → **Setup Node.js App → Create Application**:
 | Node.js version | 22 (or 20) |
 | Application mode | Production |
 | Application root | `niche-engine-app` |
-| Application URL | your main domain, e.g. `sakina.eg` |
+| Application URL | your main domain, e.g. `sakinaeg.com` |
 | Application startup file | `apps/web/server.js` |
 
 Then add the **Environment variables** from `DEPLOY.md` step 2 (`SESSION_SECRET`, `ADMIN_PASSWORD`, `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `NICHE_DOMAINS`, Telegram and Bosta keys). Save.
@@ -58,13 +58,13 @@ cPanel → **Git Version Control → Manage → Pull or Deploy**:
 1. **Update from Remote** (pulls the latest `deploy` build)
 2. **Deploy HEAD Commit** (runs `.cpanel.yml`: copies files, restarts the app)
 
-Open `https://sakina.eg/api/health`. It should answer `"ok":true` and `"database":"supabase"`.
+Open `https://sakinaeg.com/api/health`. It should answer `"ok":true` and `"database":"supabase"`.
 
 If the app does not start, open **Setup Node.js App** and read the log: a missing setting is listed there by name.
 
 ## 6. More domains for more niches
 
-Every niche must run in **the same Node app** (one process). Add other niche domains as **Aliases** of the main domain (cPanel → **Domains → Create a New Domain**, sharing the main domain's document root), not as separate Node apps. The app reads the domain name and shows the right niche. List every domain in `NICHE_DOMAINS`, e.g. `sakina.eg=umrah,www.sakina.eg=umrah,bunn.eg=coffee`.
+Every niche must run in **the same Node app** (one process). Add other niche domains as **Aliases** of the main domain (cPanel → **Domains → Create a New Domain**, sharing the main domain's document root), not as separate Node apps. The app reads the domain name and shows the right niche. List every domain in `NICHE_DOMAINS`, e.g. `sakinaeg.com=umrah,www.sakinaeg.com=umrah,bunneg.com=coffee,www.bunneg.com=coffee`.
 
 ## 7. Every update after that
 

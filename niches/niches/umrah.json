@@ -5,24 +5,78 @@
     "nameAr": "سكينة",
     "nameEn": "Sakina",
     "domain": "sakinaeg.com",
-    "palette": { "base": "#F5EFE6", "primary": "#1F5C4A", "accent": "#C9A96E" }
+    "palette": {
+      "base": "#F5EFE6",
+      "primary": "#1F5C4A",
+      "accent": "#C9A96E"
+    },
+    "tagline": {
+      "ar": "لبس العمرة والمحجبات",
+      "en": "Umrah and modest wear"
+    }
   },
   "categories": [
-    { "id": "abaya", "labelAr": "عبايات" },
-    { "id": "niqab", "labelAr": "نقاب" },
-    { "id": "khimar", "labelAr": "خمار" },
-    { "id": "hijab", "labelAr": "طرح" },
-    { "id": "ihram", "labelAr": "إحرام رجالي" }
+    {
+      "id": "abaya",
+      "labelAr": "عبايات",
+      "labelEn": "Abayas"
+    },
+    {
+      "id": "niqab",
+      "labelAr": "نقاب",
+      "labelEn": "Niqabs"
+    },
+    {
+      "id": "khimar",
+      "labelAr": "خمار",
+      "labelEn": "Khimars"
+    },
+    {
+      "id": "hijab",
+      "labelAr": "طرح",
+      "labelEn": "Hijabs"
+    },
+    {
+      "id": "ihram",
+      "labelAr": "إحرام رجالي",
+      "labelEn": "Men's ihram"
+    }
   ],
   "attributes": {
-    "required": ["fabric", "color", "sizes", "size_chart_cm", "length_cm", "opacity"],
-    "optional": ["season", "care", "origin"]
+    "required": [
+      "fabric",
+      "color",
+      "sizes",
+      "size_chart_cm",
+      "length_cm",
+      "opacity"
+    ],
+    "optional": [
+      "season",
+      "care",
+      "origin"
+    ]
   },
-  "commission": { "new": 0.18, "repeat": 0.06, "referral": 0.02 },
-  "reserve": { "percent": 0.12, "days": 30 },
+  "commission": {
+    "new": 0.18,
+    "repeat": 0.06,
+    "referral": 0.02
+  },
+  "reserve": {
+    "percent": 0.12,
+    "days": 30
+  },
   "shippingEgp": 65,
-  "risk": { "depositAboveEgp": 1200, "depositEgp": 65, "requireWhatsappConfirm": false, "openBeforePay": true },
-  "wallet": { "cashback": 0.04, "expiresDays": 30 },
+  "risk": {
+    "depositAboveEgp": 1200,
+    "depositEgp": 65,
+    "requireWhatsappConfirm": false,
+    "openBeforePay": true
+  },
+  "wallet": {
+    "cashback": 0.04,
+    "expiresDays": 30
+  },
   "priceCheckDays": 14,
   "searchSynonyms": {
     "اسدال": "عبايه",
@@ -36,16 +90,56 @@
       "id": "umrah_kit_women",
       "nameAr": "شنطة العمرة الكاملة",
       "parts": [
-        { "product": "crepe-umrah-abaya-beige", "qty": 1, "variant": null },
-        { "product": "niqab-with-khimar-black", "qty": 1, "variant": "one" },
-        { "product": "chiffon-hijab-sand", "qty": 2, "variant": "one" }
+        {
+          "product": "crepe-umrah-abaya-beige",
+          "qty": 1,
+          "variant": null
+        },
+        {
+          "product": "niqab-with-khimar-black",
+          "qty": 1,
+          "variant": "one"
+        },
+        {
+          "product": "chiffon-hijab-sand",
+          "qty": 2,
+          "variant": "one"
+        }
       ],
-      "discountEgp": 100
+      "discountEgp": 100,
+      "nameEn": "The complete Umrah kit"
     }
   ],
   "promos": [
-    { "code": "SAKINA10", "kind": "percent", "value": 0.10, "fundedBy": "platform", "firstOrderOnly": true, "minOrderEgp": 0 }
+    {
+      "code": "SAKINA10",
+      "kind": "percent",
+      "value": 0.1,
+      "fundedBy": "platform",
+      "firstOrderOnly": true,
+      "minOrderEgp": 0
+    }
   ],
-  "partners": ["umrah_travel_agencies", "hajj_umrah_groups"],
-  "reorderTrigger": "3 days after the trip return date: welcome-back message + family referral code"
+  "partners": [
+    "umrah_travel_agencies",
+    "hajj_umrah_groups"
+  ],
+  "reorderTrigger": "3 days after the trip return date: welcome-back message + family referral code",
+  "voice": "f",
+  "homeEyebrow": {
+    "ar": "موسم عمرة رمضان 2027",
+    "en": "Ramadan 2027 Umrah season"
+  },
+  "homeSection": {
+    "ar": "الأكثر طلباً قبل رمضان",
+    "en": "Most ordered before Ramadan"
+  },
+  "popularSearches": {
+    "ar": [
+      "عباية عمرة",
+      "نقاب بالخمار",
+      "طرحة شيفون",
+      "إحرام رجالي"
+    ]
+  }
 }

@@ -106,6 +106,23 @@
       "namedRegex": "^/(?<nxtPniche>[^/]+?)/checkout(?:/)?$"
     },
     {
+      "page": "/[niche]/guide",
+      "regex": "^/([^/]+?)/guide(?:/)?$",
+      "routeKeys": {
+        "nxtPniche": "nxtPniche"
+      },
+      "namedRegex": "^/(?<nxtPniche>[^/]+?)/guide(?:/)?$"
+    },
+    {
+      "page": "/[niche]/guide/[slug]",
+      "regex": "^/([^/]+?)/guide/([^/]+?)(?:/)?$",
+      "routeKeys": {
+        "nxtPniche": "nxtPniche",
+        "nxtPslug": "nxtPslug"
+      },
+      "namedRegex": "^/(?<nxtPniche>[^/]+?)/guide/(?<nxtPslug>[^/]+?)(?:/)?$"
+    },
+    {
       "page": "/[niche]/order/[id]",
       "regex": "^/([^/]+?)/order/([^/]+?)(?:/)?$",
       "routeKeys": {
@@ -130,6 +147,14 @@
         "nxtPniche": "nxtPniche"
       },
       "namedRegex": "^/(?<nxtPniche>[^/]+?)/search(?:/)?$"
+    },
+    {
+      "page": "/[niche]/sell",
+      "regex": "^/([^/]+?)/sell(?:/)?$",
+      "routeKeys": {
+        "nxtPniche": "nxtPniche"
+      },
+      "namedRegex": "^/(?<nxtPniche>[^/]+?)/sell(?:/)?$"
     }
   ],
   "staticRoutes": [
@@ -188,10 +213,22 @@
       "namedRegex": "^/dev/bot(?:/)?$"
     },
     {
+      "page": "/llms.txt",
+      "regex": "^/llms\\.txt(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/llms\\.txt(?:/)?$"
+    },
+    {
       "page": "/robots.txt",
       "regex": "^/robots\\.txt(?:/)?$",
       "routeKeys": {},
       "namedRegex": "^/robots\\.txt(?:/)?$"
+    },
+    {
+      "page": "/sitemap.xml",
+      "regex": "^/sitemap\\.xml(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/sitemap\\.xml(?:/)?$"
     }
   ],
   "dataRoutes": [],

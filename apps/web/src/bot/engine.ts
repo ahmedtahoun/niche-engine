@@ -11,6 +11,7 @@ import { allNiches, getNiche } from '../lib/niches.ts';
 import { queueShipment } from '../lib/fulfillment.ts';
 import { applySellerPart, itemsOfSeller, mutateOrder, type Order } from '../lib/orders.ts';
 import { storePhotos, storeProductPhotos } from '../lib/photos.ts';
+import { mainDomain } from '../lib/telegram-setup.ts';
 import { store } from '../lib/store/index.ts';
 import type { Product, Seller } from '../lib/types.ts';
 import type { Button, Incoming, Outgoing } from './types.ts';
@@ -41,7 +42,7 @@ type Session =
   | { flow: 'apply'; step: number; data: Record<string, string>; logoId?: string; sampleIds?: string[] }
   | { flow: 'add'; step: number; niche: string; data: Record<string, string>; variants: string[]; attrs: string[]; attrIndex: number; values: Record<string, string>; photos: number; photoIds?: string[]; colors?: string[] };
 /** Per-message context: the seller's flow state (saved after the reply if it changed) and the catalog. */
-interface Ctx { session: Session | null; cat: Catalog }
+interface Ctx { session: Session | null; cat: Catalog; alerts: string[] }
 
 // ---------- helpers ----------
 const egp = (n: number) => `${Math.round(n).toLocaleString('en-US')} ج`;
@@ -59,17 +60,26 @@ function shareText(cfg: NicheConfig, price: number) {
 
 // ---------- entry point ----------
 export async function handle(m: Incoming): Promise<Outgoing[]> {
-  const ctx: Ctx = { session: await store().getBotSession<Session>(m.chatId), cat: await catalog() };
+  const ctx: Ctx = { session: await store().getBotSession<Session>(m.chatId), cat: await catalog(), alerts: [] };
   const before = JSON.stringify(ctx.session);
   const out = await route(m, ctx);
   if (JSON.stringify(ctx.session) !== before) await store().setBotSession(m.chatId, ctx.session);
-  return out;
+  return [...out, ...adminAlerts(ctx.alerts)];
 }
+
+// ---------- admin alerts ----------
+/** Telegram chats that get the team alerts: ADMIN_TELEGRAM_CHAT_IDS="123,456" (send /myid to the bot to find yours). */
+export const adminChats = () => (process.env.ADMIN_TELEGRAM_CHAT_IDS ?? '').split(',').map((x) => Number(x.trim())).filter((x) => Number.isSafeInteger(x) && x !== 0);
+const adminAlerts = (texts: string[]) => texts.flatMap((text) => adminChats().map((chatId) => ({ chatId, text })));
+const whoIs = (m: Incoming) => `${m.user?.name ?? 'بدون اسم'}${m.user?.username ? ` (@${m.user.username})` : ''} · ${m.chatId}`;
+const adminLink = (path: string) => { const d = mainDomain(); return d ? `\nhttps://${d}${path}` : ''; };
 
 async function route(m: Incoming, ctx: Ctx): Promise<Outgoing[]> {
   const text = m.text?.trim() ?? '';
   const seller = ctx.cat.sellerByChat(m.chatId);
 
+  if (text === '/myid') return [msg(m.chatId, `رقم المحادثة بتاعتك: ${m.chatId}\n(للفريق: حطه في ADMIN_TELEGRAM_CHAT_IDS عشان توصلك التنبيهات)`)];
+  if (text.startsWith('/start')) ctx.alerts.push(`👋 حد فتح بوت البائعين: ${whoIs(m)}${seller ? `\nبائع مسجل: ${seller.name} (${seller.status})` : '\nجديد، لسه ماقدمش'}`);
   if (text === '/cancel' || text === 'إلغاء') {
     ctx.session = null;
     return [msg(m.chatId, 'تمام، لغينا الخطوة دي.', undefined, seller?.status === 'active' || seller?.status === 'warning' ? { keyboard: MENU } : {})];
@@ -101,7 +111,11 @@ async function onButton(m: Incoming, seller: Seller | null, ctx: Ctx): Promise<O
   const session = ctx.session;
   const stale = (again: Outgoing[]) => [msg(m.chatId, 'الزرار ده من سؤال قديم. جاوب على آخر سؤال 👇'), ...again];
   if (k === 'ap') {
-    if (a === 'start') return session?.flow === 'apply' ? applyAsk(m.chatId, session) : applyIntro(m.chatId, ctx, true);
+    if (a === 'start') {
+      if (session?.flow === 'apply') return applyAsk(m.chatId, session);
+      ctx.alerts.push(`🚀 بدأ التقديم كبائع: ${whoIs(m)}`);
+      return applyIntro(m.chatId, ctx, true);
+    }
     if (session?.flow !== 'apply') return applyIntro(m.chatId, ctx);
     // ap:v:<question>:<value>, only for the question being asked now.
     if (a !== 'v' || b !== APPLY_STEPS[session.step]) return stale(applyAsk(m.chatId, session));
@@ -235,6 +249,7 @@ async function applyStep(m: Incoming, s: Extract<Session, { flow: 'apply' }>, ct
         ownerName: s.data.owner, contactPhone: s.data.phone, instagram: s.data.instagram, instapay: s.data.instapay, capacity: s.data.capacity,
         ...(logo ? { logo } : {}), ...(samples.length ? { samplePhotos: samples } : {}),
       });
+      ctx.alerts.push(`📝 طلب بائع جديد للمراجعة\n${s.data.store} · ${s.data.owner}\n📱 ${s.data.phone} · ${s.data.instagram}\n📍 ${s.data.governorate}${adminLink('/admin/sellers')}`);
       return [msg(id, 'اتبعت طلبك للمراجعة ✅\nهنراجع الإنستجرام بتاعك، وهنعمل طلب تجريبي من عندك، ونرد عليك خلال 48 ساعة.')];
     }
   }
@@ -381,6 +396,7 @@ async function addStep(m: Incoming, seller: Seller, s: Extract<Session, { flow: 
       const images = await storeProductPhotos(pid, s.photoIds ?? []);
       if (images.length) product.images = images;
       await saveProduct(product);
+      ctx.alerts.push(`🛍️ منتج جديد للمراجعة من ${seller.name}\n${product.nameAr} · ${egp(product.price)} · ${images.length} صور${adminLink('/admin/products')}`);
       return [msg(id, `اتبعت للمراجعة ✅ فريق ${cfg.brand.nameAr} هيراجع الصور والسعر، وهنبلغك أول ما يتنشر.`, undefined, { keyboard: MENU })];
     }
   }

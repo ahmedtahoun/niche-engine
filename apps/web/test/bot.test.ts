@@ -185,3 +185,17 @@ test("money shows this cycle's payout after delivery", async () => {
   assert.match(text, /مستحق/);
   assert.match(text, /عمولة/);
 });
+
+test('team alerts: start, application begun and finished, product submitted', async () => {
+  process.env.ADMIN_TELEGRAM_CHAT_IDS = '900001, 900002';
+  const user = { name: 'منى', username: 'mona_store' };
+  const alerts = (out: Outgoing[]) => out.filter((o) => o.chatId === 900001).map((o) => o.text);
+  const opened = await handle({ chatId: 4444, text: '/start', user });
+  assert.equal(opened.filter((o) => o.chatId === 900002).length, 1, 'every admin chat gets it');
+  assert.match(alerts(opened)[0], /فتح بوت البائعين: منى \(@mona_store\) · 4444/);
+  assert.match(alerts(await handle({ chatId: 4444, data: 'ap:start', user }))[0], /بدأ التقديم/);
+  assert.deepEqual(alerts(await handle({ chatId: 4444, text: 'متجر منى', user })), [], 'answers in between send nothing');
+  assert.match((await handle({ chatId: 4444, text: '/myid' }))[0].text, /4444/);
+  delete process.env.ADMIN_TELEGRAM_CHAT_IDS;
+  assert.equal((await handle({ chatId: 4445, text: '/start' })).length, 1, 'no admin chats set: no alerts');
+});

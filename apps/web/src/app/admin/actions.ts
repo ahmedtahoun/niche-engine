@@ -3,7 +3,7 @@
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { revalidatePath } from 'next/cache';
-import { approveProduct, approveSeller } from '@/bot/engine';
+import { adminChats, approveProduct, approveSeller } from '@/bot/engine';
 import { deliver } from '@/bot/transport';
 import { checkPassword, COOKIE, isAdmin } from '@/lib/admin-auth';
 import { unblock } from '@/lib/blocklist';
@@ -121,4 +121,11 @@ export async function connectTelegram() {
   await guard();
   const r = await connectWebhook();
   redirect(`/admin/telegram?ok=${r.ok ? 1 : 0}&result=${encodeURIComponent(r.message)}`);
+}
+
+export async function testAdminAlert() {
+  await guard();
+  const chats = adminChats();
+  await deliver(chats.map((chatId) => ({ chatId, text: '✅ تنبيهات سكينة شغالة. هيوصلك هنا كل ما حد يفتح بوت البائعين أو يقدّم أو يبعت منتج.' })));
+  redirect(`/admin/telegram?ok=${chats.length ? 1 : 0}&result=${encodeURIComponent(chats.length ? `Test alert sent to ${chats.length} chat(s)` : 'ADMIN_TELEGRAM_CHAT_IDS is not set')}`);
 }

@@ -7,10 +7,13 @@ import { answerCallback, deliver, recordIncoming } from '@/bot/transport';
 import type { Incoming } from '@/bot/types';
 import { store } from '@/lib/store';
 
+interface TgUser { id: number; first_name?: string; last_name?: string; username?: string }
+const who = (f?: TgUser) => (f ? { name: [f.first_name, f.last_name].filter(Boolean).join(' ') || 'بدون اسم', ...(f.username ? { username: f.username } : {}) } : undefined);
+
 interface TgUpdate {
   update_id?: number;
-  message?: { chat: { id: number }; from?: { id: number }; text?: string; caption?: string; contact?: { phone_number: string; user_id?: number }; photo?: { file_id: string; width: number; height: number }[]; media_group_id?: string };
-  callback_query?: { id: string; data?: string; message?: { chat: { id: number } } };
+  message?: { chat: { id: number }; from?: TgUser; text?: string; caption?: string; contact?: { phone_number: string; user_id?: number }; photo?: { file_id: string; width: number; height: number }[]; media_group_id?: string };
+  callback_query?: { id: string; data?: string; from?: TgUser; message?: { chat: { id: number } } };
 }
 
 const same = (a: string, b: string) => a.length === b.length && timingSafeEqual(Buffer.from(a), Buffer.from(b));
@@ -25,14 +28,14 @@ export async function POST(req: Request) {
   if (typeof u.update_id === 'number' && !(await store().claimTelegramUpdate(u.update_id))) return NextResponse.json({ ok: true, duplicate: true });
   let m: Incoming | null = null;
   if (u.callback_query?.message) {
-    m = { chatId: u.callback_query.message.chat.id, data: u.callback_query.data };
+    m = { chatId: u.callback_query.message.chat.id, data: u.callback_query.data, user: who(u.callback_query.from) };
     await answerCallback(u.callback_query.id);
   } else if (u.message) {
     // Telegram sends each photo in several sizes: keep the largest.
     const best = u.message.photo?.reduce((a, b) => (b.width * b.height > a.width * a.height ? b : a));
     // A shared contact counts only if it is the sender's own number.
     const own = u.message.contact && (!u.message.contact.user_id || u.message.contact.user_id === u.message.from?.id) ? u.message.contact.phone_number : undefined;
-    m = { chatId: u.message.chat.id, text: u.message.text, ...(best ? { photos: 1, photoIds: [best.file_id] } : {}), ...(own ? { contact: own } : {}) };
+    m = { chatId: u.message.chat.id, text: u.message.text, ...(best ? { photos: 1, photoIds: [best.file_id] } : {}), ...(own ? { contact: own } : {}), user: who(u.message.from) };
   }
   if (m) {
     recordIncoming(m);

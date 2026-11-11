@@ -90,6 +90,8 @@ cd ~/niche-engine-app && mv current release-bad && mv release-old current && tou
 
 As in `DEPLOY.md` step 5, using `https://sakinaeg.com/api/telegram` and `https://sakinaeg.com/api/bosta`.
 
+**Team alerts:** send `/myid` to the bot, add `ADMIN_TELEGRAM_CHAT_IDS` = that number in the Node app's environment variables (several people: separate with commas), restart. You then get a Telegram message each time someone taps start, begins or finishes a seller application, or submits a product. `/admin/telegram` has a test button.
+
 ## 8. Keep an eye on it (free)
 
 - **Uptime alert:** a free monitor (e.g. uptimerobot.com) on `https://sakinaeg.com/api/health` every 5 minutes, alerting your phone. It also keeps a free Supabase project active (free projects pause after 7 days without traffic).

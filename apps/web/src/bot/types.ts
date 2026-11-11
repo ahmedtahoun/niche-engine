@@ -12,6 +12,8 @@ export interface Incoming {
   photoIds?: string[];
   /** Phone number shared with Telegram's "share my number" button. */
   contact?: string;
+  /** Who sent it (from Telegram), for the admin alerts. */
+  user?: { name: string; username?: string };
 }
 
 export interface Button {

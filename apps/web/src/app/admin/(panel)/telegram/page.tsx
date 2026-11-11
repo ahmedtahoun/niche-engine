@@ -1,5 +1,6 @@
 import { telegramStatus, webhookUrl } from '@/lib/telegram-setup';
-import { connectTelegram } from '../../actions';
+import { adminChats } from '@/bot/engine';
+import { connectTelegram, testAdminAlert } from '../../actions';
 import { Pill } from '../shared';
 
 export const metadata = { title: 'Telegram bot' };
@@ -31,6 +32,13 @@ export default async function TelegramPage({ searchParams }: { searchParams: Pro
             <button className="mini pri">{connected ? 'Reconnect' : 'Connect'} the bot to {want ?? 'this site'}</button>
           </form>
         )}
+        <div style={{ display: 'grid', gap: 6, borderTop: '1px solid var(--a-line)', paddingTop: 12 }}>
+          <b>Team alerts</b>
+          <span className="sub">A Telegram message to you each time someone taps start, begins or finishes a seller application, or submits a product.</span>
+          {adminChats().length
+            ? <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}><Pill kind="ok">On · {adminChats().length} chat{adminChats().length > 1 ? 's' : ''}</Pill><form action={testAdminAlert}><button className="mini">Send a test alert</button></form></div>
+            : <span><Pill kind="warn">Off</Pill> <span className="sub">Send <b>/myid</b> to the bot, then add <code>ADMIN_TELEGRAM_CHAT_IDS</code> = that number in the hosting settings (several: separate with commas) and restart.</span></span>}
+        </div>
         {s.bot && <p className="sub" style={{ margin: 0 }}>Test it: open <a href={`https://t.me/${s.bot.username}`} target="_blank" rel="noreferrer">t.me/{s.bot.username}</a> and send /start.</p>}
       </section>
     </>

@@ -6,7 +6,7 @@ import { TabBar } from '@/components/TabBar';
 import { getNiche } from '@/lib/niches';
 import { currentCustomer } from '@/lib/current-customer';
 import { walletOf } from '@/lib/wallet';
-import { dbEnabled } from '@/lib/db/rest';
+import { store } from '@/lib/store';
 
 type P = { params: Promise<{ niche: string }> };
 
@@ -21,11 +21,11 @@ export default async function NicheLayout({ children, params }: P & { children: 
   const cfg = getNiche((await params).niche);
   if (!cfg) notFound();
   const me = await currentCustomer();
-  const balance = me ? walletOf(me.phone, cfg.id).balance : 0;
+  const balance = me ? (await walletOf(me.phone, cfg.id)).balance : 0;
   const style = { '--primary': cfg.brand.palette.primary, '--base': cfg.brand.palette.base, '--accent': cfg.brand.palette.accent } as React.CSSProperties;
   return (
     <div className="shell" style={style}>
-      {!dbEnabled() && <div className="demo" role="note">نسخة تجريبية: المنتجات والأسعار للعرض بس</div>}
+      {store().kind === 'memory' && <div className="demo" role="note">نسخة تجريبية: المنتجات والأسعار للعرض بس</div>}
       <header className="head">
         <Link href={`/${cfg.id}`} className="logo">{cfg.brand.nameAr}<small>{TAGLINE[cfg.id] ?? ''}</small></Link>
         <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>

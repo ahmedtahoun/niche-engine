@@ -9,8 +9,8 @@ export async function simSend(chatId: number, input: { text?: string; data?: str
   guard();
   const m = { chatId, text: input.text, data: input.data, photos: input.photos };
   recordIncoming(m, input.label);
-  await deliver(handle(m));
+  await deliver(await handle(m));
 }
 
-export async function simApproveSeller(id: string) { guard(); await deliver(approveSeller(id)); }
-export async function simApproveProduct(id: string) { guard(); await deliver(approveProduct(id)); }
+export async function simApproveSeller(id: string) { guard(); await deliver(await approveSeller(id)); }
+export async function simApproveProduct(id: string) { guard(); await deliver(await approveProduct(id)); }

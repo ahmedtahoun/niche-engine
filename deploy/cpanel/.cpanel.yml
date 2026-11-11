@@ -1,11 +1,18 @@
 ---
 # cPanel "Git Version Control" runs these tasks on "Deploy HEAD Commit".
 # This file lives on the `deploy` branch (copied there by GitHub Actions).
-# DEPLOYPATH is the Node.js app's "Application root" (cPanel user viorowzb), not inside public_html.
+#
+# The build goes into a fresh folder, then replaces `current/` in one move, so no
+# file from an older build is left behind. It lives in a subfolder because cPanel's
+# Node.js setup puts its own `node_modules` link in the application root.
+# Node.js app: Application root = niche-engine-app, startup file = current/apps/web/server.js
 deployment:
   tasks:
-    - export DEPLOYPATH=/home/viorowzb/niche-engine-app/
-    - /bin/mkdir -p $DEPLOYPATH
-    - /bin/cp -R ./apps ./packages ./niches ./node_modules ./package.json ./REVISION $DEPLOYPATH
-    - /bin/mkdir -p ${DEPLOYPATH}tmp
-    - /bin/touch ${DEPLOYPATH}tmp/restart.txt
+    - export APP=/home/viorowzb/niche-engine-app
+    - /bin/rm -rf $APP/release-new
+    - /bin/mkdir -p $APP/release-new $APP/tmp
+    - /bin/cp -R ./apps ./packages ./niches ./node_modules ./package.json ./REVISION $APP/release-new/
+    - /bin/rm -rf $APP/release-old
+    - /bin/mv $APP/current $APP/release-old || true
+    - /bin/mv $APP/release-new $APP/current
+    - /bin/touch $APP/tmp/restart.txt

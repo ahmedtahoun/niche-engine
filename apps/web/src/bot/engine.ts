@@ -1,12 +1,16 @@
-// Seller bot logic. Pure: Incoming → Outgoing[]. No Telegram code here.
+// Seller bot logic: Incoming → Outgoing[]. No Telegram code here.
 // Relative imports (with .ts) so `node --test` can run it without Next.
+//
+// Everything lives in the database: the seller's place in a multi-step flow
+// (bot_sessions), the catalog and the orders. Order buttons go through
+// mutateOrder(), so two taps or two processes can't both accept the same order.
 import { normalizeEgyptPhone, sellerPayout, type NicheConfig, type OrderMoney } from '@niche-engine/core';
-import { PRODUCTS, SELLERS } from '../lib/demo-data.ts';
+import { catalog, saveProduct, saveSeller, type Catalog } from '../lib/catalog.ts';
 import { GOVERNORATES } from '../lib/eta.ts';
 import { allNiches, getNiche } from '../lib/niches.ts';
-import { markDirty } from '../lib/dirty.ts';
 import { queueShipment } from '../lib/fulfillment.ts';
-import { allOrders, itemsOfSeller, orderById, setSellerPart, type Order } from '../lib/orders.ts';
+import { applySellerPart, itemsOfSeller, mutateOrder, type Order } from '../lib/orders.ts';
+import { store } from '../lib/store/index.ts';
 import type { Product, Seller } from '../lib/types.ts';
 import type { Button, Incoming, Outgoing } from './types.ts';
 
@@ -35,15 +39,13 @@ const VARIANT_PRESETS: Record<string, [string, string[]][]> = {
 type Session =
   | { flow: 'apply'; step: number; data: Record<string, string> }
   | { flow: 'add'; step: number; niche: string; data: Record<string, string>; variants: string[]; attrs: string[]; attrIndex: number; values: Record<string, string>; photos: number };
-const g = globalThis as unknown as { __botSessions?: Map<number, Session> };
-const sessions = (g.__botSessions ??= new Map());
-export const resetBotSessions = () => sessions.clear();
+/** Per-message context: the seller's flow state (saved after the reply if it changed) and the catalog. */
+interface Ctx { session: Session | null; cat: Catalog }
 
 // ---------- helpers ----------
 const egp = (n: number) => `${Math.round(n).toLocaleString('en-US')} ج`;
 const msg = (chatId: number, text: string, buttons?: Button[][], extra: Partial<Outgoing> = {}): Outgoing => ({ chatId, text, ...(buttons ? { buttons } : {}), ...extra });
 const row = (...b: [string, string][]) => b.map(([text, data]) => ({ text, data }));
-export const sellerByChat = (chatId: number) => SELLERS.find((s) => s.telegramChatId === chatId) ?? null;
 const lastThursday = (now = new Date()) => { const d = new Date(now); d.setHours(0, 0, 0, 0); d.setDate(d.getDate() - ((d.getDay() - 4 + 7) % 7)); return d; };
 
 function money(o: Order): OrderMoney {
@@ -55,64 +57,73 @@ function shareText(cfg: NicheConfig, price: number) {
 }
 
 // ---------- entry point ----------
-export function handle(m: Incoming): Outgoing[] {
+export async function handle(m: Incoming): Promise<Outgoing[]> {
+  const ctx: Ctx = { session: await store().getBotSession<Session>(m.chatId), cat: await catalog() };
+  const before = JSON.stringify(ctx.session);
+  const out = await route(m, ctx);
+  if (JSON.stringify(ctx.session) !== before) await store().setBotSession(m.chatId, ctx.session);
+  return out;
+}
+
+async function route(m: Incoming, ctx: Ctx): Promise<Outgoing[]> {
   const text = m.text?.trim() ?? '';
-  const seller = sellerByChat(m.chatId);
-  const session = sessions.get(m.chatId);
+  const seller = ctx.cat.sellerByChat(m.chatId);
 
   if (text === '/cancel' || text === 'إلغاء') {
-    sessions.delete(m.chatId);
+    ctx.session = null;
     return [msg(m.chatId, 'تمام، لغينا الخطوة دي.', undefined, seller?.status === 'active' || seller?.status === 'warning' ? { keyboard: MENU } : {})];
   }
-  if (m.data) return onButton(m, seller);
-  if (session && MENU.flat().includes(text)) sessions.delete(m.chatId);
-  const active = sessions.get(m.chatId);
-  if (active?.flow === 'apply') return applyStep(m, active);
-  if (active?.flow === 'add' && seller) return addStep(m, seller, active);
+  if (m.data) return onButton(m, seller, ctx);
+  if (ctx.session && MENU.flat().includes(text)) ctx.session = null;
+  const active = ctx.session;
+  if (active?.flow === 'apply') return applyStep(m, active, ctx);
+  if (active?.flow === 'add' && seller) return addStep(m, seller, active, ctx);
 
-  if (!seller) return applyIntro(m.chatId);
+  if (!seller) return applyIntro(m.chatId, ctx);
   if (seller.status === 'applied') return [msg(m.chatId, 'طلبك لسه بيتراجع ✅ هنرد عليك خلال 48 ساعة بعد الطلب التجريبي.')];
   if (seller.status === 'suspended' || seller.status === 'declined') return [msg(m.chatId, 'حسابك موقوف حالياً. كلمنا على واتساب خدمة البائعين لو عندك سؤال.')];
 
   switch (text) {
     case '📦 طلبات مفتوحة': return openOrders(seller);
-    case '➕ منتج جديد': return startAdd(seller);
-    case '📊 أرقامي': return stats(seller);
+    case '➕ منتج جديد': return startAdd(seller, ctx);
+    case '📊 أرقامي': return stats(seller, ctx.cat);
     case '💰 فلوسي': return payout(seller);
-    case '🔎 مراجعة الأسعار': return priceCheck(seller);
+    case '🔎 مراجعة الأسعار': return priceCheck(seller, ctx.cat);
     default: return [msg(m.chatId, `أهلاً ${seller.name} 👋 اختار من القايمة تحت.`, undefined, { keyboard: MENU })];
   }
 }
 
-function onButton(m: Incoming, seller: Seller | null): Outgoing[] {
+async function onButton(m: Incoming, seller: Seller | null, ctx: Ctx): Promise<Outgoing[]> {
   const [k, a = '', b = '', c = ''] = (m.data ?? '').split(':');
-  const session = sessions.get(m.chatId);
-  if (k === 'ap') return session?.flow === 'apply' ? applyStep({ ...m, text: undefined, data: undefined }, session, a === 'v' ? b : `${a}:${b}`) : applyIntro(m.chatId, a === 'start');
-  if (!seller) return applyIntro(m.chatId);
-  if (k === 'ad' && session?.flow === 'add') return addStep({ ...m, data: undefined }, seller, session, a === 'v' ? b : a);
-  if (k === 'acc' || k === 'rej' || k === 'hand') return orderButton(seller, k, Number(a));
+  const session = ctx.session;
+  if (k === 'ap') return session?.flow === 'apply' ? applyStep({ ...m, text: undefined, data: undefined }, session, ctx, a === 'v' ? b : `${a}:${b}`) : applyIntro(m.chatId, ctx, a === 'start');
+  if (!seller) return applyIntro(m.chatId, ctx);
+  if (k === 'ad' && session?.flow === 'add') return addStep({ ...m, data: undefined }, seller, session, ctx, a === 'v' ? b : a);
+  if (k === 'acc' || k === 'rej' || k === 'hand') return orderButton(seller, k, Number(a), ctx.cat);
   if (k === 'stk') {
-    const p = PRODUCTS.find((x) => x.id === a && x.sellerId === seller.id);
+    const found = ctx.cat.productById(a);
+    const p = found && found.sellerId === seller.id ? structuredClone(found) : null;
     const v = p?.variants.at(Number(b));
     if (!p || !v) return [msg(m.chatId, 'المنتج ده مش موجود.')];
     v.stock = Number(c) || 5;
-    markDirty('product', p.id);
+    await saveProduct(p);
     return [msg(m.chatId, `رجع متاح: ${p.nameAr} · ${v.label} (${v.stock} قطع) ✅`)];
   }
   if (k === 'pok') {
-    PRODUCTS.filter((p) => p.sellerId === seller.id).forEach((p) => { p.priceConfirmedAt = new Date().toISOString(); markDirty('product', p.id); });
+    const now = new Date().toISOString();
+    for (const p of ctx.cat.products.filter((x) => x.sellerId === seller.id)) await saveProduct({ ...structuredClone(p), priceConfirmedAt: now });
     return [msg(m.chatId, 'شكراً! الأسعار اتأكدت. هنسألك تاني بعد أسبوعين.')];
   }
   return [msg(m.chatId, 'الزرار ده قديم. استخدم القايمة تحت.', undefined, { keyboard: MENU })];
 }
 
 // ---------- seller application ----------
-function applyIntro(chatId: number, start = false): Outgoing[] {
+function applyIntro(chatId: number, ctx: Ctx, start = false): Outgoing[] {
   if (!start) {
     return [msg(chatId, 'أهلاً بيك 👋 ده بوت البائعين.\n• مش هتدفع أي حاجة غير لما تبيع\n• الطلبات بتوصلك هنا\n• فلوسك بتتحول كل خميس\n\nافتح متجرك في 5 دقايق.', [row(['🚀 ابدأ التقديم', 'ap:start'])])];
   }
   const s: Session = { flow: 'apply', step: 0, data: {} };
-  sessions.set(chatId, s);
+  ctx.session = s;
   return applyAsk(chatId, s);
 }
 
@@ -137,7 +148,7 @@ function applyAsk(chatId: number, s: Extract<Session, { flow: 'apply' }>): Outgo
   }
 }
 
-function applyStep(m: Incoming, s: Extract<Session, { flow: 'apply' }>, choice?: string): Outgoing[] {
+async function applyStep(m: Incoming, s: Extract<Session, { flow: 'apply' }>, ctx: Ctx, choice?: string): Promise<Outgoing[]> {
   const id = m.chatId;
   const text = m.text?.trim() ?? '';
   const step = APPLY_STEPS[s.step];
@@ -158,10 +169,9 @@ function applyStep(m: Incoming, s: Extract<Session, { flow: 'apply' }>, choice?:
     case 'instapay': { const p = normalizeEgyptPhone(text); if (!p) return retry('الرقم لازم يكون 11 رقم ويبدأ بـ 010 أو 011 أو 012 أو 015.'); s.data.instapay = p; break; }
     case 'agree': {
       if (choice !== 'agree') return retry('لازم توافق على الشروط عشان نكمل.');
-      sessions.delete(id);
-      const newId = `n${Date.now().toString(36)}`;
-      SELLERS.push({ id: newId, niche: s.data.niche, telegramChatId: id, name: s.data.store, area: `${s.data.area}، ${s.data.governorate}`, rating: 0, status: 'applied', instagram: s.data.instagram, instapay: s.data.instapay, capacity: s.data.capacity });
-      markDirty('seller', newId);
+      ctx.session = null;
+      const newId = `n${Date.now().toString(36)}${Math.random().toString(36).slice(2, 5)}`;
+      await saveSeller({ id: newId, niche: s.data.niche, telegramChatId: id, name: s.data.store, area: `${s.data.area}، ${s.data.governorate}`, rating: 0, status: 'applied', instagram: s.data.instagram, instapay: s.data.instapay, capacity: s.data.capacity });
       return [msg(id, 'اتبعت طلبك للمراجعة ✅\nهنراجع الإنستجرام بتاعك، وهنعمل طلب تجريبي من عندك، ونرد عليك خلال 48 ساعة.')];
     }
   }
@@ -170,21 +180,21 @@ function applyStep(m: Incoming, s: Extract<Session, { flow: 'apply' }>, choice?:
 }
 
 /** Called from the admin panel when a seller is approved. */
-export function approveSeller(sellerId: string): Outgoing[] {
-  const s = SELLERS.find((x) => x.id === sellerId);
-  if (!s || s.status !== 'applied') return [];
-  s.status = 'active';
-  markDirty('seller', s.id);
+export async function approveSeller(sellerId: string): Promise<Outgoing[]> {
+  const found = (await catalog()).sellerById(sellerId);
+  if (!found || found.status !== 'applied') return [];
+  const s = { ...structuredClone(found), status: 'active' as const };
+  await saveSeller(s);
   if (!s.telegramChatId) return [];
   return [msg(s.telegramChatId, `🎉 مبروك! اتقبلت في ${getNiche(s.niche)?.brand.nameAr ?? 'المنصة'}.\nضيف أول منتج من القايمة تحت. أول تحويل ليك هيكون الخميس اللي بعد أول طلب يتسلم.`, undefined, { keyboard: MENU })];
 }
 
 // ---------- add product ----------
-function startAdd(seller: Seller): Outgoing[] {
+function startAdd(seller: Seller, ctx: Ctx): Outgoing[] {
   const cfg = getNiche(seller.niche)!;
   const attrs = cfg.attributes.required.filter((a) => !VARIANT_ATTRS.includes(a));
   const s: Session = { flow: 'add', step: 0, niche: cfg.id, data: {}, variants: [], attrs, attrIndex: 0, values: {}, photos: 0 };
-  sessions.set(seller.telegramChatId!, s);
+  ctx.session = s;
   return [msg(seller.telegramChatId!, 'يلا 👌 المنتج ده في أنهي قسم؟', [cfg.categories.map((c) => ({ text: c.labelAr, data: `ad:v:${c.id}` }))])];
 }
 
@@ -211,12 +221,12 @@ function addAsk(chatId: number, s: Extract<Session, { flow: 'add' }>): Outgoing[
   }
 }
 
-function addStep(m: Incoming, seller: Seller, s: Extract<Session, { flow: 'add' }>, choice?: string): Outgoing[] {
+async function addStep(m: Incoming, seller: Seller, s: Extract<Session, { flow: 'add' }>, ctx: Ctx, choice?: string): Promise<Outgoing[]> {
   const id = seller.telegramChatId!;
   const cfg = getNiche(s.niche)!;
   const text = m.text?.trim() ?? '';
   const retry = (why: string) => [msg(id, why), ...addAsk(id, s)];
-  if (choice === 'cancel') { sessions.delete(id); return [msg(id, 'تمام، لغيناه.', undefined, { keyboard: MENU })]; }
+  if (choice === 'cancel') { ctx.session = null; return [msg(id, 'تمام، لغيناه.', undefined, { keyboard: MENU })]; }
   switch (ADD_STEPS[s.step]) {
     case 'category': if (!choice || !cfg.categories.some((c) => c.id === choice)) return [msg(id, 'اختار القسم من الأزرار.')]; s.data.category = choice; break;
     case 'photos': if (!m.photos) return retry('محتاجين صور المنتج.'); s.photos = m.photos; break;
@@ -243,8 +253,8 @@ function addStep(m: Incoming, seller: Seller, s: Extract<Session, { flow: 'add' 
     }
     case 'preview': {
       if (choice !== 'publish') return addAsk(id, s);
-      sessions.delete(id);
-      const pid = `u${Date.now().toString(36)}`;
+      ctx.session = null;
+      const pid = `u${Date.now().toString(36)}${Math.random().toString(36).slice(2, 5)}`;
       const attributes = Object.fromEntries(s.attrs.map((k) => [ATTR[k]?.label.split(' (')[0] ?? k, s.values[k]]));
       const product: Product = {
         id: pid, niche: cfg.id, slug: `${cfg.id}-${pid}`, sellerId: seller.id, category: s.data.category,
@@ -253,8 +263,7 @@ function addStep(m: Incoming, seller: Seller, s: Extract<Session, { flow: 'add' 
         price: Number(s.data.price), attributes, variants: s.variants.map((label) => ({ label, stock: Number(s.data.stock) })),
         status: 'review', priceConfirmedAt: new Date().toISOString(), views: 0, reviews: [], faq: [],
       };
-      PRODUCTS.push(product);
-      markDirty('product', product.id);
+      await saveProduct(product);
       return [msg(id, `اتبعت للمراجعة ✅ فريق ${cfg.brand.nameAr} هيراجع الصور والسعر، وهنبلغك أول ما يتنشر.`, undefined, { keyboard: MENU })];
     }
   }
@@ -263,22 +272,23 @@ function addStep(m: Incoming, seller: Seller, s: Extract<Session, { flow: 'add' 
 }
 
 /** Called from the admin panel when a product is approved. */
-export function approveProduct(productId: string): Outgoing[] {
-  const p = PRODUCTS.find((x) => x.id === productId);
-  const s = p && SELLERS.find((x) => x.id === p.sellerId);
-  if (!p || !s || p.status !== 'review') return [];
-  p.status = 'live';
-  markDirty('product', p.id);
+export async function approveProduct(productId: string): Promise<Outgoing[]> {
+  const cat = await catalog();
+  const found = cat.productById(productId);
+  const s = found && cat.sellerById(found.sellerId);
+  if (!found || !s || found.status !== 'review') return [];
+  const p = { ...structuredClone(found), status: 'live' as const };
+  await saveProduct(p);
   return s.telegramChatId ? [msg(s.telegramChatId, `🎉 "${p.nameAr}" اتنشر على ${getNiche(p.niche)?.brand.domain}/p/${p.slug}`)] : [];
 }
 
 // ---------- orders ----------
 /** New-order messages for every seller in an order (sent when the customer confirms). */
-export function notifyOrder(o: Order): Outgoing[] {
+export function notifyOrder(o: Order, cat: Catalog): Outgoing[] {
   const cfg = getNiche(o.niche)!;
   const tag = { new: `عميل جديد من ${cfg.brand.nameAr}`, repeat: 'عميل راجع' }[o.type];
   return Object.keys(o.sellerState).flatMap((sid) => {
-    const s = SELLERS.find((x) => x.id === sid);
+    const s = cat.sellerById(sid);
     if (!s?.telegramChatId) return [];
     const items = itemsOfSeller(o, sid);
     const share = items.reduce((a, i) => a + i.unitPrice * i.qty * (1 - cfg.commission[o.type]), 0);
@@ -287,38 +297,41 @@ export function notifyOrder(o: Order): Outgoing[] {
   });
 }
 
-function orderButton(seller: Seller, k: string, orderId: number): Outgoing[] {
+async function orderButton(seller: Seller, k: string, orderId: number, cat: Catalog): Promise<Outgoing[]> {
   const id = seller.telegramChatId!;
-  const o = orderById(orderId);
-  if (!o || !(seller.id in o.sellerState)) return [msg(id, 'الطلب ده مش موجود.')];
+  const current = await store().getOrder(orderId);
+  if (!current || !(seller.id in current.sellerState)) return [msg(id, 'الطلب ده مش موجود.')];
+  const part = k === 'acc' ? 'accepted' : k === 'rej' ? 'rejected' : 'handed';
+  const o = await mutateOrder(orderId, (x) => applySellerPart(x, seller.id, part));
   if (k === 'acc') {
-    if (!setSellerPart(o, seller.id, 'accepted')) return [msg(id, `الطلب #${o.id} اتعامل معاه قبل كده.`)];
-    queueShipment(o, seller.id);
+    if (!o) return [msg(id, `الطلب #${orderId} اتعامل معاه قبل كده.`)];
+    queueShipment(o.id, seller.id);
     return [
       msg(id, `البوليصة جاية في الرسالة الجاية 📄\nاطبعها والزقها على كيس ${getNiche(o.niche)?.brand.nameAr} 🛍️\nمندوب بوسطة جاي بكرة من 12 لـ 4.\nبيانات العميل على البوليصة بس، وممنوع استخدامها لأي حاجة غير الشحن.`, [row(['📦 سلمت للمندوب', `hand:${o.id}`])]),
     ];
   }
   if (k === 'rej') {
-    if (!setSellerPart(o, seller.id, 'rejected')) return [msg(id, `الطلب #${o.id} اتعامل معاه قبل كده.`)];
+    if (!o) return [msg(id, `الطلب #${orderId} اتعامل معاه قبل كده.`)];
     const out: Outgoing[] = [];
     for (const it of itemsOfSeller(o, seller.id)) {
-      const p = PRODUCTS.find((x) => x.id === it.productId);
+      const found = cat.productById(it.productId);
+      const p = found ? structuredClone(found) : null;
       const vi = p?.variants.findIndex((v) => v.label === it.variant) ?? -1;
       if (p && vi >= 0) {
         p.variants[vi].stock = 0;
-        markDirty('product', p.id);
+        await saveProduct(p);
         out.push(msg(id, `خفينا "${p.nameAr} · ${it.variant}" لحد ما يرجع متاح.`, [row(['رجع متاح (5 قطع)', `stk:${p.id}:${vi}:5`])]));
       }
     }
     return [msg(id, `تمام. فريقنا هيكلم العميل بخصوص الطلب #${o.id}.\nالرفض بيأثر على ترتيبك، فحدّث المخزون أول بأول.`), ...out];
   }
-  if (!setSellerPart(o, seller.id, 'handed')) return [msg(id, `لازم تقبل الطلب #${o.id} الأول.`)];
+  if (!o) return [msg(id, `لازم تقبل الطلب #${orderId} الأول.`)];
   return [msg(id, `تمام 👌 الطلب #${o.id} مع بوسطة. هنبلغك أول ما يتسلم.`)];
 }
 
-function openOrders(seller: Seller): Outgoing[] {
+async function openOrders(seller: Seller): Promise<Outgoing[]> {
   const label = { pending: 'مستني قبولك', accepted: 'البوليصة جاهزة', handed: 'مع المندوب', rejected: 'اترفض' } as const;
-  const open = allOrders().filter((o) => ['confirmed', 'accepted', 'picked'].includes(o.status) && seller.id in o.sellerState && o.sellerState[seller.id] !== 'rejected');
+  const open = (await store().listOrders({ sellerId: seller.id, statuses: ['confirmed', 'accepted', 'picked'], limit: 50 })).filter((o) => o.sellerState[seller.id] !== 'rejected');
   if (!open.length) return [msg(seller.telegramChatId!, 'مفيش طلبات مفتوحة دلوقتي.', undefined, { keyboard: MENU })];
   return open.map((o) => {
     const part = o.sellerState[seller.id];
@@ -327,20 +340,24 @@ function openOrders(seller: Seller): Outgoing[] {
   });
 }
 
-function stats(seller: Seller): Outgoing[] {
-  const mine = PRODUCTS.filter((p) => p.sellerId === seller.id);
-  const week = Date.now() - 7 * 864e5;
-  const orders = allOrders().filter((o) => seller.id in o.sellerState && Date.parse(o.createdAt) >= week && o.status !== 'cancelled');
-  const sales = (sid: string) => allOrders().filter((o) => o.status !== 'cancelled').reduce((a, o) => a + itemsOfSeller(o, sid).reduce((b, i) => b + i.unitPrice * i.qty, 0), 0);
-  const peers = SELLERS.filter((s) => s.niche === seller.niche && ['active', 'warning'].includes(s.status)).sort((a, b) => sales(b.id) - sales(a.id));
+async function stats(seller: Seller, cat: Catalog): Promise<Outgoing[]> {
+  const mine = cat.products.filter((p) => p.sellerId === seller.id);
+  const week = new Date(Date.now() - 7 * 864e5).toISOString();
+  // Ranking by the last 30 days of sales in this niche.
+  const recent = (await store().listOrders({ niche: seller.niche, since: new Date(Date.now() - 30 * 864e5).toISOString(), limit: 5000 })).filter((o) => o.status !== 'cancelled');
+  const orders = recent.filter((o) => seller.id in o.sellerState && o.createdAt >= week);
+  const totals = new Map<string, number>();
+  for (const o of recent) for (const i of o.items) totals.set(i.sellerId, (totals.get(i.sellerId) ?? 0) + i.unitPrice * i.qty);
+  const sales = (sid: string) => totals.get(sid) ?? 0;
+  const peers = cat.sellers.filter((s) => s.niche === seller.niche && ['active', 'warning'].includes(s.status)).sort((a, b) => sales(b.id) - sales(a.id));
   const low = mine.flatMap((p) => p.variants.filter((v) => v.stock > 0 && v.stock <= 3).map((v) => `${p.nameAr} · ${v.label} (فاضل ${v.stock})`));
   return [msg(seller.telegramChatId!, `📊 آخر 7 أيام\n👀 مشاهدات منتجاتك: ${mine.reduce((a, p) => a + p.views, 0).toLocaleString('en-US')}\n🛒 طلبات: ${orders.length}\n⭐ تقييمك: ${seller.rating || '—'}\n🏆 ترتيبك: ${peers.findIndex((s) => s.id === seller.id) + 1} من ${peers.length}${low.length ? `\n⚠️ مخزون قليل:\n${low.map((l) => `• ${l}`).join('\n')}` : ''}`, undefined, { keyboard: MENU })];
 }
 
-function payout(seller: Seller): Outgoing[] {
+async function payout(seller: Seller): Promise<Outgoing[]> {
   const cfg = getNiche(seller.niche)!;
   const since = lastThursday();
-  const delivered = allOrders().filter((o) => o.status === 'delivered' && seller.id in o.sellerState);
+  const delivered = await store().listOrders({ sellerId: seller.id, statuses: ['delivered'], limit: 100000 });
   const cycle = sellerPayout(seller.id, delivered.filter((o) => o.deliveredAt && Date.parse(o.deliveredAt) >= since.getTime()).map(money), cfg);
   const all = sellerPayout(seller.id, delivered.map(money), cfg);
   const next = new Date(since); next.setDate(next.getDate() + 7);
@@ -348,8 +365,8 @@ function payout(seller: Seller): Outgoing[] {
   return [msg(seller.telegramChatId!, `💰 فلوسك\nمستحق ${day}: ${egp(cycle.payable)}\n(مبيعات اتسلمت ${egp(cycle.sales)} − عمولة ${egp(cycle.commission)} − ضمان ${egp(cycle.reserve)})\nمحجوز كضمان (${Math.round(cfg.reserve.percent * 100)}٪ لمدة ${cfg.reserve.days} يوم): ${egp(all.reserve)}${seller.instapay ? `\nالتحويل على: ${seller.instapay.slice(0, 3)}••••${seller.instapay.slice(-4)}` : ''}`, undefined, { keyboard: MENU })];
 }
 
-function priceCheck(seller: Seller): Outgoing[] {
-  const live = PRODUCTS.filter((p) => p.sellerId === seller.id && (p.status ?? 'live') === 'live');
+function priceCheck(seller: Seller, cat: Catalog): Outgoing[] {
+  const live = cat.products.filter((p) => p.sellerId === seller.id && (p.status ?? 'live') === 'live');
   if (!live.length) return [msg(seller.telegramChatId!, 'مفيش منتجات منشورة لسه.')];
   return [msg(seller.telegramChatId!, `🔎 مراجعة الأسعار (كل أسبوعين):\n${live.map((p) => `• ${p.nameAr}: ${egp(p.price)}`).join('\n')}\nالأسعار دي لسه زي الإنستجرام؟`, [row(['✅ أيوه كلها', 'pok'])])];
 }

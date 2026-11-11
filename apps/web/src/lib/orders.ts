@@ -1,5 +1,7 @@
-// In-memory order store for the demo. Swap for Supabase `orders` + `order_items` + `shipments`.
-import { markDirty } from './dirty.ts';
+// Orders. Stored in the database; every change goes through mutateOrder(), which
+// re-reads the order, applies the change and saves it only if nobody else changed
+// it in between (otherwise it retries with the fresh copy).
+import { store } from './store/index.ts';
 import type { CartLine, OrderItem, Quote } from './types.ts';
 
 export type OrderStatus = 'awaiting_confirm' | 'confirmed' | 'accepted' | 'picked' | 'delivered' | 'refused' | 'cancelled';
@@ -22,6 +24,7 @@ export interface Order {
   deliveredAt?: string;
   type: 'new' | 'repeat';
   payment: 'cod' | 'instapay';
+  /** Delivery details as typed at checkout. */
   customer: { name: string; phone: string; governorate: string; area: string; address: string; landmark: string };
   cart: CartLine[];
   quote: Quote;
@@ -30,42 +33,58 @@ export interface Order {
   shipments?: Record<string, Shipment>;
   promoCode?: string;
   needsAttention?: string;
+  /** Changes on every save; an update based on an older version is refused. */
+  version: number;
 }
 
-interface Store { nextId: number; orders: Order[] }
-const g = globalThis as unknown as { __nicheStore?: Store };
-const store: Store = (g.__nicheStore ??= { nextId: 1001, orders: [] });
+export type OrderDraft = Omit<Order, 'id' | 'createdAt' | 'items' | 'sellerState' | 'version'>;
 
-export function ordersFor(phone: string, niche: string): Order[] {
-  return store.orders.filter((o) => o.customer.phone === phone && o.niche === niche && o.status !== 'cancelled');
-}
-
-export function saveOrder(o: Omit<Order, 'id' | 'createdAt' | 'items' | 'sellerState'>): Order {
+/** Adds the per-seller fields to a new order. */
+export function draftOrder(o: OrderDraft): Omit<Order, 'id' | 'createdAt' | 'version'> {
   const items = o.quote.items;
   const sellerState = Object.fromEntries([...new Set(items.map((i) => i.sellerId))].map((s) => [s, 'pending' as SellerPart]));
-  const order: Order = { ...o, items, sellerState, id: store.nextId++, createdAt: new Date().toISOString() };
-  store.orders.unshift(order);
-  markDirty('order', order.id);
-  return order;
+  return { ...o, items, sellerState };
 }
 
-export function getOrder(niche: string, id: number): Order | null {
-  return store.orders.find((o) => o.id === id && o.niche === niche) ?? null;
+export async function getOrder(niche: string, id: number): Promise<Order | null> {
+  const o = await store().getOrder(id);
+  return o && o.niche === niche ? o : null;
 }
 
-export const orderById = (id: number) => store.orders.find((o) => o.id === id) ?? null;
+export const orderById = (id: number) => store().getOrder(id);
 
-export function setStatus(niche: string, id: number, from: OrderStatus[], to: OrderStatus): Order | null {
-  const o = getOrder(niche, id);
-  if (!o || !from.includes(o.status)) return null;
+/** A customer's orders in one niche, newest first (cancelled ones left out). */
+export async function ordersFor(phone: string, niche: string): Promise<Order[]> {
+  return (await store().listOrders({ phone, niche })).filter((o) => o.status !== 'cancelled');
+}
+
+/**
+ * Applies `change` to the latest copy of an order and saves it.
+ * `change` returns false when the change isn't allowed (nothing is saved).
+ * It may run more than once if another request changed the order at the same
+ * time, so it must only edit the order: send messages after this returns.
+ */
+export async function mutateOrder(id: number, change: (o: Order) => boolean): Promise<Order | null> {
+  for (let attempt = 0; attempt < 5; attempt++) {
+    const o = await store().getOrder(id);
+    if (!o || !change(o)) return null;
+    const saved = await store().updateOrder(o);
+    if (saved) return saved;
+  }
+  throw new Error(`order ${id}: too many concurrent changes`);
+}
+
+// ---------- pure state changes (used inside mutateOrder) ----------
+
+export function applyStatus(o: Order, from: OrderStatus[], to: OrderStatus): boolean {
+  if (!from.includes(o.status)) return false;
   o.status = to;
   if (to === 'delivered') o.deliveredAt = new Date().toISOString();
-  markDirty('order', o.id);
-  return o;
+  return true;
 }
 
 /** Updates one seller's part and rolls the order status forward when every seller is done. */
-export function setSellerPart(o: Order, sellerId: string, part: SellerPart): boolean {
+export function applySellerPart(o: Order, sellerId: string, part: SellerPart): boolean {
   if (!(sellerId in o.sellerState) || !['confirmed', 'accepted'].includes(o.status)) return false;
   const current = o.sellerState[sellerId];
   const allowed: Record<SellerPart, SellerPart[]> = { pending: [], accepted: ['pending'], rejected: ['pending'], handed: ['accepted'] };
@@ -75,16 +94,7 @@ export function setSellerPart(o: Order, sellerId: string, part: SellerPart): boo
   if (part === 'rejected') o.needsAttention = 'seller_rejected';
   if (parts.every((p) => p === 'accepted' || p === 'handed')) o.status = 'accepted';
   if (parts.every((p) => p === 'handed')) o.status = 'picked';
-  markDirty('order', o.id);
   return true;
 }
 
 export const itemsOfSeller = (o: Order, sellerId: string) => o.items.filter((i) => i.sellerId === sellerId);
-
-export const allOrders = () => store.orders;
-
-/** Replaces the store with orders loaded from the database (newest first). */
-export function loadOrders(list: Order[]) {
-  store.orders = [...list].sort((a, b) => b.id - a.id);
-  store.nextId = Math.max(1000, ...list.map((x) => x.id)) + 1;
-}

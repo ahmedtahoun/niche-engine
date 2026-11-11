@@ -1,8 +1,9 @@
-// Server start: check production settings, load data from Supabase, and save
-// pending changes before the process stops (deploys and restarts send SIGTERM).
-import { flushNow } from './lib/dirty';
+// Server start: check production settings and write the niche settings to the
+// database (sellers and orders reference them). Nothing else is loaded into
+// memory: every request reads the database, so restarts lose nothing.
 import { checkEnv } from './lib/env';
-import { hydrate } from './lib/persist';
+import { allNiches } from './lib/niches';
+import { store } from './lib/store';
 
 if (process.env.NODE_ENV === 'production') {
   const { errors, warnings } = checkEnv();
@@ -14,18 +15,11 @@ if (process.env.NODE_ENV === 'production') {
   }
 }
 
+const s = store();
 try {
-  await hydrate();
+  await s.syncNiches(Object.values(allNiches()).map((c) => ({ id: c.id, status: c.status, config: c })));
+  console.log(`[store] ${s.kind}: niche settings synced`);
 } catch (e) {
-  // Refuse to run on stale demo data when a database is configured but unreachable.
-  console.error('[persist] could not load from Supabase:', e);
-  throw e;
-}
-
-for (const sig of ['SIGTERM', 'SIGINT'] as const) {
-  process.once(sig, async () => {
-    console.log(`[persist] ${sig}: saving pending changes`);
-    await flushNow();
-    process.exit(0);
-  });
+  // Keep serving: /api/health reports the database as unreachable, and the next start retries.
+  console.error('[store] could not reach the database at start:', e);
 }

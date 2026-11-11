@@ -1,7 +1,8 @@
 import Link from 'next/link';
 import { blockedList } from '@/lib/blocklist';
-import { SELLERS } from '@/lib/demo-data';
-import { allOrders, type Order } from '@/lib/orders';
+import { catalog } from '@/lib/catalog';
+import type { Order } from '@/lib/orders';
+import { store } from '@/lib/store';
 import { clearAttention, moveOrder, unblockPhone } from '../../actions';
 import { ago, EGP, NicheTabs, Pill, pickNiche, STATUS } from '../shared';
 
@@ -36,10 +37,9 @@ export default async function Orders({ searchParams }: { searchParams: Promise<{
   const sp = await searchParams;
   const niche = pickNiche(sp);
   const filter = FILTERS.find((f) => f[0] === sp.filter) ?? FILTERS[0];
-  const base = allOrders().filter((o) => !niche || o.niche === niche);
+  const [cat, base, blocked] = await Promise.all([catalog(), store().listOrders({ niche: niche ?? undefined, limit: 2000 }), blockedList()]);
   const rows = base.filter(filter[2]);
-  const name = (sid: string) => SELLERS.find((s) => s.id === sid)?.name ?? sid;
-  const blocked = blockedList();
+  const name = (sid: string) => cat.sellerById(sid)?.name ?? sid;
   return (
     <>
       <div className="adm-top">
@@ -78,7 +78,7 @@ export default async function Orders({ searchParams }: { searchParams: Promise<{
           <h2>Blocked phone numbers <span className="sub">shared across all niches</span></h2>
           <div className="tbl"><table className="t" style={{ minWidth: 380 }}>
             <tbody>{blocked.map((b) => (
-              <tr key={b.phone}><td>{b.phone}</td><td>{b.reason}</td><td><form action={unblockPhone.bind(null, b.phone)}><button className="mini">Unblock</button></form></td></tr>
+              <tr key={b.phone}><td>{b.phone}</td><td>{b.refusals} refused deliveries</td><td><form action={unblockPhone.bind(null, b.phone)}><button className="mini">Unblock</button></form></td></tr>
             ))}</tbody>
           </table></div>
         </section>

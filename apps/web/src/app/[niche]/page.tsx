@@ -3,7 +3,7 @@ import { notFound } from 'next/navigation';
 import { BundleArt } from '@/components/Art';
 import { Footer } from '@/components/Footer';
 import { ProductCard } from '@/components/ProductCard';
-import { bundleView, search } from '@/lib/catalog';
+import { catalog } from '@/lib/catalog';
 import { egp } from '@/lib/eta';
 import { getNiche } from '@/lib/niches';
 
@@ -13,8 +13,9 @@ const SECTION: Record<string, string> = { umrah: 'الأكثر طلباً قبل
 export default async function Home({ params }: { params: Promise<{ niche: string }> }) {
   const cfg = getNiche((await params).niche);
   if (!cfg) notFound();
-  const hero = bundleView(cfg, cfg.bundles[0].id);
-  const products = search(cfg, { sort: 'best' });
+  const cat = await catalog();
+  const hero = cfg.bundles[0] ? cat.bundleView(cfg, cfg.bundles[0].id) : null;
+  const products = cat.search(cfg, { sort: 'best' });
   return (
     <main className="page">
       {hero && (
@@ -38,7 +39,7 @@ export default async function Home({ params }: { params: Promise<{ niche: string
         {cfg.categories.map((c) => <Link key={c.id} className="chip" href={`/${cfg.id}/search?cat=${c.id}`}>{c.labelAr}</Link>)}
       </nav>
       <h2 className="sec">{SECTION[cfg.id]}</h2>
-      <div className="grid">{products.map((p) => <ProductCard key={p.id} p={p} />)}</div>
+      <div className="grid">{products.map((p) => <ProductCard key={p.id} p={p} seller={cat.sellerOf(p)} />)}</div>
       <Footer cfg={cfg} />
     </main>
   );

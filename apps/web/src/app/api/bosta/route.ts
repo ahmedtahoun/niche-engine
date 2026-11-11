@@ -12,7 +12,8 @@ export async function POST(req: Request) {
   const secret = process.env.BOSTA_WEBHOOK_SECRET;
   if (!secret || !same(req.headers.get('authorization') ?? '', secret)) return NextResponse.json({ ok: false }, { status: 401 });
   const update = parseWebhook(await req.json().catch(() => null));
-  if (update) await deliver(applyTracking(update.tracking, update.status));
+  // A database error returns 500 so Bosta retries; applying the same update twice changes nothing.
+  if (update) await deliver(await applyTracking(update.tracking, update.status));
   // Always 200 for well-authenticated calls so Bosta doesn't retry unknown states forever.
   return NextResponse.json({ ok: true, applied: Boolean(update) });
 }

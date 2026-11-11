@@ -1,6 +1,6 @@
 import { notFound } from 'next/navigation';
 import { transcript } from '@/bot/transport';
-import { PRODUCTS, SELLERS } from '@/lib/demo-data';
+import { catalog } from '@/lib/catalog';
 import { Simulator } from './Simulator';
 
 export const dynamic = 'force-dynamic';
@@ -8,6 +8,7 @@ export const metadata = { title: 'Seller bot simulator' };
 
 export default async function BotSim({ searchParams }: { searchParams: Promise<{ chat?: string }> }) {
   if (process.env.NODE_ENV === 'production') notFound();
+  const { sellers: SELLERS, products: PRODUCTS } = await catalog();
   const chats = [
     ...SELLERS.filter((s) => s.telegramChatId).map((s) => ({ id: s.telegramChatId!, label: `${s.name} (${s.status})` })),
     ...(SELLERS.some((s) => s.telegramChatId === 5555) ? [] : [{ id: 5555, label: 'متقدم جديد' }]),

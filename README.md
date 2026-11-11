@@ -3,7 +3,7 @@
 One marketplace engine, many niche brands, built for Egypt.
 First niche: **Sakina** (Umrah and modest wear). Next: **Bunn** (specialty coffee).
 
-- **Customers** order on the niche website (PWA, Arabic, no account) and confirm on WhatsApp.
+- **Customers** order on the niche website (Arabic, phone + password account created at checkout). Bosta's SMS confirms the shipment.
 - **Sellers** run everything from a Telegram bot: apply, add products, accept orders, get paid.
 - **You** control everything from the admin panel.
 - **Every shipment** goes through the platform's Bosta account, so cash on delivery reaches the platform before sellers are paid weekly (minus commission and a reserve).
@@ -14,10 +14,10 @@ First niche: **Sakina** (Umrah and modest wear). Next: **Bunn** (specialty coffe
 |---|---|---|
 | `niches/*.json` | One settings file per niche: brand, categories, required attributes, commission, reserve, deposit, wallet, search synonyms, hero bundles, promos | Umrah + Coffee drafted |
 | `packages/core` | Shared rules: niche validation, cart totals, promos, commission tiers, payouts and reserve, Arabic search, phone validation | Done, tested |
-| `supabase/migrations` | Postgres schema for all niches (matches the app model) | Ready to apply |
-| `apps/web/src/lib/persist.ts` | Supabase persistence: loads everything on server start, writes every change back. Demo data when keys are absent | Done, tested against a fake Supabase |
+| `supabase/migrations` | Postgres schema for all niches. `0002` makes the database the only source of truth: order numbers, version checks, wallet transactions, one cashback/refund/spend/payout per order or cycle | Apply 0001 then 0002 |
+| `apps/web/src/lib/store` | Storage layer: `SupabaseStore` (production; every request reads/writes the database, so restarts and several processes are safe) and `MemoryStore` (local demo + tests, same rules) | Done, tested against real Postgres (PGlite) |
 | `apps/web/src/lib/bosta.ts` + `fulfillment.ts` | One Bosta shipment per seller when they accept, cash split across shipments, waybill PDF to the seller's Telegram, `/api/bosta` webhook for delivered / returned | Done in demo mode; verify field names with Bosta |
-| `apps/web` | Next.js storefront, multi-domain (one domain per niche): home, search, product, bundle, cart, checkout, order. Demo data until Supabase keys arrive | Storefront done; admin next |
+| `apps/web` | Next.js storefront, multi-domain (one domain per niche): home, search, product, bundle, cart, checkout, order. Demo data until Supabase keys arrive | Done |
 | `apps/web/src/bot` | Telegram seller bot: apply, add product (with required attributes + seller share), receive orders, accept / not available / handed to courier, numbers, payout, price check. Pure engine + `/api/telegram` webhook | Done, tested; needs the bot token |
 | Customer accounts | Phone + password created inside checkout; scrypt-hashed passwords, signed session cookie, 5-attempt lock, saved address, order pages visible to their owner only | Done, tested |
 | Customer wallet | Per niche: cashback on delivery (Umrah 4% / 30 days, Coffee 4% / 45 days), use at checkout (never pays shipping), soonest-expiring credit spent first, credit returned on cancel/refusal, balance in header + account history, "credit owed" in admin | Done, tested |
@@ -71,16 +71,16 @@ curl "https://api.telegram.org/bot$TELEGRAM_BOT_TOKEN/setWebhook?url=https://YOU
 
 **cPanel + GitHub:** see **[DEPLOY-CPANEL.md](DEPLOY-CPANEL.md)** (GitHub Actions builds, cPanel pulls the `deploy` branch).
 
-**Container host:** see **[DEPLOY.md](DEPLOY.md)**: Supabase, environment variables, Docker host (one instance), domains, webhooks, launch checklist.
+**Container host:** see **[DEPLOY.md](DEPLOY.md)**: Supabase, environment variables, Docker host, domains, webhooks, launch checklist.
 
 ## Going live: data and shipping
 
 **Supabase**
-1. Create the project, open the SQL editor, and run `supabase/migrations/0001_init.sql`.
+1. Create the project, open the SQL editor, and run `supabase/migrations/0001_init.sql`, then `0002_database_first.sql`.
 2. Set `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` (server only, never in the browser).
-3. Restart. The server loads all data on start; the demo catalog disappears.
+3. Restart. Every page now reads the database; the demo catalog disappears.
 
-**Run as ONE server instance** (a Node host such as Railway, Render or a VPS), not serverless functions: the app reads from memory and writes through to Supabase.
+**How data is kept safe:** the database is the only source of truth. Order changes use version checks (a change based on an old copy is retried, never lost); an order and its wallet spend are saved in one transaction; the database allows one cashback, refund and spend per order and one payout per seller per cycle; Telegram retries and repeated Bosta webhooks are handled once. Checkout and sign-in are rate-limited per visitor, and a phone can place at most 5 orders a day.
 
 **Bosta**
 1. Set `BOSTA_API_KEY`. Each seller needs their pickup location id in `sellers.bosta_location_id`.

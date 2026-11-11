@@ -1,10 +1,12 @@
-// Customer wallet, one per phone per niche. An append-only ledger:
+// Customer wallet, one per phone per niche. An append-only ledger in the database:
 //   + cashback after delivery, + refund when an order that used credit is cancelled/refused,
-//   − spend at checkout. Each credit expires on its own date; spending uses the
-//   credit that expires soonest first. Credit can never pay the shipping fee (core rule).
-import { markDirty } from './dirty.ts';
+//   − spend at checkout (saved in the same transaction as the order).
+// Each credit expires on its own date; spending uses the credit that expires soonest
+// first. Credit can never pay the shipping fee (core rule). The database allows one
+// cashback, one refund and one spend per order, and never a negative total.
 import { getNiche } from './niches.ts';
 import type { Order } from './orders.ts';
+import { store } from './store/index.ts';
 
 export type WalletKind = 'cashback' | 'spend' | 'refund' | 'adjust';
 export interface WalletEntry {
@@ -19,24 +21,13 @@ export interface WalletEntry {
   createdAt: string;
 }
 
-const g = globalThis as unknown as { __wallet?: WalletEntry[] };
-const ledger: WalletEntry[] = (g.__wallet ??= []);
-
 const addDays = (iso: string, days: number) => new Date(Date.parse(iso) + days * 864e5).toISOString();
-const newId = () => `w${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`;
 
-function add(e: Omit<WalletEntry, 'id' | 'createdAt'>, now = new Date().toISOString()): WalletEntry {
-  const entry: WalletEntry = { ...e, id: newId(), createdAt: now };
-  ledger.push(entry);
-  markDirty('wallet', entry.id);
-  return entry;
-}
-
-export const entriesOf = (phone: string, niche: string) => ledger.filter((e) => e.phone === phone && e.niche === niche);
+// ---------- pure balance maths (tested) ----------
 
 /** Remaining amount of each credit after applying debits soonest-expiring first. */
-function lots(phone: string, niche: string) {
-  const es = entriesOf(phone, niche).sort((a, b) => a.createdAt.localeCompare(b.createdAt));
+function lots(entries: WalletEntry[]) {
+  const es = [...entries].sort((a, b) => a.createdAt.localeCompare(b.createdAt));
   const credits: { remaining: number; expiresAt: string }[] = [];
   for (const e of es) {
     if (e.amount > 0) { credits.push({ remaining: e.amount, expiresAt: e.expiresAt ?? '9999-12-31' }); continue; }
@@ -52,56 +43,65 @@ function lots(phone: string, niche: string) {
   return credits;
 }
 
-export function walletOf(phone: string, niche: string, now = new Date()) {
+export function balanceOf(entries: WalletEntry[], now = new Date()) {
   const iso = now.toISOString();
-  const live = lots(phone, niche).filter((c) => c.remaining > 0 && c.expiresAt > iso);
+  const live = lots(entries).filter((c) => c.remaining > 0 && c.expiresAt > iso);
   const balance = live.reduce((a, c) => a + c.remaining, 0);
   const next = live.sort((a, b) => a.expiresAt.localeCompare(b.expiresAt))[0];
   return { balance, nextExpiry: next ? { amount: next.remaining, at: next.expiresAt } : null };
 }
 
-/** Cashback on delivered goods (after bundle and promo discounts). Once per order. */
-export function grantCashback(o: Order, now = new Date().toISOString()): WalletEntry | null {
-  if (ledger.some((e) => e.kind === 'cashback' && e.orderId === o.id)) return null;
+// ---------- reads ----------
+
+/** Balance plus the version to pass when spending (see placeOrder). */
+export async function walletOf(phone: string, niche: string, now = new Date()) {
+  const { version, entries } = await store().wallet(phone, niche);
+  return { ...balanceOf(entries, now), version };
+}
+
+export async function entriesOf(phone: string, niche: string) {
+  return (await store().wallet(phone, niche)).entries;
+}
+
+/** Total credit customers can still spend: a liability on the platform's books. */
+export async function totalOwed(niche?: string, now = new Date()) {
+  const byWallet = new Map<string, WalletEntry[]>();
+  for (const e of await store().listWalletEntries(niche)) {
+    const k = `${e.phone}|${e.niche}`;
+    byWallet.set(k, [...(byWallet.get(k) ?? []), e]);
+  }
+  let sum = 0;
+  for (const es of byWallet.values()) sum += balanceOf(es, now).balance;
+  return sum;
+}
+
+// ---------- credits (safe to call twice: the database keeps one per order) ----------
+
+/** Cashback on delivered goods (after bundle and promo discounts). */
+export async function grantCashback(o: Order, now = new Date().toISOString()) {
   const cfg = getNiche(o.niche);
   if (!cfg) return null;
   const goods = o.quote.subtotal - o.quote.bundleDiscount - o.quote.promoDiscount;
   const amount = Math.floor(goods * cfg.wallet.cashback);
   if (amount <= 0) return null;
-  return add({ phone: o.customer.phone, niche: o.niche, amount, kind: 'cashback', orderId: o.id, expiresAt: addDays(now, cfg.wallet.expiresDays) }, now);
+  const r = await store().appendWallet({ phone: o.customer.phone, niche: o.niche, amount, kind: 'cashback', orderId: o.id, expiresAt: addDays(now, cfg.wallet.expiresDays), createdAt: now }, null);
+  return r === 'ok' ? amount : null;
 }
 
-/** Records credit used at checkout. Throws if the balance no longer covers it. */
-export function spend(phone: string, niche: string, amount: number, orderId: number): WalletEntry | null {
-  if (amount <= 0) return null;
-  if (walletOf(phone, niche).balance < amount) throw new Error('wallet_insufficient');
-  return add({ phone, niche, amount: -amount, kind: 'spend', orderId });
-}
-
-/** Gives back credit an order used, when it is cancelled or refused. Once per order. */
-export function refundSpend(o: Order): WalletEntry | null {
-  const used = ledger.filter((e) => e.orderId === o.id && e.kind === 'spend').reduce((a, e) => a - e.amount, 0);
-  if (used <= 0 || ledger.some((e) => e.kind === 'refund' && e.orderId === o.id)) return null;
+/** Gives back credit an order used, when it is cancelled or refused. */
+export async function refundSpend(o: Order) {
+  const entries = await entriesOf(o.customer.phone, o.niche);
+  const used = entries.filter((e) => e.orderId === o.id && e.kind === 'spend').reduce((a, e) => a - e.amount, 0);
+  if (used <= 0) return null;
   const cfg = getNiche(o.niche);
   const now = new Date().toISOString();
-  return add({ phone: o.customer.phone, niche: o.niche, amount: used, kind: 'refund', orderId: o.id, expiresAt: addDays(now, cfg?.wallet.expiresDays ?? 30) }, now);
+  const r = await store().appendWallet({ phone: o.customer.phone, niche: o.niche, amount: used, kind: 'refund', orderId: o.id, expiresAt: addDays(now, cfg?.wallet.expiresDays ?? 30), createdAt: now }, null);
+  return r === 'ok' ? used : null;
 }
 
 /** Manual credit from the admin (e.g. the leakage-report reward). */
-export function adjust(phone: string, niche: string, amount: number, note: string) {
+export async function adjust(phone: string, niche: string, amount: number, note: string) {
   const cfg = getNiche(niche);
   const now = new Date().toISOString();
-  return add({ phone, niche, amount: Math.round(amount), kind: 'adjust', note, ...(amount > 0 ? { expiresAt: addDays(now, cfg?.wallet.expiresDays ?? 30) } : {}) }, now);
+  return store().appendWallet({ phone, niche, amount: Math.round(amount), kind: 'adjust', note, createdAt: now, ...(amount > 0 ? { expiresAt: addDays(now, cfg?.wallet.expiresDays ?? 30) } : {}) }, null);
 }
-
-/** Total credit customers can still spend: a liability on the platform's books. */
-export function totalOwed(niche?: string, now = new Date()) {
-  const keys = new Set(ledger.filter((e) => !niche || e.niche === niche).map((e) => `${e.phone}|${e.niche}`));
-  let sum = 0;
-  for (const k of keys) { const [p, n] = k.split('|'); sum += walletOf(p, n, now).balance; }
-  return sum;
-}
-
-export const allWalletEntries = () => ledger;
-export const walletEntryById = (id: string) => ledger.find((e) => e.id === id) ?? null;
-export function loadWallet(list: WalletEntry[]) { ledger.splice(0, ledger.length, ...list); }

@@ -17,7 +17,7 @@ const RANK: Record<string, number> = { awaiting_confirm: 0, confirmed: 1, accept
 export default async function OrderPage({ params }: { params: Promise<{ niche: string; id: string }> }) {
   const { niche, id } = await params;
   const cfg = getNiche(niche);
-  const o = cfg && getOrder(niche, Number(id));
+  const o = cfg ? await getOrder(niche, Number(id)) : null;
   if (!cfg || !o) notFound();
   // Orders hold a name, phone and address: only their owner may see them.
   const me = await currentCustomer();

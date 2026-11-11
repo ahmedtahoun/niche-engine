@@ -3,7 +3,7 @@ import { notFound } from 'next/navigation';
 import { AuthForms, SignOut } from '@/components/AuthForms';
 import { currentCustomer } from '@/lib/current-customer';
 import { getNiche } from '@/lib/niches';
-import { allOrders } from '@/lib/orders';
+import { store } from '@/lib/store';
 import { entriesOf, walletOf } from '@/lib/wallet';
 
 export const metadata = { title: 'حسابي' };
@@ -24,9 +24,8 @@ export default async function AccountPage({ params }: { params: Promise<{ niche:
       </main>
     );
   }
-  const orders = allOrders().filter((o) => o.customer.phone === me.phone && o.niche === cfg.id);
-  const w = walletOf(me.phone, cfg.id);
-  const history = entriesOf(me.phone, cfg.id).slice().reverse().slice(0, 8);
+  const [orders, w, entries] = await Promise.all([store().listOrders({ phone: me.phone, niche: cfg.id, limit: 50 }), walletOf(me.phone, cfg.id), entriesOf(me.phone, cfg.id)]);
+  const history = entries.slice().reverse().slice(0, 8);
   const KIND: Record<string, string> = { cashback: 'كاش باك', spend: 'استخدمته في طلب', refund: 'رجعلك من طلب اتلغى', adjust: 'رصيد من الفريق' };
   const day = (iso: string) => new Date(iso).toLocaleDateString('ar-EG-u-nu-latn', { day: 'numeric', month: 'long' });
   return (

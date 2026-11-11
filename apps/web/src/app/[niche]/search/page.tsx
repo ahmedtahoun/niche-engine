@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { ProductCard } from '@/components/ProductCard';
-import { search, type PriceBand, type SortKey } from '@/lib/catalog';
+import { catalog, type PriceBand, type SortKey } from '@/lib/catalog';
 import { getNiche } from '@/lib/niches';
 
 export const metadata = { title: 'بحث' };
@@ -23,7 +23,8 @@ export default async function SearchPage({ params, searchParams }: { params: Pro
   const cat = cfg.categories.some((c) => c.id === sp.cat) ? sp.cat : undefined;
   const sort = (SORTS.find((s) => s[0] === sp.sort)?.[0] ?? 'best') as SortKey;
   const price = (BANDS.find((b) => b[0] === sp.price)?.[0] ?? 'all') as PriceBand;
-  const results = q || cat ? search(cfg, { q, cat, sort, price }) : [];
+  const catl = await catalog();
+  const results = q || cat ? catl.search(cfg, { q, cat, sort, price }) : [];
   const link = (patch: Partial<SP>) => {
     const u = new URLSearchParams();
     const next = { q, cat, sort: sort === 'best' ? undefined : sort, price: price === 'all' ? undefined : price, ...patch };
@@ -62,7 +63,7 @@ export default async function SearchPage({ params, searchParams }: { params: Pro
           {results.length ? (
             <>
               <p className="muted" style={{ margin: 0 }}>{results.length} منتج{q ? ` لـ "${q}"` : ''}</p>
-              <div className="grid">{results.map((p) => <ProductCard key={p.id} p={p} />)}</div>
+              <div className="grid">{results.map((p) => <ProductCard key={p.id} p={p} seller={catl.sellerOf(p)} />)}</div>
             </>
           ) : (
             <div className="box" style={{ textAlign: 'center', justifyItems: 'center' }}>

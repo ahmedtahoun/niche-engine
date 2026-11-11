@@ -1,7 +1,7 @@
-import { PRODUCTS, SELLERS } from '@/lib/demo-data';
+import { catalog } from '@/lib/catalog';
 import { getNiche } from '@/lib/niches';
-import { allOrders } from '@/lib/orders';
-import { sellerCycle } from '@/lib/payouts';
+import { cycleFrom } from '@/lib/payouts';
+import { store } from '@/lib/store';
 import { approveSellerAction, setSellerStatus } from '../../actions';
 import { EGP, NicheTabs, Pill, pickNiche } from '../shared';
 
@@ -11,11 +11,13 @@ const SSTAT: Record<string, [string, string]> = { applied: ['Applied', 'info'], 
 
 export default async function Sellers({ searchParams }: { searchParams: Promise<{ niche?: string }> }) {
   const niche = pickNiche(await searchParams);
-  const list = SELLERS.filter((s) => !niche || s.niche === niche);
+  const [cat, orders] = await Promise.all([catalog(), store().listOrders({ niche: niche ?? undefined, limit: 100000 })]);
+  const delivered = orders.filter((o) => o.status === 'delivered');
+  const list = cat.sellers.filter((s) => !niche || s.niche === niche);
   const apps = list.filter((s) => s.status === 'applied');
   const rest = list.filter((s) => s.status !== 'applied');
   const stat = (sid: string) => {
-    const mine = allOrders().filter((o) => sid in o.sellerState && o.status !== 'cancelled');
+    const mine = orders.filter((o) => sid in o.sellerState && o.status !== 'cancelled');
     const decided = mine.filter((o) => o.sellerState[sid] !== 'pending');
     const rejected = mine.filter((o) => o.sellerState[sid] === 'rejected').length;
     return { orders: mine.length, rejectRate: decided.length ? rejected / decided.length : 0 };
@@ -51,11 +53,11 @@ export default async function Sellers({ searchParams }: { searchParams: Promise<
           <tbody>{rest.map((s) => {
             const st = stat(s.id);
             const cfg = getNiche(s.niche)!;
-            const c = sellerCycle(s.id, cfg);
+            const c = cycleFrom(s.id, delivered, cfg);
             return (
               <tr key={s.id}>
                 <td className="ar"><b>{s.name}</b></td><td>{cfg.brand.nameEn}</td><td className="ar">{s.area}</td>
-                <td className="r">{PRODUCTS.filter((p) => p.sellerId === s.id).length}</td>
+                <td className="r">{cat.products.filter((p) => p.sellerId === s.id).length}</td>
                 <td className="r">{st.orders}</td>
                 <td className="r" style={{ color: st.rejectRate > 0.1 ? 'var(--a-bad)' : undefined }}>{Math.round(st.rejectRate * 100)}%</td>
                 <td className="r">{s.rating || '—'}</td>

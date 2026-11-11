@@ -1,11 +1,9 @@
 import Link from 'next/link';
-import { sellerOf } from '@/lib/catalog';
 import { egp, etaLabel } from '@/lib/eta';
-import type { Product } from '@/lib/types';
+import type { Product, Seller } from '@/lib/types';
 import { Art } from './Art';
 
-export function ProductCard({ p }: { p: Product }) {
-  const s = sellerOf(p);
+export function ProductCard({ p, seller: s }: { p: Product; seller: Seller }) {
   return (
     <Link href={`/${p.niche}/p/${p.slug}`} className="card">
       <div className="pimg"><Art kind={p.art} color={p.color} /></div>

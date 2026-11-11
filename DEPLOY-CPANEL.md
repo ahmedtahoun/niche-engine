@@ -4,82 +4,97 @@
 You push to main ──▶ GitHub Actions: tests → build → `deploy` branch
                                                         │
 cPanel "Git Version Control" pulls `deploy` ◀───────────┘
-        └─▶ .cpanel.yml copies it to the app folder and restarts the Node app
+        └─▶ .cpanel.yml puts the build in niche-engine-app/current and restarts the Node app
 ```
 
 The hosting server never builds anything. If a test fails on GitHub, nothing new reaches cPanel.
 
----
+Setup used here: cPanel user `viorowzb`, domain `sakinaeg.com`, Node.js 20.
 
-## 0. Ask your host first (important)
+## How the app keeps data
 
-The app keeps its working data in memory and writes every change to Supabase, so it must run as **one process that stays up**. cPanel runs Node apps with Passenger, which may start several processes or stop the app when idle. Send your host support this message:
+Supabase is the only place data lives. Every request reads and writes it; nothing important is held in the server's memory. So the app can restart at any time, cPanel may stop it when idle or run several copies under load, and nothing is lost or mixed up. Money changes (an order with its wallet spend, cashback, refunds, payouts) are single database transactions with rules the database enforces.
 
-> For my Node.js application at `/home/viorowzb/niche-engine-app`, please limit Passenger to **one process** (max instances = 1) and **keep it running when idle** (min instances = 1 / no idle shutdown). Also confirm Node.js **20 or 22** is available in "Setup Node.js App" and that my account has about **512 MB of RAM** for it.
+## 1. Supabase (once)
 
-If they can't guarantee one process, use a container host instead (see `DEPLOY.md`); the code is the same.
+1. Supabase → **SQL Editor** → run `supabase/migrations/0001_init.sql`, then `supabase/migrations/0002_database_first.sql` (in that order; each once).
+2. **Project Settings → API Keys**: copy the project URL and the **secret** key (`sb_secret_…` or the legacy `service_role`). The secret key goes only into cPanel (step 4), never into the code or a chat.
 
-## 1. Supabase
+## 2. Connect cPanel to GitHub (once)
 
-Same as `DEPLOY.md` step 1: create the project (Frankfurt), run `supabase/migrations/0001_init.sql`, copy the URL and service-role key.
+The repository is public, so cPanel clones it over HTTPS with no SSH key.
 
-## 2. Edit `.cpanel.yml` once
-
-Done: `deploy/cpanel/.cpanel.yml` already uses the cPanel user `viorowzb`. If the username ever changes, edit it on `main` and push. The file only exists on the `deploy` branch, so cPanel must check out `deploy`, not `main`.
-
-## 3. Connect cPanel to GitHub
-
-The repository is public, so cPanel can clone it over HTTPS with no SSH key.
-
-1. cPanel → **Git Version Control → Create**:
+1. cPanel → **Git Version Control → Create**
    - Clone a Repository: **on**
    - Clone URL: `https://github.com/ahmedtahoun/niche-engine.git`
    - Repository path: `/home/viorowzb/repositories/niche-engine`
-   - Repository name: `niche-engine`
-2. After it clones, open **Manage → Basic Information** and set the **Checked-Out Branch** to `deploy`.
+2. **Manage → Basic Information**: set **Checked-Out Branch** to **`deploy`** (not `main`: only `deploy` has the built site and `.cpanel.yml`).
 
-Never put keys or passwords in the repository: it is public. They live only in the Node app's environment variables in cPanel.
+Never put keys or passwords in the repository: it is public. They live only in the Node app's environment variables.
 
-(If you make the repository private again, cPanel needs an SSH deploy key: cPanel → SSH Access → generate a key, add its public part in GitHub → Settings → Deploy keys with write access off, and clone with `git@github.com:ahmedtahoun/niche-engine.git`.)
+## 3. Domain (once)
 
-## 4. Create the Node.js app
+1. At the registrar (Namecheap): `sakinaeg.com` → **Nameservers → Namecheap Web Hosting DNS**.
+2. cPanel → **Domains**: `sakinaeg.com` added, **Share document root off**.
+3. cPanel → **SSL/TLS Status** → tick `sakinaeg.com` and `www.sakinaeg.com` → **Run AutoSSL**.
 
-cPanel → **Setup Node.js App → Create Application**:
+## 4. Node.js app (once)
+
+cPanel → **Setup Node.js App → Create Application** (or edit the existing one):
 
 | Field | Value |
 |---|---|
-| Node.js version | 22 (or 20) |
+| Node.js version | 20 (or 22) |
 | Application mode | Production |
 | Application root | `niche-engine-app` |
-| Application URL | `sakinaeg.com` (add `www.sakinaeg.com` as an alias) |
-| Application startup file | `apps/web/server.js` |
+| Application URL | `sakinaeg.com` |
+| Application startup file | `current/apps/web/server.js` |
 
-Then add the **Environment variables** from `DEPLOY.md` step 2 (`SESSION_SECRET`, `ADMIN_PASSWORD`, `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `NICHE_DOMAINS`, Telegram and Bosta keys). Save.
+Environment variables (Add Variable for each):
 
-Do not press "Run NPM Install": the `deploy` branch already contains everything the server needs.
+| Name | Value |
+|---|---|
+| `SUPABASE_URL` | `https://ywfblcnpridlucljqtbz.supabase.co` |
+| `SUPABASE_SERVICE_ROLE_KEY` | the secret key from step 1 |
+| `SESSION_SECRET` | a random string of 32+ characters |
+| `ADMIN_PASSWORD` | 12+ characters, for `/admin` |
+| `NICHE_DOMAINS` | `sakinaeg.com=umrah,www.sakinaeg.com=umrah` |
 
-## 5. First deploy
+Telegram and Bosta keys come later (step 7). Save. Do **not** press "Run NPM Install": the build already contains everything.
+
+## 5. Deploy
 
 cPanel → **Git Version Control → Manage → Pull or Deploy**:
 1. **Update from Remote** (pulls the latest `deploy` build)
-2. **Deploy HEAD Commit** (runs `.cpanel.yml`: copies files, restarts the app)
+2. **Deploy HEAD Commit** (copies it into `niche-engine-app/current` and restarts the app)
 
-Open `https://sakinaeg.com/api/health`. It should answer `"ok":true` and `"database":"supabase"`.
+Open `https://sakinaeg.com/api/health`. It should answer `"ok":true`, `"database":"supabase"` and a `"revision"` matching the latest commit on GitHub.
 
-If the app does not start, open **Setup Node.js App** and read the log: a missing setting is listed there by name.
+- **"It works! NodeJS …"**: cPanel's placeholder. The deploy hasn't run yet, or the startup file isn't `current/apps/web/server.js`.
+- **"The system cannot deploy"**: the checked-out branch is still `main`, or files were added inside `repositories/niche-engine`. In cPanel → Terminal run `cd ~/repositories/niche-engine && git branch && git status --short` and send the output.
+- **The app doesn't start**: Setup Node.js App → open the log (or `~/niche-engine-app/stderr.log`). A missing setting is listed by name.
 
-## 6. More domains for more niches
-
-Every niche must run in **the same Node app** (one process). Add other niche domains as **Aliases** of the main domain (cPanel → **Domains → Create a New Domain**, sharing the main domain's document root), not as separate Node apps. The app reads the domain name and shows the right niche. List every domain in `NICHE_DOMAINS`, e.g. `sakinaeg.com=umrah,www.sakinaeg.com=umrah`.
-
-## 7. Every update after that
+## 6. Every update after that
 
 1. Push to `main` (or merge a pull request).
 2. Wait for the green check in GitHub → **Actions**.
 3. cPanel → Git Version Control → **Update from Remote**, then **Deploy HEAD Commit**.
 
-To roll back: in cPanel, deploy an older commit of the `deploy` branch (each one names the `main` commit it was built from).
+The previous build stays in `niche-engine-app/release-old`. To roll back quickly, in cPanel → Terminal:
 
-## 8. Webhooks
+```bash
+cd ~/niche-engine-app && mv current release-bad && mv release-old current && touch tmp/restart.txt
+```
 
-Telegram and Bosta as in `DEPLOY.md` step 5, using your main domain.
+## 7. Telegram and Bosta (after the site is live)
+
+As in `DEPLOY.md` step 5, using `https://sakinaeg.com/api/telegram` and `https://sakinaeg.com/api/bosta`.
+
+## 8. Keep an eye on it (free)
+
+- **Uptime alert:** a free monitor (e.g. uptimerobot.com) on `https://sakinaeg.com/api/health` every 5 minutes, alerting your phone. It also keeps a free Supabase project active (free projects pause after 7 days without traffic).
+- **Backups:** Supabase's free plan has no point-in-time restore. Upgrade to Pro once real orders flow, or export weekly until then.
+
+## More niches later
+
+Add each niche's domain to the same Node app (Domains → Create a New Domain, sharing the main domain's document root) and list it in `NICHE_DOMAINS`, e.g. `…,coffeedomain.com=coffee`.

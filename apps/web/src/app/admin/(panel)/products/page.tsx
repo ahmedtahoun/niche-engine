@@ -1,4 +1,4 @@
-import { PRODUCTS, SELLERS } from '@/lib/demo-data';
+import { catalog } from '@/lib/catalog';
 import { getNiche } from '@/lib/niches';
 import { approveProductAction, approveSellerAction, setProductStatus, setSellerStatus } from '../../actions';
 import { EGP, NicheTabs, Pill, pickNiche } from '../shared';
@@ -9,10 +9,11 @@ const DEMO_CONFIRMED = '2026-11-01T00:00:00Z';
 
 export default async function Products({ searchParams }: { searchParams: Promise<{ niche?: string }> }) {
   const niche = pickNiche(await searchParams);
-  const list = PRODUCTS.filter((p) => !niche || p.niche === niche);
+  const cat = await catalog();
+  const list = cat.products.filter((p) => !niche || p.niche === niche);
   const review = list.filter((p) => p.status === 'review');
-  const apps = SELLERS.filter((s) => s.status === 'applied' && (!niche || s.niche === niche));
-  const seller = (id: string) => SELLERS.find((s) => s.id === id);
+  const apps = cat.sellers.filter((s) => s.status === 'applied' && (!niche || s.niche === niche));
+  const seller = (id: string) => cat.sellerById(id);
   const daysSince = (iso?: string) => Math.floor((Date.now() - Date.parse(iso ?? DEMO_CONFIRMED)) / 864e5);
 
   return (

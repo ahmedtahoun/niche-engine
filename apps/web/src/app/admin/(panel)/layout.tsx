@@ -1,9 +1,9 @@
 import { Suspense } from 'react';
 import { redirect } from 'next/navigation';
 import { devOpen, isAdmin } from '@/lib/admin-auth';
-import { PRODUCTS, SELLERS } from '@/lib/demo-data';
-import { allOrders } from '@/lib/orders';
+import { catalog } from '@/lib/catalog';
 import { seedDemoOrders } from '@/lib/seed';
+import { store } from '@/lib/store';
 import { logout } from '../actions';
 import { Nav } from './Nav';
 import '../admin.css';
@@ -13,10 +13,12 @@ export const dynamic = 'force-dynamic';
 
 export default async function PanelLayout({ children }: { children: React.ReactNode }) {
   if (!(await isAdmin())) redirect('/admin/login');
-  seedDemoOrders();
+  await seedDemoOrders();
+  const [cat, open] = await Promise.all([catalog(), store().listOrders({ statuses: ['confirmed'], limit: 1000 })]);
+  const attention = await store().listOrders({ needsAttention: true, limit: 1000 });
   const counts = {
-    orders: allOrders().filter((o) => o.needsAttention || o.status === 'confirmed').length,
-    review: PRODUCTS.filter((p) => p.status === 'review').length + SELLERS.filter((s) => s.status === 'applied').length,
+    orders: new Set([...open, ...attention].map((o) => o.id)).size,
+    review: cat.products.filter((p) => p.status === 'review').length + cat.sellers.filter((s) => s.status === 'applied').length,
   };
   return (
     <div className="adm">

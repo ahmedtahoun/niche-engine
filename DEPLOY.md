@@ -2,15 +2,15 @@
 
 One Docker image runs everything: every niche's storefront, the admin panel, and the Telegram and Bosta webhooks.
 
-**Run exactly one instance.** The app reads from memory and writes every change through to Supabase. Two instances would each hold their own copy. Use a Node/Docker host (Railway, Render, Fly.io or a VPS), not serverless functions.
+Supabase is the only source of truth: every request reads and writes it, and money changes are database transactions. The app can restart or run as several instances without losing or mixing data. Any Node/Docker host works (Railway, Render, Fly.io, a VPS, or cPanel: see `DEPLOY-CPANEL.md`).
 
 ---
 
 ## 1. Supabase (database)
 
 1. Create a project. Pick the region closest to Egypt (Frankfurt, `eu-central-1`).
-2. Open **SQL Editor**, paste `supabase/migrations/0001_init.sql`, and run it once.
-3. From **Project Settings → API**, copy the **Project URL** and the **service_role** key. The service-role key is a server secret: it goes only into the host's environment, never into the browser or a chat.
+2. Open **SQL Editor** and run `supabase/migrations/0001_init.sql`, then `0002_database_first.sql` (each once, in order).
+3. From **Project Settings → API Keys**, copy the **Project URL** and the **secret** key (`sb_secret_…` or legacy `service_role`). The service-role key is a server secret: it goes only into the host's environment, never into the browser or a chat.
 4. Before real money flows, turn on daily backups (a paid Supabase plan).
 
 ## 2. Environment variables
@@ -38,9 +38,9 @@ The server checks these at start. If a required one is missing it **exits and pr
 2. In this folder: `railway init`, then `railway up`. Railway finds the `Dockerfile`, builds it, and runs it. The build runs every test and checks every niche file first; if one fails, nothing is deployed.
 3. Add the variables from step 2 in the service's **Variables** tab, then redeploy.
 4. Set the health check path to `/api/health`.
-5. Keep the service at **1 replica**.
+5. One replica is enough to start; more are safe.
 
-Render, Fly.io or a VPS work the same way: build the `Dockerfile`, expose port `3000`, health check `/api/health`, one instance.
+Render, Fly.io or a VPS work the same way: build the `Dockerfile`, expose port `3000`, health check `/api/health`.
 
 ## 4. Domains
 
@@ -72,13 +72,14 @@ Bosta:
 
 ## 7. Updating and rolling back
 
-- **Update:** `railway up` again (or push, once the repo is on GitHub). Pending changes are saved before the old server stops.
+- **Update:** `railway up` again (or push). Nothing is held in memory, so a restart loses nothing.
 - **Roll back:** redeploy the previous deployment from the host's dashboard. The database is unaffected.
 - **New niche:** add `niches/<id>.json`, pass `npm run check:niches`, add its domain to `NICHE_DOMAINS`, deploy.
 
 ## Launch checklist
 
-- [ ] Supabase schema applied; backups on
+- [ ] Supabase migrations 0001 and 0002 applied; backups on
+- [ ] Free uptime monitor on `/api/health` (also keeps a free Supabase project from pausing)
 - [ ] All required variables set; deploy log shows no `[env]` errors
 - [ ] Domains live over HTTPS and listed in `NICHE_DOMAINS`
 - [ ] Telegram webhook registered; a test seller receives `/start`

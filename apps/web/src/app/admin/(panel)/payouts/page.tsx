@@ -1,7 +1,7 @@
-import { SELLERS } from '@/lib/demo-data';
+import { catalog } from '@/lib/catalog';
 import { getNiche } from '@/lib/niches';
-import { allOrders } from '@/lib/orders';
-import { cycleStart, nextPayday, paidThisCycle, sellerCycle } from '@/lib/payouts';
+import { cycleFrom, cycleStart, nextPayday, paidThisCycle } from '@/lib/payouts';
+import { store } from '@/lib/store';
 import { markPaidAction } from '../../actions';
 import { EGP, NicheTabs, Pill, pickNiche } from '../shared';
 
@@ -12,9 +12,10 @@ const day = (d: Date) => d.toLocaleDateString('en-GB', { weekday: 'short', day: 
 export default async function Payouts({ searchParams }: { searchParams: Promise<{ niche?: string }> }) {
   const niche = pickNiche(await searchParams);
   const since = cycleStart();
-  const rows = SELLERS.filter((s) => (!niche || s.niche === niche) && ['active', 'warning', 'suspended'].includes(s.status))
-    .map((s) => ({ s, c: sellerCycle(s.id, getNiche(s.niche)!), paid: paidThisCycle(s.id) }));
-  const cash = allOrders().filter((o) => (!niche || o.niche === niche) && o.status === 'delivered' && Date.parse(o.deliveredAt ?? '') >= since.getTime()).reduce((a, o) => a + o.quote.total, 0);
+  const [cat, delivered, paid] = await Promise.all([catalog(), store().listOrders({ niche: niche ?? undefined, statuses: ['delivered'], limit: 100000 }), paidThisCycle()]);
+  const rows = cat.sellers.filter((s) => (!niche || s.niche === niche) && ['active', 'warning', 'suspended'].includes(s.status))
+    .map((s) => ({ s, c: cycleFrom(s.id, delivered, getNiche(s.niche)!), paid: paid.get(s.id) ?? null }));
+  const cash = delivered.filter((o) => Date.parse(o.deliveredAt ?? '') >= since.getTime()).reduce((a, o) => a + o.quote.total, 0);
   const due = rows.reduce((a, r) => a + (r.paid ? 0 : r.c.payable), 0);
   const commission = rows.reduce((a, r) => a + r.c.commission, 0);
   const reserve = rows.reduce((a, r) => a + r.c.reserveHeld, 0);

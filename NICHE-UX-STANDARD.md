@@ -131,3 +131,4 @@ Add a line for every real incident, with the rule it created.
 |---|---|---|---|
 | 2026-11-11 | Decision: customers sign in with phone + password (created at checkout), and WhatsApp order confirmation is off at launch | Fake-order protection at launch = shared refusal blocklist + deposit above the niche threshold | All niches |
 | 2026-11-11 | Coffee synonyms pointed to English words while the catalog is Arabic, so "اسبرسو" found nothing | Synonyms must map to words the catalog actually uses; a core test checks one per niche | All niches |
+| 2026-11-11 | Review before launch: data was held in memory and copied to Supabase later, so shared hosting (which may start a second process or stop the app) could lose or mix orders, and a failed save was dropped | The database is the only source of truth: order changes use version checks, money changes are database transactions with one-per-order rules, bot steps and login limits live in the database | All niches |

@@ -1,14 +1,17 @@
-// Delivers bot messages. Every message is kept in a per-chat log (used by the
-// local simulator). When TELEGRAM_BOT_TOKEN is set, real chats also get the
-// message through the Telegram Bot API. Demo chats (ids < 100000) never do.
+// Delivers bot messages. Demo chats (ids < 100000, used by the local simulator)
+// keep a short log in memory; real chats get the message through the Telegram
+// Bot API when TELEGRAM_BOT_TOKEN is set (and are never logged here: no customer
+// data sits in server memory).
 import type { Incoming, Outgoing } from './types.ts';
 
 export interface LogEntry { from: 'bot' | 'me'; text: string; buttons?: Outgoing['buttons']; keyboard?: Outgoing['keyboard']; file?: Outgoing['file']; at: string }
 
+const isDemoChat = (chatId: number) => chatId < 100000;
 const g = globalThis as unknown as { __botLog?: Map<number, LogEntry[]> };
 const log = (g.__botLog ??= new Map());
 
 const push = (chatId: number, e: LogEntry) => {
+  if (!isDemoChat(chatId)) return;
   const list = log.get(chatId) ?? [];
   list.push(e);
   log.set(chatId, list.slice(-200));
@@ -20,7 +23,6 @@ export function recordIncoming(m: Incoming, label?: string) {
   push(m.chatId, { from: 'me', text: label ?? m.text ?? (m.photos ? `📷 ${m.photos} صور` : m.data ?? ''), at: new Date().toISOString() });
 }
 
-const isDemoChat = (chatId: number) => chatId < 100000;
 
 export async function deliver(outs: Outgoing[]) {
   for (const o of outs) {

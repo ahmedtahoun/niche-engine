@@ -2,14 +2,15 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { AddBundle } from '@/components/AddToCart';
 import { Art, BundleArt } from '@/components/Art';
-import { bundleView, sellerOf } from '@/lib/catalog';
+import { catalog } from '@/lib/catalog';
 import { egp } from '@/lib/eta';
 import { getNiche } from '@/lib/niches';
 
 export default async function BundlePage({ params }: { params: Promise<{ niche: string; id: string }> }) {
   const { niche, id } = await params;
   const cfg = getNiche(niche);
-  const bv = cfg && bundleView(cfg, id);
+  const cat = await catalog();
+  const bv = cfg && cat.bundleView(cfg, id);
   if (!cfg || !bv) notFound();
   const sellers = new Set(bv.parts.map((p) => p.product.sellerId)).size;
   const pickLabel = bv.pickVariantsFrom?.category === 'abaya' ? 'مقاس العباية' : 'الطحنة';
@@ -22,7 +23,7 @@ export default async function BundlePage({ params }: { params: Promise<{ niche: 
         {bv.parts.map((pt) => (
           <Link key={pt.product.slug} href={`/${niche}/p/${pt.product.slug}`} className="line">
             <div className="pimg"><Art kind={pt.product.art} color={pt.product.color} /></div>
-            <div><b className="small">{pt.product.nameAr}{pt.qty > 1 ? ` × ${pt.qty}` : ''}</b><div className="pby">من {sellerOf(pt.product).name}</div></div>
+            <div><b className="small">{pt.product.nameAr}{pt.qty > 1 ? ` × ${pt.qty}` : ''}</b><div className="pby">من {cat.sellerOf(pt.product).name}</div></div>
             <span className="num small">{egp(pt.product.price * pt.qty)}</span>
           </Link>
         ))}

@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { AddToCart } from '@/components/AddToCart';
 import { Art } from '@/components/Art';
-import { productBySlug, sellerOf } from '@/lib/catalog';
+import { catalog } from '@/lib/catalog';
 import { egp, etaLabel } from '@/lib/eta';
 import { getNiche } from '@/lib/niches';
 
@@ -10,7 +10,7 @@ type P = { params: Promise<{ niche: string; slug: string }> };
 
 export async function generateMetadata({ params }: P): Promise<Metadata> {
   const { niche, slug } = await params;
-  const p = productBySlug(niche, slug);
+  const p = (await catalog()).productBySlug(niche, slug);
   return p ? { title: p.nameAr, description: p.leadAr } : {};
 }
 
@@ -19,9 +19,10 @@ const SIZE_CHART = [['1', '135', '56'], ['2', '140', '58'], ['3', '145', '61'], 
 export default async function ProductPage({ params }: P) {
   const { niche, slug } = await params;
   const cfg = getNiche(niche);
-  const p = cfg && productBySlug(niche, slug);
+  const cat = await catalog();
+  const p = cfg && cat.productBySlug(niche, slug);
   if (!cfg || !p) notFound();
-  const s = sellerOf(p);
+  const s = cat.sellerOf(p);
   const finder = p.category === 'abaya' ? 'size' : cfg.id === 'coffee' && p.variants.length > 1 ? 'grind' : null;
   const jsonLd = {
     '@context': 'https://schema.org', '@type': 'Product', name: p.nameAr, description: p.leadAr,

@@ -1,9 +1,8 @@
 import Link from 'next/link';
 import { blockedList } from '@/lib/blocklist';
-import { bundleProblems } from '@/lib/catalog';
-import { PRODUCTS, SELLERS } from '@/lib/demo-data';
+import { catalog } from '@/lib/catalog';
 import { allNiches, getNiche } from '@/lib/niches';
-import { allOrders } from '@/lib/orders';
+import { store } from '@/lib/store';
 import { moneyOf, orderNet } from '@/lib/payouts';
 import { commissionBySeller } from '@niche-engine/core';
 import { totalOwed } from '@/lib/wallet';
@@ -13,7 +12,9 @@ export const metadata = { title: 'Overview' };
 
 export default async function Overview({ searchParams }: { searchParams: Promise<{ niche?: string }> }) {
   const niche = pickNiche(await searchParams);
-  const orders = allOrders().filter((o) => !niche || o.niche === niche);
+  const [cat, all, blocked, owed] = await Promise.all([catalog(), store().listOrders({ limit: 100000 }), blockedList(), totalOwed(niche ?? undefined)]);
+  const { sellers: SELLERS, products: PRODUCTS } = cat;
+  const orders = all.filter((o) => !niche || o.niche === niche);
   const placed = orders.length;
   const live = orders.filter((o) => !['cancelled', 'refused'].includes(o.status));
   const confirmed = orders.filter((o) => !['awaiting_confirm', 'cancelled'].includes(o.status));
@@ -38,14 +39,13 @@ export default async function Overview({ searchParams }: { searchParams: Promise
   for (const s of nicheSellers.filter((x) => x.status === 'warning')) alerts.push(['var(--a-warn)', `${s.name} is on warning`, 'Slow hand-over or high rejection rate', '/admin/sellers', 'Seller']);
   const low = PRODUCTS.filter((p) => (p.status ?? 'live') === 'live' && (!niche || p.niche === niche)).flatMap((p) => p.variants.filter((v) => v.stock > 0 && v.stock <= 3).map((v) => `${p.nameAr} · ${v.label} (${v.stock})`));
   if (low.length) alerts.push(['var(--a-warn)', `${low.length} sizes almost sold out`, low.slice(0, 3).join(' — '), '/admin/products', 'Stock']);
-  for (const c of Object.values(allNiches()).filter((x) => !niche || x.id === niche)) for (const pr of bundleProblems(c)) alerts.push(['var(--a-bad)', `${c.brand.nameEn} bundle problem`, pr, '/admin/products', 'Fix']);
-  const blocked = blockedList();
+  for (const c of Object.values(allNiches()).filter((x) => !niche || x.id === niche)) for (const pr of cat.bundleProblems(c)) alerts.push(['var(--a-bad)', `${c.brand.nameEn} bundle problem`, pr, '/admin/products', 'Fix']);
   if (blocked.length) alerts.push(['var(--a-bad)', `${blocked.length} phone numbers blocked after refusals`, 'Shared across every niche', '/admin/orders?filter=refused', 'View']);
 
   return (
     <>
       <div className="adm-top">
-        <div><h1>Overview</h1><p className="sub">All orders in the system · demo data until Supabase is connected</p></div>
+        <div><h1>Overview</h1><p className="sub">All orders in the system{store().kind === 'memory' ? ' · demo data (no database connected)' : ''}</p></div>
         <NicheTabs base="/admin" current={niche} />
       </div>
       <div className="kpis">
@@ -54,7 +54,7 @@ export default async function Overview({ searchParams }: { searchParams: Promise
         <div className="kpi"><small>Net to platform</small><b>{EGP(net)}</b><span>after promos, cashback, refusals</span></div>
         <div className="kpi"><small>WhatsApp confirm rate</small><b>{placed ? pct(confirmed.length / placed) : '—'}</b><span>target above 85%</span></div>
         <div className="kpi"><small>Delivery success</small><b>{delivered.length + refused.length ? pct(delivered.length / (delivered.length + refused.length)) : '—'}</b><span>{delivered.length} delivered · {refused.length} refused</span></div>
-        <div className="kpi"><small>Wallet credit owed</small><b>{EGP(totalOwed(niche ?? undefined))}</b><span>customers can still spend this</span></div>
+        <div className="kpi"><small>Wallet credit owed</small><b>{EGP(owed)}</b><span>customers can still spend this</span></div>
         <div className="kpi"><small>Average order</small><b>{live.length ? EGP(gmv / live.length) : '—'}</b><span>bundles push this up</span></div>
       </div>
       <div className="cols">
@@ -76,7 +76,7 @@ export default async function Overview({ searchParams }: { searchParams: Promise
                 <td><span className={`pill ${c.status === 'live' ? 'ok' : 'mute'}`}>{c.status}</span></td>
                 <td className="r">{SELLERS.filter((s) => s.niche === c.id && ['active', 'warning'].includes(s.status)).length}</td>
                 <td className="r">{PRODUCTS.filter((p) => p.niche === c.id && (p.status ?? 'live') === 'live').length}</td>
-                <td className="r">{allOrders().filter((o) => o.niche === c.id).length}</td>
+                <td className="r">{all.filter((o) => o.niche === c.id).length}</td>
               </tr>
             ))}</tbody>
           </table></div>

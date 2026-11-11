@@ -76,6 +76,10 @@ h1, h2, h3 { margin: 0; line-height: 1.3; text-wrap: balance; }
 .card { border: 1px solid var(--line); border-radius: 14px; padding: 8px; display: grid; gap: 3px; background: var(--surface); }
 .pimg { background: var(--base); border-radius: 10px; aspect-ratio: 1; display: grid; place-items: center; }
 .pimg svg { width: 64%; height: 64%; }
+.pimg, .big { overflow: hidden; }
+.photo { width: 100%; height: 100%; object-fit: cover; display: block; }
+.gallery { display: grid; grid-auto-flow: column; grid-auto-columns: 100%; overflow-x: auto; scroll-snap-type: x mandatory; gap: 8px; border-radius: 16px; }
+.gallery img { width: 100%; aspect-ratio: 1 / 1.1; object-fit: cover; scroll-snap-align: center; border-radius: 16px; background: var(--base); }
 .pname { font-weight: 600; font-size: 13px; line-height: 1.35; }
 .pby, .pmeta { font-size: 11.5px; color: var(--muted); }
 .pprice { font-weight: 700; color: var(--primary); }

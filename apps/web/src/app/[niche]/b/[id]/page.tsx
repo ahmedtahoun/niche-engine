@@ -22,7 +22,7 @@ export default async function BundlePage({ params }: { params: Promise<{ niche: 
       <div style={{ display: 'grid', gap: 8 }}>
         {bv.parts.map((pt) => (
           <Link key={pt.product.slug} href={`/${niche}/p/${pt.product.slug}`} className="line">
-            <div className="pimg"><Art kind={pt.product.art} color={pt.product.color} /></div>
+            <div className="pimg"><Art kind={pt.product.art} color={pt.product.color} image={pt.product.images?.[0]} alt={pt.product.nameAr} /></div>
             <div><b className="small">{pt.product.nameAr}{pt.qty > 1 ? ` × ${pt.qty}` : ''}</b><div className="pby">من {cat.sellerOf(pt.product).name}</div></div>
             <span className="num small">{egp(pt.product.price * pt.qty)}</span>
           </Link>

@@ -11,7 +11,9 @@ const SHAPES: Record<Exclude<ArtKind, 'kit'>, string> = {
   tool: 'M18 22 L82 22 L60 62 L40 62 Z M42 66 L58 66 L58 72 L42 72 Z M30 78 L70 78 L70 84 L30 84 Z',
 };
 
-export function Art({ kind, color, kitColors }: { kind: ArtKind; color: string; kitColors?: string[] }) {
+export function Art({ kind, color, kitColors, image, alt = '' }: { kind: ArtKind; color: string; kitColors?: string[]; image?: string; alt?: string }) {
+  // eslint-disable-next-line @next/next/no-img-element
+  if (image) return <img className="photo" src={image} alt={alt} loading="lazy" decoding="async" />;
   if (kind === 'kit') {
     const [a = '#D8C6A6', b = '#2A2D30', c = '#CBBDA5'] = kitColors ?? [];
     return (

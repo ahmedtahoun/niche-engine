@@ -15,8 +15,6 @@ const PLAN: { niche: string; cart: CartLine[]; status: OrderStatus; name: string
   { niche: 'umrah', cart: [{ kind: 'item', slug: 'cotton-ihram-2pc', variant: 'L', qty: 1 }], status: 'confirmed', name: 'أم يوسف', phone: '01511110004', gov: 'أسيوط', type: 'new', hoursAgo: 5 },
   { niche: 'umrah', cart: [{ kind: 'item', slug: 'chiffon-hijab-sand', variant: 'مقاس واحد', qty: 2 }], status: 'refused', name: 'شيماء', phone: '01011110005', gov: 'طنطا', type: 'new', hoursAgo: 50 },
   { niche: 'umrah', cart: [{ kind: 'item', slug: 'crepe-umrah-abaya-beige', variant: '1', qty: 1 }], status: 'awaiting_confirm', name: 'ريم', phone: '01011110006', gov: 'القاهرة', type: 'new', hoursAgo: 1 },
-  { niche: 'coffee', cart: [{ kind: 'bundle', id: 'discovery_box', variant: 'مطحون فلتر', qty: 1 }], status: 'delivered', name: 'كريم', phone: '01011110007', gov: 'القاهرة', type: 'new', hoursAgo: 26 },
-  { niche: 'coffee', cart: [{ kind: 'item', slug: 'brazil-espresso-blend-250g', variant: 'مطحون اسبريسو', qty: 2 }], status: 'accepted', name: 'عمر', phone: '01211110008', gov: 'الإسكندرية', type: 'repeat', hoursAgo: 8 },
 ];
 
 export async function seedDemoOrders() {

@@ -7,8 +7,8 @@ import { catalog } from '@/lib/catalog';
 import { egp } from '@/lib/eta';
 import { getNiche } from '@/lib/niches';
 
-const HERO_EYEBROW: Record<string, string> = { umrah: 'موسم عمرة رمضان 2027', coffee: 'كل شهر 3 محامص جديدة' };
-const SECTION: Record<string, string> = { umrah: 'الأكثر طلباً قبل رمضان', coffee: 'الأكثر طلباً الأسبوع ده' };
+const HERO_EYEBROW: Record<string, string> = { umrah: 'موسم عمرة رمضان 2027' };
+const SECTION: Record<string, string> = { umrah: 'الأكثر طلباً قبل رمضان' };
 
 export default async function Home({ params }: { params: Promise<{ niche: string }> }) {
   const cfg = getNiche((await params).niche);

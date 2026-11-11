@@ -18,11 +18,13 @@ const revision = (() => {
 export async function GET() {
   const s = store();
   const dbUp = await s.ping();
+  const missing = dbUp ? await s.missingMigrations() : [];
   return NextResponse.json({
     ok: dbUp,
     revision,
     niches: Object.keys(allNiches()),
     database: s.kind === 'supabase' ? (dbUp ? 'supabase' : 'supabase_unreachable') : 'demo',
+    migrations: missing.length ? `run in Supabase: ${missing.join(', ')}` : 'ok',
     telegram: Boolean(process.env.TELEGRAM_BOT_TOKEN),
     bosta: Boolean(process.env.BOSTA_API_KEY),
   }, { status: dbUp ? 200 : 503, headers: { 'Cache-Control': 'no-store' } });

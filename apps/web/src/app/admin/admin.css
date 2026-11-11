@@ -18,7 +18,7 @@
 .adm-main { padding: 22px max(20px, env(safe-area-inset-right, 0px)) 40px max(20px, env(safe-area-inset-left, 0px)); display: grid; gap: 18px; align-content: start; min-width: 0; }
 .adm h1 { font-size: 22px; margin: 0; font-family: inherit; }
 .adm .sub { color: var(--a-muted); margin: 2px 0 0; font-size: 13px; }
-.adm-top { display: flex; justify-content: space-between; align-items: end; gap: 12px; flex-wrap: wrap; }
+.adm-top { display: flex; justify-content: space-between; align-items: flex-end; gap: 12px; flex-wrap: wrap; }
 .adm-tabs { display: flex; gap: 6px; flex-wrap: wrap; }
 .adm-tabs a { border: 1px solid var(--a-line); background: var(--a-surface); border-radius: 999px; padding: 6px 13px; font-size: 13px; font-weight: 600; }
 .adm-tabs a[aria-current="true"] { background: var(--a-ink); color: var(--a-bg); border-color: var(--a-ink); }
@@ -41,6 +41,10 @@
 .pill { display: inline-flex; align-items: center; gap: 5px; border-radius: 999px; padding: 2px 9px; font-size: 12px; font-weight: 600; white-space: nowrap; }
 .pill::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
 .pill.ok { background: var(--a-ok-soft); color: var(--a-ok); } .pill.warn { background: var(--a-warn-soft); color: var(--a-warn); }
+.thumbs { display: flex; gap: 6px; flex-wrap: wrap; margin: 4px 0; }
+.thumbs img { width: 84px; height: 84px; object-fit: cover; border-radius: 8px; border: 1px solid var(--a-line); }
+.thumb { width: 40px; height: 40px; object-fit: cover; border-radius: 6px; flex: none; }
+.thumb.none { display: grid; place-items: center; font-size: 9px; color: var(--a-muted); border: 1px dashed var(--a-line); }
 .pill.bad { background: var(--a-bad-soft); color: var(--a-bad); } .pill.info { background: var(--a-info-soft); color: var(--a-info); }
 .pill.mute { background: var(--a-bg); color: var(--a-muted); }
 .acts { display: flex; gap: 6px; flex-wrap: wrap; }

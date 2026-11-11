@@ -50,7 +50,7 @@ export default async function OrderPage({ params }: { params: Promise<{ niche: s
       <div style={{ display: 'grid', gap: 8 }}>
         {o.quote.lines.map((l) => (
           <div className="line" key={l.key}>
-            <div className="pimg">{l.isBundle ? <BundleArt parts={l.parts ?? []} /> : <Art kind={l.art} color={l.color} />}</div>
+            <div className="pimg">{l.isBundle ? <BundleArt parts={l.parts ?? []} /> : <Art kind={l.art} color={l.color} image={l.image} />}</div>
             <div><b className="small">{l.title}{l.qty > 1 ? ` × ${l.qty}` : ''}</b><div className="pby">{l.by}</div></div>
             <span className="num small">{Math.round(l.amount).toLocaleString('en-US')} ج</span>
           </div>

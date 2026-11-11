@@ -1,8 +1,8 @@
 // Maps each domain to its niche: sakinaeg.com/p/x → /umrah/p/x internally.
-// On localhost, open /umrah or /coffee directly; "/" falls back to DEFAULT_NICHE.
+// On localhost, open /umrah directly; "/" falls back to DEFAULT_NICHE.
 import { NextResponse, type NextRequest } from 'next/server';
 
-const NICHE_IDS = (process.env.NICHE_IDS ?? 'umrah,coffee').split(',');
+const NICHE_IDS = (process.env.NICHE_IDS ?? 'umrah').split(',');
 const DOMAINS = Object.fromEntries(
   (process.env.NICHE_DOMAINS ?? '').split(',').filter(Boolean).map((pair) => pair.split('=') as [string, string]),
 );

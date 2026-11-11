@@ -53,7 +53,7 @@ export function CartView({ niche, depositAbove, deposit, cashback }: { niche: st
       <div style={{ display: 'grid', gap: 8 }}>
         {(q?.lines ?? []).map((l, i) => (
           <div className="line" key={l.key}>
-            <div className="pimg">{l.isBundle ? <BundleArt parts={l.parts ?? []} /> : <Art kind={l.art} color={l.color} />}</div>
+            <div className="pimg">{l.isBundle ? <BundleArt parts={l.parts ?? []} /> : <Art kind={l.art} color={l.color} image={l.image} />}</div>
             <div><b className="small">{l.title}</b><div className="pby">{l.by}</div></div>
             <div style={{ display: 'grid', gap: 4, justifyItems: 'end' }}>
               <span className="num small">{egp(l.amount)}</span>

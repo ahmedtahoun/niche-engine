@@ -106,7 +106,7 @@ export class Catalog {
         if (variant.stock < qty) problems.push(`low_stock:${line.slug}:${variant.label}`);
         coreLines.push({ sellerId: p.sellerId, unitPrice: p.price, qty });
         items.push({ sellerId: p.sellerId, productId: p.id, name: p.nameAr, variant: line.variant, qty, unitPrice: p.price });
-        priced.push({ key: `${i}`, title: `${p.nameAr} · ${line.variant}`, by: this.sellerOf(p).name, art: p.art, color: p.color, qty, amount: p.price * qty, isBundle: false });
+        priced.push({ key: `${i}`, title: `${p.nameAr} · ${line.variant}`, by: this.sellerOf(p).name, art: p.art, color: p.color, qty, amount: p.price * qty, isBundle: false, ...(p.images?.[0] ? { image: p.images[0] } : {}) });
       } else {
         const bv = this.bundleView(cfg, line.id);
         if (!bv) return void problems.push(`bundle_unavailable:${line.id}`);

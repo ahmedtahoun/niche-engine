@@ -8,6 +8,8 @@ export interface Incoming {
   data?: string;
   /** Number of photos sent in this message. */
   photos?: number;
+  /** Telegram file ids of those photos (largest size of each). */
+  photoIds?: string[];
 }
 
 export interface Button {

@@ -128,4 +128,5 @@ export class MemoryStore implements Store {
   // ---------- operations ----------
   async syncNiches() {}
   async ping() { return true; }
+  async missingMigrations() { return []; }
 }

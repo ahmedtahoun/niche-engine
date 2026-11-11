@@ -80,4 +80,6 @@ export interface Store {
   syncNiches(rows: { id: string; status: string; config: unknown }[]): Promise<void>;
   /** True if the database answers. */
   ping(): Promise<boolean>;
+  /** Migration files that still need to be run (empty when the schema is current). */
+  missingMigrations(): Promise<string[]>;
 }

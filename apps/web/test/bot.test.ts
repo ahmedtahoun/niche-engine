@@ -17,18 +17,18 @@ const sellerByChat = async (chat: number) => (await catalog()).sellerByChat(chat
 
 freshStore();
 
-test('a new seller applies in 9 steps and is approved', async () => {
+test('a new seller applies (one niche, so no niche question) and is approved', async () => {
   const chat = 7777;
   assert.match(last(await say(chat, '/start')).text, /ابدأ التقديم|5 دقايق/);
-  assert.match(last(await tap(chat, 'ap:start')).text, /بتبيع إيه/);
-  await tap(chat, 'ap:v:umrah');
+  assert.match(last(await tap(chat, 'ap:start')).text, /اسم المتجر/, 'with one niche the bot starts at the store name');
   await say(chat, 'نور للخمارات');
   assert.match(last(await say(chat, 'not a handle!!')).text, /instagram|الإنستجرام/i, 'bad handle is asked again');
   await say(chat, '@nour.khimar');
   await tap(chat, 'ap:v:القاهرة');
   await say(chat, 'المعادي');
   assert.match(last(await say(chat, 'مفيش صور')).text, /صور/);
-  await handle({ chatId: chat, photos: 3 });
+  await handle({ chatId: chat, photos: 1 });
+  assert.deepEqual(await handle({ chatId: chat, photos: 1 }), [], 'the rest of an album is ignored quietly');
   await tap(chat, 'ap:v:10-25');
   assert.match(last(await say(chat, '0123')).text, /11 رقم|إنستاباي/);
   assert.match(last(await say(chat, '01011112222')).text, /الاتفاق/);
@@ -54,7 +54,6 @@ test('the flow survives a restart: its step is stored, not kept in memory', asyn
 test('every bundle part maps to a real product and size', async () => {
   const cat = await catalog();
   assert.deepEqual(cat.bundleProblems(umrah), []);
-  assert.deepEqual(cat.bundleProblems(getNiche('coffee')!), []);
 });
 
 test('a menu button leaves an unfinished wizard', async () => {
@@ -119,7 +118,9 @@ test('a seller adds a product that waits for review, then goes live', async () =
   const chat = 1001;
   assert.match(last(await say(chat, '➕ منتج جديد')).text, /أنهي قسم/);
   await tap(chat, 'ad:v:abaya');
-  await handle({ chatId: chat, photos: 3 });
+  await handle({ chatId: chat, photos: 1, photoIds: ['tg-photo-1'] });
+  assert.deepEqual(await handle({ chatId: chat, photos: 1, photoIds: ['tg-photo-2'] }), [], 'album photos are collected quietly');
+  assert.deepEqual((await store().getBotSession<{ photoIds: string[] }>(chat))?.photoIds, ['tg-photo-1', 'tg-photo-2']);
   await say(chat, 'عباية كتان — زيتي');
   assert.ok((await say(chat, 'غالي')).some((m) => /رقم/.test(m.text)), 'non-numeric price is refused');
   await say(chat, '750');

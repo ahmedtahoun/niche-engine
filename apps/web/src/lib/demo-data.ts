@@ -8,9 +8,6 @@ export const SELLERS: Seller[] = [
   { id: 's2', telegramChatId: 1002, niche: 'umrah', name: 'نقاب الهدى', area: 'المنصورة', rating: 4.6, status: 'active' },
   { id: 's3', telegramChatId: 1003, niche: 'umrah', name: 'استوديو طرحة', area: 'الإسكندرية', rating: 4.9, status: 'active' },
   { id: 's4', telegramChatId: 1004, niche: 'umrah', name: 'إحرام مكة', area: 'الجيزة', rating: 4.2, status: 'warning' },
-  { id: 'c1', telegramChatId: 2001, niche: 'coffee', name: 'محمصة الصباح', area: 'المعادي، القاهرة', rating: 4.9, status: 'active' },
-  { id: 'c2', telegramChatId: 2002, niche: 'coffee', name: 'بن الجبل', area: 'الإسكندرية', rating: 4.7, status: 'active' },
-  { id: 'c3', telegramChatId: 2003, niche: 'coffee', name: 'محمصة ٣٠٠ درجة', area: 'الشيخ زايد', rating: 4.8, status: 'active' },
 ];
 
 const ABAYA_FAQ: [string, string][] = [
@@ -54,29 +51,4 @@ export const PRODUCTS: Product[] = [
     attributes: { 'القماش': 'قطن فوطة', 'المقاس': '2 × 110 × 220 سم' }, variants: v({ M: 8, L: 4 }), views: 640,
     reviews: [{ name: 'أم يوسف', tags: ['L', 'مظبوط'], text: 'القطن تقيل وبيشرب العرق.' }], faq: [] },
 
-  // ---------- Coffee ----------
-  { id: 'k1', niche: 'coffee', slug: 'ethiopia-yirgacheffe-250g', sellerId: 'c1', category: 'beans', art: 'bag', color: '#C9874B',
-    nameAr: 'بن إثيوبي يرجاتشيفي — 250 جم', leadAr: 'تحميص فاتح بنكهة زهور وليمون، ممتاز للفلتر وV60.', price: 420,
-    attributes: { 'المنشأ': 'إثيوبيا', 'درجة التحميص': 'فاتح', 'تاريخ التحميص': '2026-11-06', 'المعالجة': 'مغسول', 'الوزن': '250 جم', 'النكهات': 'زهور، ليمون، شاي' }, variants: GRINDS(12), views: 1530,
-    reviews: [{ name: 'كريم', tags: ['V60', 'فاكهي'], text: 'أحلى فلتر جربته في مصر.' }], faq: COFFEE_FAQ },
-  { id: 'k2', niche: 'coffee', slug: 'colombia-huila-250g', sellerId: 'c2', category: 'beans', art: 'bag', color: '#8A5A3B',
-    nameAr: 'بن كولومبي هويلا — 250 جم', leadAr: 'تحميص متوسط متوازن بنكهة كراميل وشوكولاتة، ينفع لكل طرق التحضير.', price: 380,
-    attributes: { 'المنشأ': 'كولومبيا', 'درجة التحميص': 'متوسط', 'تاريخ التحميص': '2026-11-04', 'المعالجة': 'مغسول', 'الوزن': '250 جم', 'النكهات': 'كراميل، شوكولاتة' }, variants: GRINDS(15), views: 1290,
-    reviews: [{ name: 'سلمى', tags: ['فرنش برس', 'متوازن'], text: 'طعمه ناعم ومفيهوش مرارة.' }], faq: COFFEE_FAQ },
-  { id: 'k3', niche: 'coffee', slug: 'kenya-aa-250g', sellerId: 'c3', category: 'beans', art: 'bag', color: '#A0603A',
-    nameAr: 'بن كيني AA — 250 جم', leadAr: 'حموضة واضحة ونكهة توت أسود، لعشاق القهوة الفاكهية.', price: 460,
-    attributes: { 'المنشأ': 'كينيا', 'درجة التحميص': 'فاتح متوسط', 'تاريخ التحميص': '2026-11-08', 'المعالجة': 'مغسول', 'الوزن': '250 جم', 'النكهات': 'توت أسود، جريب فروت' }, variants: GRINDS(8), views: 870,
-    reviews: [], faq: COFFEE_FAQ },
-  { id: 'k4', niche: 'coffee', slug: 'brazil-espresso-blend-250g', sellerId: 'c2', category: 'beans', art: 'bag', color: '#5B3A29',
-    nameAr: 'خلطة اسبريسو برازيلي — 250 جم', leadAr: 'تحميص غامق بكريمة تقيلة، مثالية للاسبريسو والكابتشينو.', price: 340,
-    attributes: { 'المنشأ': 'البرازيل', 'درجة التحميص': 'غامق', 'تاريخ التحميص': '2026-11-07', 'المعالجة': 'طبيعي', 'الوزن': '250 جم', 'النكهات': 'شوكولاتة داكنة، بندق' }, variants: GRINDS(20), views: 1980,
-    reviews: [{ name: 'عمر', tags: ['اسبريسو', 'كريمة'], text: 'الكريمة تقيلة جداً.' }], faq: COFFEE_FAQ },
-  { id: 'k5', niche: 'coffee', slug: 'turkish-blend-cardamom-250g', sellerId: 'c1', category: 'ground', art: 'bag', color: '#6B4A35',
-    nameAr: 'بن تركي محوج بالحبهان — 250 جم', leadAr: 'بن تركي مطحون ناعم مع حبهان طازة، للكنكة.', price: 220,
-    attributes: { 'المنشأ': 'خلطة', 'درجة التحميص': 'وسط غامق', 'تاريخ التحميص': '2026-11-09', 'المعالجة': '—', 'الوزن': '250 جم', 'النكهات': 'حبهان' }, variants: v({ 'مطحون تركي': 25 }), views: 2410,
-    reviews: [{ name: 'أمل', tags: ['كنكة', 'محوج'], text: 'ريحته بتملا البيت.' }], faq: COFFEE_FAQ },
-  { id: 'k6', niche: 'coffee', slug: 'v60-dripper-ceramic', sellerId: 'c3', category: 'tools', art: 'tool', color: '#E9E4DA',
-    nameAr: 'قمع V60 سيراميك', leadAr: 'قمع تقطير سيراميك مقاس 02 لكوب أو كوبين، بيحافظ على الحرارة.', price: 650,
-    attributes: { 'الخامة': 'سيراميك', 'المقاس': '02 (1–4 أكواب)' }, variants: v({ 'أبيض': 6 }), views: 540,
-    reviews: [], faq: [] },
 ];

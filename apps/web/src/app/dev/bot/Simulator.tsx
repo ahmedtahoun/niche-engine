@@ -80,7 +80,7 @@ export function Simulator({ chat, chats, log, pendingSellers, pendingProducts }:
           <div className="panel">
             <h2>Chats</h2>
             <div className="chats">{chats.map((c) => <Link key={c.id} href={`/dev/bot?chat=${c.id}`} aria-current={c.id === chat ? 'true' : undefined} dir="rtl">{c.label}</Link>)}</div>
-            <p style={{ margin: 0, fontSize: 13, color: '#5c6862' }}>Place and confirm an order on the storefront (/umrah or /coffee): the sellers in it get the order here. 📷 sends 3 demo photos.</p>
+            <p style={{ margin: 0, fontSize: 13, color: '#5c6862' }}>Place and confirm an order on the storefront (/umrah): the sellers in it get the order here. 📷 sends 3 demo photos.</p>
           </div>
           <div className="panel">
             <h2>Admin stand-in (until the admin panel exists)</h2>

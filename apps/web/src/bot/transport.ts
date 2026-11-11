@@ -27,7 +27,9 @@ export function recordIncoming(m: Incoming, label?: string) {
 export async function deliver(outs: Outgoing[]) {
   for (const o of outs) {
     push(o.chatId, { from: 'bot', text: o.text, buttons: o.buttons, keyboard: o.keyboard, file: o.file ? { name: o.file.name } : undefined, at: new Date().toISOString() });
-    if (process.env.TELEGRAM_BOT_TOKEN && !isDemoChat(o.chatId)) await sendTelegram(o);
+    // A failed message is logged, never thrown: the change that caused it (an
+    // approval, an order) is already saved and must not show as an error.
+    if (process.env.TELEGRAM_BOT_TOKEN && !isDemoChat(o.chatId)) await sendTelegram(o).catch((e) => console.error('[telegram] send failed', o.chatId, e));
   }
 }
 
@@ -41,16 +43,16 @@ async function sendTelegram(o: Outgoing) {
     form.set('chat_id', String(o.chatId));
     form.set('caption', o.text);
     form.set('document', new Blob([Buffer.from(o.file.base64, 'base64')], { type: 'application/pdf' }), o.file.name);
-    const r = await fetch(`${base}/sendDocument`, { method: 'POST', body: form });
+    const r = await fetch(`${base}/sendDocument`, { method: 'POST', body: form, signal: AbortSignal.timeout(20_000) });
     if (!r.ok) console.error('telegram sendDocument failed', r.status, await r.text());
     return;
   }
   const text = o.file ? `${o.text}: ${o.file.name}` : o.text;
-  const res = await fetch(`${base}/sendMessage`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ chat_id: o.chatId, text, reply_markup }) });
+  const res = await fetch(`${base}/sendMessage`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ chat_id: o.chatId, text, reply_markup }), signal: AbortSignal.timeout(10_000) });
   if (!res.ok) console.error('telegram sendMessage failed', res.status, await res.text());
 }
 
 export async function answerCallback(id: string) {
   if (!process.env.TELEGRAM_BOT_TOKEN) return;
-  await fetch(`https://api.telegram.org/bot${process.env.TELEGRAM_BOT_TOKEN?.trim()}/answerCallbackQuery`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ callback_query_id: id }) });
+  await fetch(`https://api.telegram.org/bot${process.env.TELEGRAM_BOT_TOKEN?.trim()}/answerCallbackQuery`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ callback_query_id: id }) }).catch((e) => console.error('[telegram] answerCallback failed', e));
 }

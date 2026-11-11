@@ -1,7 +1,7 @@
 # niche-engine
 
 One marketplace engine, many niche brands, built for Egypt.
-First niche: **Sakina** (Umrah and modest wear). Next: **Bunn** (specialty coffee).
+Niche: **Sakina** (Umrah and modest wear) at sakinaeg.com. Other niches get their own launch later.
 
 - **Customers** order on the niche website (Arabic, phone + password account created at checkout). Bosta's SMS confirms the shipment.
 - **Sellers** run everything from a Telegram bot: apply, add products, accept orders, get paid.
@@ -12,7 +12,7 @@ First niche: **Sakina** (Umrah and modest wear). Next: **Bunn** (specialty coffe
 
 | Path | What it is | Status |
 |---|---|---|
-| `niches/*.json` | One settings file per niche: brand, categories, required attributes, commission, reserve, deposit, wallet, search synonyms, hero bundles, promos | Umrah + Coffee drafted |
+| `niches/*.json` | One settings file per niche: brand, categories, required attributes, commission, reserve, deposit, wallet, search synonyms, hero bundles, promos | Umrah |
 | `packages/core` | Shared rules: niche validation, cart totals, promos, commission tiers, payouts and reserve, Arabic search, phone validation | Done, tested |
 | `supabase/migrations` | Postgres schema for all niches. `0002` makes the database the only source of truth: order numbers, version checks, wallet transactions, one cashback/refund/spend/payout per order or cycle | Apply 0001 then 0002 |
 | `apps/web/src/lib/store` | Storage layer: `SupabaseStore` (production; every request reads/writes the database, so restarts and several processes are safe) and `MemoryStore` (local demo + tests, same rules) | Done, tested against real Postgres (PGlite) |
@@ -38,7 +38,7 @@ npm test
 npm run check:niches
 ```
 
-Storefront (open http://localhost:3100/umrah or /coffee):
+Storefront (open http://localhost:3100/umrah):
 
 ```bash
 npm run dev --workspace @niche-engine/web

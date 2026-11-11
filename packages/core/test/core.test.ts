@@ -10,11 +10,9 @@ import {
 
 const load = (id: string) => JSON.parse(readFileSync(join(import.meta.dirname, '..', '..', '..', 'niches', `${id}.json`), 'utf8')) as NicheConfig;
 const umrah = load('umrah');
-const coffee = load('coffee');
 
-test('both niche configs are valid', () => {
+test('the niche config is valid', () => {
   assert.deepEqual(validateNiche(umrah), []);
-  assert.deepEqual(validateNiche(coffee), []);
 });
 
 test('validation rejects commission that makes poaching profitable', () => {
@@ -94,11 +92,7 @@ test('Arabic search normalizes letters and maps synonyms', () => {
   const terms = searchTerms('اسدال', umrah.searchSynonyms);
   assert.deepEqual(terms, ['عبايه']);
   assert.ok(matches('عباية عمرة كريب — بيج', terms));
-  assert.ok(matches('بن إثيوبي محمص فاتح', searchTerms('قهوة', coffee.searchSynonyms)));
   assert.ok(!matches('طرحة شيفون', searchTerms('نقاب', umrah.searchSynonyms)));
-  // Coffee synonyms must land on words the Arabic catalog actually uses.
-  assert.ok(matches('خلطة اسبريسو برازيلي', searchTerms('اسبرسو', coffee.searchSynonyms)));
-  assert.ok(matches('بن إثيوبي يرجاتشيفي', searchTerms('قهوة ethiopia', coffee.searchSynonyms)));
 });
 
 test('Egyptian phone numbers', () => {

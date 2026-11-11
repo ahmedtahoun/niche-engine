@@ -40,6 +40,14 @@ test('catalog: sellers and products come back from Postgres unchanged', async ()
   assert.deepEqual({ ...cat.productById(p.id)!, priceConfirmedAt: undefined }, { ...p, priceConfirmedAt: undefined, status: p.status ?? 'live' });
 });
 
+test('catalog: product photos are saved and read back', async () => {
+  const p = { ...PRODUCTS[0], id: 'withphotos', slug: 'with-photos', images: ['https://x/1.jpg', 'https://x/2.jpg'] };
+  await s.saveProduct(p);
+  invalidateCatalog();
+  assert.deepEqual((await catalog()).productById('withphotos')?.images, p.images);
+  assert.deepEqual(await s.missingMigrations(), [], 'all migrations applied');
+});
+
 test('orders: the database numbers them from 1001 and keeps the delivery details', async () => {
   const o = await makeOrder();
   assert.ok(o.id >= 1001);

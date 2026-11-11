@@ -15,7 +15,7 @@ export async function generateMetadata({ params }: P): Promise<Metadata> {
   return cfg ? { title: { default: cfg.brand.nameAr, template: `%s · ${cfg.brand.nameAr}` } } : {};
 }
 
-const TAGLINE: Record<string, string> = { umrah: 'لبس العمرة والمحجبات', coffee: 'قهوة مختصة من محامص مصر' };
+const TAGLINE: Record<string, string> = { umrah: 'لبس العمرة والمحجبات' };
 
 export default async function NicheLayout({ children, params }: P & { children: React.ReactNode }) {
   const cfg = getNiche((await params).niche);

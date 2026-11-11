@@ -10,6 +10,7 @@ import { GOVERNORATES } from '../lib/eta.ts';
 import { allNiches, getNiche } from '../lib/niches.ts';
 import { queueShipment } from '../lib/fulfillment.ts';
 import { applySellerPart, itemsOfSeller, mutateOrder, type Order } from '../lib/orders.ts';
+import { storeProductPhotos } from '../lib/photos.ts';
 import { store } from '../lib/store/index.ts';
 import type { Product, Seller } from '../lib/types.ts';
 import type { Button, Incoming, Outgoing } from './types.ts';
@@ -38,7 +39,7 @@ const VARIANT_PRESETS: Record<string, [string, string[]][]> = {
 // ---------- sessions (wizard state per chat) ----------
 type Session =
   | { flow: 'apply'; step: number; data: Record<string, string> }
-  | { flow: 'add'; step: number; niche: string; data: Record<string, string>; variants: string[]; attrs: string[]; attrIndex: number; values: Record<string, string>; photos: number };
+  | { flow: 'add'; step: number; niche: string; data: Record<string, string>; variants: string[]; attrs: string[]; attrIndex: number; values: Record<string, string>; photos: number; photoIds?: string[] };
 /** Per-message context: the seller's flow state (saved after the reply if it changed) and the catalog. */
 interface Ctx { session: Session | null; cat: Catalog }
 
@@ -122,7 +123,9 @@ function applyIntro(chatId: number, ctx: Ctx, start = false): Outgoing[] {
   if (!start) {
     return [msg(chatId, 'أهلاً بيك 👋 ده بوت البائعين.\n• مش هتدفع أي حاجة غير لما تبيع\n• الطلبات بتوصلك هنا\n• فلوسك بتتحول كل خميس\n\nافتح متجرك في 5 دقايق.', [row(['🚀 ابدأ التقديم', 'ap:start'])])];
   }
-  const s: Session = { flow: 'apply', step: 0, data: {} };
+  const niches = Object.keys(allNiches());
+  // With one niche there is nothing to choose: start at the store name.
+  const s: Session = niches.length === 1 ? { flow: 'apply', step: 1, data: { niche: niches[0] } } : { flow: 'apply', step: 0, data: {} };
   ctx.session = s;
   return applyAsk(chatId, s);
 }
@@ -153,6 +156,8 @@ async function applyStep(m: Incoming, s: Extract<Session, { flow: 'apply' }>, ct
   const text = m.text?.trim() ?? '';
   const step = APPLY_STEPS[s.step];
   const retry = (why: string) => [msg(id, why), ...applyAsk(id, s)];
+  // The rest of a photo album arrives as separate messages: ignore them quietly.
+  if (m.photos && s.step > APPLY_STEPS.indexOf('photos')) return [];
   switch (step) {
     case 'niche': if (!choice || !getNiche(choice)) return retry('اختار من الأزرار.'); s.data.niche = choice; break;
     case 'store': if (text.length < 2) return retry('اكتب اسم المتجر.'); s.data.store = text.slice(0, 60); break;
@@ -193,7 +198,7 @@ export async function approveSeller(sellerId: string): Promise<Outgoing[]> {
 function startAdd(seller: Seller, ctx: Ctx): Outgoing[] {
   const cfg = getNiche(seller.niche)!;
   const attrs = cfg.attributes.required.filter((a) => !VARIANT_ATTRS.includes(a));
-  const s: Session = { flow: 'add', step: 0, niche: cfg.id, data: {}, variants: [], attrs, attrIndex: 0, values: {}, photos: 0 };
+  const s: Session = { flow: 'add', step: 0, niche: cfg.id, data: {}, variants: [], attrs, attrIndex: 0, values: {}, photos: 0, photoIds: [] };
   ctx.session = s;
   return [msg(seller.telegramChatId!, 'يلا 👌 المنتج ده في أنهي قسم؟', [cfg.categories.map((c) => ({ text: c.labelAr, data: `ad:v:${c.id}` }))])];
 }
@@ -215,7 +220,7 @@ function addAsk(chatId: number, s: Extract<Session, { flow: 'add' }>): Outgoing[
     }
     case 'preview': {
       const lines = s.attrs.map((k) => `• ${ATTR[k]?.label.split(' (')[0] ?? k}: ${s.values[k]}`).join('\n');
-      return [msg(chatId, `✨ جاهز للمراجعة:\n${s.data.name}\n💰 سعر العميل: ${egp(Number(s.data.price))}\n${shareText(cfg, Number(s.data.price))}\nالمتاح: ${s.variants.join('، ')} (${s.data.stock} من كل نوع)\n${lines}`, [row(['✅ ابعته للمراجعة', 'ad:publish'], ['❌ الغي', 'ad:cancel'])])];
+      return [msg(chatId, `✨ جاهز للمراجعة:\n${s.data.name}\n📷 ${s.photos} ${s.photos === 1 ? 'صورة' : 'صور'}\n💰 سعر العميل: ${egp(Number(s.data.price))}\n${shareText(cfg, Number(s.data.price))}\nالمتاح: ${s.variants.join('، ')} (${s.data.stock} من كل نوع)\n${lines}`, [row(['✅ ابعته للمراجعة', 'ad:publish'], ['❌ الغي', 'ad:cancel'])])];
     }
     default: return [];
   }
@@ -227,9 +232,16 @@ async function addStep(m: Incoming, seller: Seller, s: Extract<Session, { flow: 
   const text = m.text?.trim() ?? '';
   const retry = (why: string) => [msg(id, why), ...addAsk(id, s)];
   if (choice === 'cancel') { ctx.session = null; return [msg(id, 'تمام، لغيناه.', undefined, { keyboard: MENU })]; }
+  // Telegram sends an album as one message per photo: photos arriving after the
+  // photo step are added quietly (up to 5) instead of being read as answers.
+  if (m.photoIds?.length && s.step > ADD_STEPS.indexOf('photos')) {
+    s.photoIds = [...(s.photoIds ?? []), ...m.photoIds].slice(0, 5);
+    s.photos = s.photoIds.length;
+    return [];
+  }
   switch (ADD_STEPS[s.step]) {
     case 'category': if (!choice || !cfg.categories.some((c) => c.id === choice)) return [msg(id, 'اختار القسم من الأزرار.')]; s.data.category = choice; break;
-    case 'photos': if (!m.photos) return retry('محتاجين صور المنتج.'); s.photos = m.photos; break;
+    case 'photos': if (!m.photos) return retry('محتاجين صور المنتج.'); s.photoIds = (m.photoIds ?? []).slice(0, 5); s.photos = Math.max(m.photos, s.photoIds.length); break;
     case 'name': if (text.length < 4) return retry('الاسم قصير أوي.'); s.data.name = text.slice(0, 80); break;
     case 'price': { const p = Number(text.replace(/[^\d.]/g, '')); if (!(p >= 10 && p <= 100000)) return retry('اكتب السعر رقم بس، مثلاً: 850'); s.data.price = String(Math.round(p)); break; }
     case 'variants': {
@@ -263,6 +275,8 @@ async function addStep(m: Incoming, seller: Seller, s: Extract<Session, { flow: 
         price: Number(s.data.price), attributes, variants: s.variants.map((label) => ({ label, stock: Number(s.data.stock) })),
         status: 'review', priceConfirmedAt: new Date().toISOString(), views: 0, reviews: [], faq: [],
       };
+      const images = await storeProductPhotos(pid, s.photoIds ?? []);
+      if (images.length) product.images = images;
       await saveProduct(product);
       return [msg(id, `اتبعت للمراجعة ✅ فريق ${cfg.brand.nameAr} هيراجع الصور والسعر، وهنبلغك أول ما يتنشر.`, undefined, { keyboard: MENU })];
     }

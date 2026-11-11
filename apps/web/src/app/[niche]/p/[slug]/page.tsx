@@ -25,7 +25,7 @@ export default async function ProductPage({ params }: P) {
   const s = cat.sellerOf(p);
   const finder = p.category === 'abaya' ? 'size' : cfg.id === 'coffee' && p.variants.length > 1 ? 'grind' : null;
   const jsonLd = {
-    '@context': 'https://schema.org', '@type': 'Product', name: p.nameAr, description: p.leadAr,
+    '@context': 'https://schema.org', '@type': 'Product', name: p.nameAr, description: p.leadAr, ...(p.images?.length ? { image: p.images } : {}),
     brand: { '@type': 'Brand', name: s.name },
     additionalProperty: Object.entries(p.attributes).map(([name, value]) => ({ '@type': 'PropertyValue', name, value })),
     offers: {
@@ -40,7 +40,15 @@ export default async function ProductPage({ params }: P) {
   return (
     <main className="page">
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replace(/</g, '\\u003c') }} />
-      <div className="big"><Art kind={p.art} color={p.color} /></div>
+      {p.images?.length ? (
+        <>
+          <div className="gallery" aria-label="صور المنتج">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            {p.images.map((src, i) => <img key={src} src={src} alt={`${p.nameAr} · صورة ${i + 1}`} loading={i ? 'lazy' : 'eager'} decoding="async" />)}
+          </div>
+          {p.images.length > 1 && <span className="small muted" style={{ textAlign: 'center' }}>اسحبي لباقي الصور · {p.images.length} صور</span>}
+        </>
+      ) : <div className="big"><Art kind={p.art} color={p.color} /></div>}
       <div style={{ display: 'grid', gap: 6 }}>
         <h1 className="title">{p.nameAr}</h1>
         <div className="muted">من <b>{s.name}</b> · <span style={{ color: 'var(--ok)', fontWeight: 700 }}>✓ بائع موثّق</span> · ⭐ {s.rating}</div>

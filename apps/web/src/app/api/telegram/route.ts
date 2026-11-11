@@ -9,7 +9,7 @@ import { store } from '@/lib/store';
 
 interface TgUpdate {
   update_id?: number;
-  message?: { chat: { id: number }; text?: string; photo?: unknown[]; media_group_id?: string };
+  message?: { chat: { id: number }; text?: string; caption?: string; photo?: { file_id: string; width: number; height: number }[]; media_group_id?: string };
   callback_query?: { id: string; data?: string; message?: { chat: { id: number } } };
 }
 
@@ -28,7 +28,9 @@ export async function POST(req: Request) {
     m = { chatId: u.callback_query.message.chat.id, data: u.callback_query.data };
     await answerCallback(u.callback_query.id);
   } else if (u.message) {
-    m = { chatId: u.message.chat.id, text: u.message.text, photos: u.message.photo ? 1 : undefined };
+    // Telegram sends each photo in several sizes: keep the largest.
+    const best = u.message.photo?.reduce((a, b) => (b.width * b.height > a.width * a.height ? b : a));
+    m = { chatId: u.message.chat.id, text: u.message.text, ...(best ? { photos: 1, photoIds: [best.file_id] } : {}) };
   }
   if (m) {
     recordIncoming(m);

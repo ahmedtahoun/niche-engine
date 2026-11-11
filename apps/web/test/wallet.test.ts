@@ -26,7 +26,7 @@ test('4% cashback on delivered goods after discounts, once per order', async () 
   assert.equal((await walletOf('01010000001', 'umrah')).balance, 59);
   assert.equal(await grantCashback(o), null, 'no double cashback');
   assert.equal((await walletOf('01010000001', 'umrah')).balance, 59);
-  assert.equal((await walletOf('01010000001', 'coffee')).balance, 0, 'wallets are per niche');
+  assert.equal((await walletOf('01010000001', 'other-niche')).balance, 0, 'wallets are per niche');
 });
 
 test('credit expires after the niche window (30 days for Umrah)', async () => {

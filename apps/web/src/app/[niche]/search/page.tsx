@@ -8,7 +8,6 @@ export const metadata = { title: 'بحث' };
 
 const POPULAR: Record<string, string[]> = {
   umrah: ['عباية عمرة', 'نقاب بالخمار', 'طرحة شيفون', 'إحرام رجالي'],
-  coffee: ['بن إثيوبي', 'اسبريسو', 'بن تركي', 'V60'],
 };
 const SORTS: [SortKey, string][] = [['best', 'الأكثر طلباً'], ['low', 'الأقل سعراً'], ['high', 'الأعلى سعراً'], ['rating', 'الأعلى تقييماً']];
 const BANDS: [PriceBand, string][] = [['lt300', 'أقل من 300'], ['mid', '300–900'], ['gt900', 'فوق 900']];

@@ -38,6 +38,8 @@ export interface Product {
   priceConfirmedAt?: string;
   views: number;
   reviews: { name: string; tags: string[]; text: string }[];
+  /** Photo addresses (Supabase Storage). Without photos the page shows a drawing. */
+  images?: string[];
   faq: [string, string][];
 }
 
@@ -55,6 +57,8 @@ export interface PricedLine {
   qty: number;
   amount: number;
   isBundle: boolean;
+  /** First product photo, if any. */
+  image?: string;
   parts?: { art: ArtKind; color: string }[];
 }
 

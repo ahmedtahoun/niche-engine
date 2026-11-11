@@ -1,0 +1,22 @@
+{
+  "/_not-found/page": "app/_not-found/page.js",
+  "/api/bosta/route": "app/api/bosta/route.js",
+  "/api/telegram/route": "app/api/telegram/route.js",
+  "/robots.txt/route": "app/robots.txt/route.js",
+  "/api/health/route": "app/api/health/route.js",
+  "/admin/login/page": "app/admin/login/page.js",
+  "/dev/bot/page": "app/dev/bot/page.js",
+  "/[niche]/b/[id]/page": "app/[niche]/b/[id]/page.js",
+  "/[niche]/p/[slug]/page": "app/[niche]/p/[slug]/page.js",
+  "/[niche]/page": "app/[niche]/page.js",
+  "/[niche]/cart/page": "app/[niche]/cart/page.js",
+  "/[niche]/account/page": "app/[niche]/account/page.js",
+  "/[niche]/checkout/page": "app/[niche]/checkout/page.js",
+  "/[niche]/order/[id]/page": "app/[niche]/order/[id]/page.js",
+  "/[niche]/search/page": "app/[niche]/search/page.js",
+  "/admin/(panel)/orders/page": "app/admin/(panel)/orders/page.js",
+  "/admin/(panel)/payouts/page": "app/admin/(panel)/payouts/page.js",
+  "/admin/(panel)/products/page": "app/admin/(panel)/products/page.js",
+  "/admin/(panel)/page": "app/admin/(panel)/page.js",
+  "/admin/(panel)/sellers/page": "app/admin/(panel)/sellers/page.js"
+}

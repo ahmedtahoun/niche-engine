@@ -1,0 +1,17 @@
+User-Agent: *
+Allow: /
+Disallow: /admin
+Disallow: /dev
+Disallow: /api
+Disallow: /cart
+Disallow: /checkout
+Disallow: /account
+Disallow: /order
+
+User-Agent: OAI-SearchBot
+User-Agent: PerplexityBot
+Allow: /
+Disallow: /admin
+Disallow: /dev
+Disallow: /api
+

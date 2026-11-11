@@ -37,7 +37,9 @@ async function sendTelegram(o: Outgoing) {
   const base = `https://api.telegram.org/bot${process.env.TELEGRAM_BOT_TOKEN?.trim()}`;
   const reply_markup = o.buttons
     ? { inline_keyboard: o.buttons.map((r) => r.map((b) => ({ text: b.text, callback_data: b.data }))) }
-    : o.keyboard ? { keyboard: o.keyboard.map((r) => r.map((text) => ({ text }))), resize_keyboard: true, is_persistent: true } : undefined;
+    : o.askContact ? { keyboard: [[{ text: o.askContact, request_contact: true }]], resize_keyboard: true, one_time_keyboard: true }
+    : o.keyboard ? { keyboard: o.keyboard.map((r) => r.map((text) => ({ text }))), resize_keyboard: true, is_persistent: true }
+    : o.removeKeyboard ? { remove_keyboard: true } : undefined;
   if (o.file?.base64) {
     const form = new FormData();
     form.set('chat_id', String(o.chatId));

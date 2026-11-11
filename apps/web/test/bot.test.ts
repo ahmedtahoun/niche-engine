@@ -17,25 +17,39 @@ const sellerByChat = async (chat: number) => (await catalog()).sellerByChat(chat
 
 freshStore();
 
-test('a new seller applies (one niche, so no niche question) and is approved', async () => {
+test('a new seller applies with owner, contact, logo and pickup address, and is approved', async () => {
   const chat = 7777;
   assert.match(last(await say(chat, '/start')).text, /ابدأ التقديم|5 دقايق/);
-  assert.match(last(await tap(chat, 'ap:start')).text, /اسم المتجر/, 'with one niche the bot starts at the store name');
-  await say(chat, 'نور للخمارات');
-  assert.match(last(await say(chat, 'not a handle!!')).text, /instagram|الإنستجرام/i, 'bad handle is asked again');
-  await say(chat, '@nour.khimar');
-  await tap(chat, 'ap:v:القاهرة');
-  await say(chat, 'المعادي');
+  assert.match(last(await tap(chat, 'ap:start')).text, /1\/11 · اسم المتجر/, 'one niche: no niche question');
+  assert.match(last(await say(chat, 'نور للخمارات')).text, /اسمك/);
+  const phoneQ = last(await say(chat, 'نور'));
+  assert.match(phoneQ.text, /رقم موبايل/);
+  assert.equal(phoneQ.askContact, '📱 ابعت رقمي', 'one-tap share-number button');
+  const logoQ = last(await handle({ chatId: chat, contact: '201011112222' }));
+  assert.match(logoQ.text, /لوجو/);
+  assert.equal(logoQ.removeKeyboard, true, 'the share button goes away');
+  assert.match((await tap(chat, 'ap:v:capacity:10-25'))[0].text, /سؤال قديم/, 'a button from another question is refused');
+  assert.match(last(await tap(chat, 'ap:v:logo:skip')).text, /الإنستجرام/);
+  assert.match((await say(chat, 'not a handle!!'))[0].text, /اليوزر/, 'bad handle is asked again');
+  assert.match(last(await say(chat, 'https://www.instagram.com/nour.khimar/')).text, /محافظتك/);
+  assert.match(last(await tap(chat, 'ap:v:governorate:القاهرة')).text, /عنوان الاستلام/);
+  assert.match((await say(chat, 'المعادي'))[0].text, /بالتفصيل/, 'a short address is asked again');
+  await say(chat, 'المعادي، شارع 9، عمارة 12، الدور 3');
   assert.match(last(await say(chat, 'مفيش صور')).text, /صور/);
-  await handle({ chatId: chat, photos: 1 });
-  assert.deepEqual(await handle({ chatId: chat, photos: 1 }), [], 'the rest of an album is ignored quietly');
-  await tap(chat, 'ap:v:10-25');
-  assert.match(last(await say(chat, '0123')).text, /11 رقم|إنستاباي/);
-  assert.match(last(await say(chat, '01011112222')).text, /الاتفاق/);
-  assert.match(last(await tap(chat, 'ap:v:agree')).text, /للمراجعة/);
+  await handle({ chatId: chat, photos: 1, photoIds: ['s1'] });
+  assert.deepEqual(await handle({ chatId: chat, photos: 1, photoIds: ['s2'] }), [], 'the rest of an album is kept quietly');
+  const instapayQ = last(await tap(chat, 'ap:v:capacity:10-25'));
+  assert.ok(instapayQ.buttons?.flat().some((b) => b.data === 'ap:v:instapay:same'), 'offers the same number for InstaPay');
+  assert.match(last(await tap(chat, 'ap:v:instapay:same')).text, /الاتفاق/);
+  assert.match(last(await tap(chat, 'ap:v:agree:yes')).text, /للمراجعة/);
   const s = (await sellerByChat(chat))!;
   assert.equal(s.status, 'applied');
+  assert.equal(s.ownerName, 'نور');
+  assert.equal(s.contactPhone, '01011112222');
   assert.equal(s.instapay, '01011112222');
+  assert.equal(s.instagram, '@nour.khimar');
+  assert.equal(s.governorate, 'القاهرة');
+  assert.equal(s.pickupAddress, 'المعادي، شارع 9، عمارة 12، الدور 3');
   assert.equal(await store().getBotSession(chat), null, 'finished flow is cleared from the database');
   assert.match(last(await say(chat, 'أي حاجة')).text, /بيتراجع/);
   const welcome = await approveSeller(s.id);
@@ -43,10 +57,24 @@ test('a new seller applies (one niche, so no niche question) and is approved', a
   assert.ok(welcome[0].keyboard, 'approved seller gets the menu');
 });
 
+test('one-size product: no size chart question', async () => {
+  const chat = 1002;
+  await say(chat, '➕ منتج جديد');
+  await tap(chat, 'ad:v:category:niqab');
+  await handle({ chatId: chat, photos: 1, photoIds: ['n1'] });
+  await say(chat, 'نقاب سادة');
+  await say(chat, '300');
+  await tap(chat, 'ad:v:variants:preset1');
+  await tap(chat, 'ad:v:stock:5');
+  const session = await store().getBotSession<{ attrs: string[] }>(chat);
+  assert.ok(session && !session.attrs.includes('size_chart_cm'));
+  await say(chat, '/cancel');
+});
+
 test('the flow survives a restart: its step is stored, not kept in memory', async () => {
   await say(1003, '➕ منتج جديد');
   assert.equal((await store().getBotSession<{ flow: string }>(1003))?.flow, 'add');
-  await tap(1003, 'ad:v:hijab');
+  await tap(1003, 'ad:v:category:hijab');
   assert.equal((await store().getBotSession<{ step: number }>(1003))?.step, 1);
   await say(1003, '/cancel');
 });
@@ -117,21 +145,22 @@ test('rejecting hides the size and flags the order for the team', async () => {
 test('a seller adds a product that waits for review, then goes live', async () => {
   const chat = 1001;
   assert.match(last(await say(chat, '➕ منتج جديد')).text, /أنهي قسم/);
-  await tap(chat, 'ad:v:abaya');
+  await tap(chat, 'ad:v:category:abaya');
   await handle({ chatId: chat, photos: 1, photoIds: ['tg-photo-1'] });
   assert.deepEqual(await handle({ chatId: chat, photos: 1, photoIds: ['tg-photo-2'] }), [], 'album photos are collected quietly');
   assert.deepEqual((await store().getBotSession<{ photoIds: string[] }>(chat))?.photoIds, ['tg-photo-1', 'tg-photo-2']);
   await say(chat, 'عباية كتان — زيتي');
   assert.ok((await say(chat, 'غالي')).some((m) => /رقم/.test(m.text)), 'non-numeric price is refused');
-  await say(chat, '750');
-  await tap(chat, 'ad:v:preset0');
-  await tap(chat, 'ad:v:5');
+  await say(chat, '٧٥٠');
+  await tap(chat, 'ad:v:variants:preset0');
+  await tap(chat, 'ad:v:stock:5');
+  assert.match((await tap(chat, 'ad:v:stock:3'))[0].text, /سؤال قديم/, 'a second tap on an old stock button is not taken as the fabric');
   await say(chat, 'كتان طبيعي');
   await say(chat, 'زيتي');
   await say(chat, '1=135، 2=140، 3=145، 4=150');
   await say(chat, '140');
-  const preview = last(await tap(chat, 'ad:v:غير شفاف'));
-  assert.match(preview.text, /615 ج/, '750 at 18% → 615 share shown before publishing');
+  const preview = last(await tap(chat, 'ad:v:a-opacity:غير شفاف'));
+  assert.match(preview.text, /615 ج/, '٧٥٠ (Arabic digits) at 18% → 615 share shown before publishing');
   await tap(chat, 'ad:publish');
   const find = async () => (await catalog()).products.find((x) => x.nameAr === 'عباية كتان — زيتي')!;
   const p = await find();

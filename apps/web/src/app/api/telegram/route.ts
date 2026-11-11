@@ -9,7 +9,7 @@ import { store } from '@/lib/store';
 
 interface TgUpdate {
   update_id?: number;
-  message?: { chat: { id: number }; text?: string; caption?: string; photo?: { file_id: string; width: number; height: number }[]; media_group_id?: string };
+  message?: { chat: { id: number }; from?: { id: number }; text?: string; caption?: string; contact?: { phone_number: string; user_id?: number }; photo?: { file_id: string; width: number; height: number }[]; media_group_id?: string };
   callback_query?: { id: string; data?: string; message?: { chat: { id: number } } };
 }
 
@@ -30,7 +30,9 @@ export async function POST(req: Request) {
   } else if (u.message) {
     // Telegram sends each photo in several sizes: keep the largest.
     const best = u.message.photo?.reduce((a, b) => (b.width * b.height > a.width * a.height ? b : a));
-    m = { chatId: u.message.chat.id, text: u.message.text, ...(best ? { photos: 1, photoIds: [best.file_id] } : {}) };
+    // A shared contact counts only if it is the sender's own number.
+    const own = u.message.contact && (!u.message.contact.user_id || u.message.contact.user_id === u.message.from?.id) ? u.message.contact.phone_number : undefined;
+    m = { chatId: u.message.chat.id, text: u.message.text, ...(best ? { photos: 1, photoIds: [best.file_id] } : {}), ...(own ? { contact: own } : {}) };
   }
   if (m) {
     recordIncoming(m);

@@ -10,6 +10,8 @@ export interface Incoming {
   photos?: number;
   /** Telegram file ids of those photos (largest size of each). */
   photoIds?: string[];
+  /** Phone number shared with Telegram's "share my number" button. */
+  contact?: string;
 }
 
 export interface Button {
@@ -26,4 +28,8 @@ export interface Outgoing {
   keyboard?: string[][];
   /** A document (e.g. the Bosta waybill). */
   file?: { name: string; base64?: string };
+  /** Shows a one-tap "share my phone number" button with this label. */
+  askContact?: string;
+  /** Hides the share-number button again. */
+  removeKeyboard?: boolean;
 }

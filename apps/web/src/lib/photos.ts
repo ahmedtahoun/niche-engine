@@ -50,16 +50,19 @@ async function upload(path: string, bytes: ArrayBuffer, type: string): Promise<s
  * Stores a product's Telegram photos and returns their public addresses.
  * Photos that fail are skipped (the admin sees the count before approving).
  */
-export async function storeProductPhotos(productId: string, fileIds: string[]): Promise<string[]> {
+export const storeProductPhotos = (productId: string, fileIds: string[]) => storePhotos(productId, fileIds);
+
+/** Stores Telegram photos under `folder/` and returns their public addresses (failed ones skipped). */
+export async function storePhotos(folder: string, fileIds: string[]): Promise<string[]> {
   if (!photosEnabled() || !fileIds.length) return [];
   await ensureBucket();
   const urls: string[] = [];
   for (const [i, id] of fileIds.slice(0, 5).entries()) {
     try {
       const f = await fromTelegram(id);
-      urls.push(await upload(`${productId}/${i + 1}-${randomBytes(4).toString('hex')}.${f.ext}`, f.bytes, f.type));
+      urls.push(await upload(`${folder}/${i + 1}-${randomBytes(4).toString('hex')}.${f.ext}`, f.bytes, f.type));
     } catch (e) {
-      console.error('[photos] could not store a photo for', productId, e);
+      console.error('[photos] could not store a photo for', folder, e);
     }
   }
   return urls;

@@ -10,7 +10,7 @@ import { GOVERNORATES } from '../lib/eta.ts';
 import { allNiches, getNiche } from '../lib/niches.ts';
 import { queueShipment } from '../lib/fulfillment.ts';
 import { applySellerPart, itemsOfSeller, mutateOrder, type Order } from '../lib/orders.ts';
-import { storeProductPhotos } from '../lib/photos.ts';
+import { storePhotos, storeProductPhotos } from '../lib/photos.ts';
 import { store } from '../lib/store/index.ts';
 import type { Product, Seller } from '../lib/types.ts';
 import type { Button, Incoming, Outgoing } from './types.ts';
@@ -38,7 +38,7 @@ const VARIANT_PRESETS: Record<string, [string, string[]][]> = {
 
 // ---------- sessions (wizard state per chat) ----------
 type Session =
-  | { flow: 'apply'; step: number; data: Record<string, string> }
+  | { flow: 'apply'; step: number; data: Record<string, string>; logoId?: string; sampleIds?: string[] }
   | { flow: 'add'; step: number; niche: string; data: Record<string, string>; variants: string[]; attrs: string[]; attrIndex: number; values: Record<string, string>; photos: number; photoIds?: string[] };
 /** Per-message context: the seller's flow state (saved after the reply if it changed) and the catalog. */
 interface Ctx { session: Session | null; cat: Catalog }
@@ -95,11 +95,24 @@ async function route(m: Incoming, ctx: Ctx): Promise<Outgoing[]> {
 }
 
 async function onButton(m: Incoming, seller: Seller | null, ctx: Ctx): Promise<Outgoing[]> {
-  const [k, a = '', b = '', c = ''] = (m.data ?? '').split(':');
+  const [k, a = '', b = '', ...rest] = (m.data ?? '').split(':');
+  const c = rest[0] ?? '';
+  const value = rest.join(':');
   const session = ctx.session;
-  if (k === 'ap') return session?.flow === 'apply' ? applyStep({ ...m, text: undefined, data: undefined }, session, ctx, a === 'v' ? b : `${a}:${b}`) : applyIntro(m.chatId, ctx, a === 'start');
+  const stale = (again: Outgoing[]) => [msg(m.chatId, 'الزرار ده من سؤال قديم. جاوب على آخر سؤال 👇'), ...again];
+  if (k === 'ap') {
+    if (a === 'start') return session?.flow === 'apply' ? applyAsk(m.chatId, session) : applyIntro(m.chatId, ctx, true);
+    if (session?.flow !== 'apply') return applyIntro(m.chatId, ctx);
+    // ap:v:<question>:<value>, only for the question being asked now.
+    if (a !== 'v' || b !== APPLY_STEPS[session.step]) return stale(applyAsk(m.chatId, session));
+    return applyStep({ ...m, text: undefined, data: undefined }, session, ctx, value);
+  }
   if (!seller) return applyIntro(m.chatId, ctx);
-  if (k === 'ad' && session?.flow === 'add') return addStep({ ...m, data: undefined }, seller, session, ctx, a === 'v' ? b : a);
+  if (k === 'ad' && session?.flow === 'add') {
+    if (a !== 'v') return addStep({ ...m, data: undefined }, seller, session, ctx, a); // publish / cancel
+    if (b !== addToken(session)) return stale(addAsk(m.chatId, session));
+    return addStep({ ...m, data: undefined }, seller, session, ctx, value);
+  }
   if (k === 'acc' || k === 'rej' || k === 'hand') return orderButton(seller, k, Number(a), ctx.cat);
   if (k === 'stk') {
     const found = ctx.cat.productById(a);
@@ -130,23 +143,31 @@ function applyIntro(chatId: number, ctx: Ctx, start = false): Outgoing[] {
   return applyAsk(chatId, s);
 }
 
-const APPLY_STEPS = ['niche', 'store', 'instagram', 'governorate', 'area', 'photos', 'capacity', 'instapay', 'agree'] as const;
+const APPLY_STEPS = ['niche', 'store', 'owner', 'phone', 'logo', 'instagram', 'governorate', 'address', 'photos', 'capacity', 'instapay', 'agree'] as const;
+type ApplyStep = (typeof APPLY_STEPS)[number];
+/** Inline button tied to one question: tapping an old button later can't answer a different question. */
+const ap = (step: ApplyStep, value: string, text = value) => ({ text, data: `ap:v:${step}:${value}` });
 
 function applyAsk(chatId: number, s: Extract<Session, { flow: 'apply' }>): Outgoing[] {
-  const n = `${s.step + 1}/${APPLY_STEPS.length}`;
+  const single = Object.keys(allNiches()).length === 1;
+  const total = APPLY_STEPS.length - (single ? 1 : 0);
+  const n = `${s.step + (single ? 0 : 1)}/${total}`;
   switch (APPLY_STEPS[s.step]) {
-    case 'niche': return [msg(chatId, `${n} · بتبيع إيه؟`, [Object.values(allNiches()).map((c) => ({ text: c.brand.nameAr, data: `ap:v:${c.id}` }))])];
-    case 'store': return [msg(chatId, `${n} · اسم المتجر؟ (اكتبه)`)];
+    case 'niche': return [msg(chatId, `${n} · بتبيع إيه؟`, [Object.values(allNiches()).map((c) => ap('niche', c.id, c.brand.nameAr))])];
+    case 'store': return [msg(chatId, `${n} · اسم المتجر؟ (اكتبه زي ما العملاء يعرفوه)`)];
+    case 'owner': return [msg(chatId, `${n} · اسمك؟ (صاحب المتجر أو المسؤول عن الطلبات)`)];
+    case 'phone': return [msg(chatId, `${n} · رقم موبايل نتواصل معاك عليه (ومندوب بوسطة بيكلمك عليه وقت الاستلام).\nدوس الزرار تحت يبعته بضغطة، أو اكتبه.`, undefined, { askContact: '📱 ابعت رقمي' })];
+    case 'logo': return [msg(chatId, `${n} · ابعت لوجو المتجر (صورة). هيظهر جنب منتجاتك.`, [[ap('logo', 'skip', 'معنديش لوجو دلوقتي')]], { removeKeyboard: true })];
     case 'instagram': return [msg(chatId, `${n} · لينك أو يوزر الإنستجرام (للتحقق بس)`)];
-    case 'governorate': return [msg(chatId, `${n} · محافظتك؟ (عشان مندوب بوسطة ييجي يستلم من عندك)`, [row(['القاهرة', 'ap:v:القاهرة'], ['الجيزة', 'ap:v:الجيزة']), row(['الإسكندرية', 'ap:v:الإسكندرية'], ['محافظة تانية (اكتبها)', 'ap:v:other'])])];
-    case 'area': return [msg(chatId, `${n} · المنطقة؟ (مثلاً: مدينة نصر)`)];
-    case 'photos': return [msg(chatId, `${n} · ابعت 3 صور لمنتجاتك`)];
-    case 'capacity': return [msg(chatId, `${n} · تقدر تشحن كام قطعة في الأسبوع؟`, [row(['أقل من 10', 'ap:v:<10'], ['10–25', 'ap:v:10-25'], ['أكتر من 25', 'ap:v:25+'])])];
-    case 'instapay': return [msg(chatId, `${n} · رقم إنستاباي أو المحفظة اللي هنحولك عليه`)];
+    case 'governorate': return [msg(chatId, `${n} · محافظتك؟ (منها مندوب بوسطة بيستلم)`, [[ap('governorate', 'القاهرة'), ap('governorate', 'الجيزة')], [ap('governorate', 'الإسكندرية'), ap('governorate', 'other', 'محافظة تانية (اكتبها)')]])];
+    case 'address': return [msg(chatId, `${n} · عنوان الاستلام بالتفصيل: المنطقة، الشارع، رقم العمارة والدور.\n(بوسطة بتعمل منه نقطة استلام باسمك)`)];
+    case 'photos': return [msg(chatId, `${n} · ابعت من 3 لـ 5 صور لمنتجاتك (ممكن مرة واحدة).`)];
+    case 'capacity': return [msg(chatId, `${n} · تقدر تشحن كام قطعة في الأسبوع؟`, [[ap('capacity', '<10', 'أقل من 10'), ap('capacity', '10-25', '10–25'), ap('capacity', '25+', 'أكتر من 25')]])];
+    case 'instapay': return [msg(chatId, `${n} · رقم إنستاباي أو المحفظة اللي هنحولك عليه فلوسك كل خميس`, s.data.phone ? [[ap('instapay', 'same', `نفس الرقم ${s.data.phone}`)]] : undefined)];
     case 'agree': {
       const cfg = getNiche(s.data.niche)!;
       const pct = (x: number) => `${Math.round(x * 100)}٪`;
-      return [msg(chatId, `${n} · ملخص الاتفاق:\n• العمولة: ${pct(cfg.commission.new)} على العميل الجديد اللي ${cfg.brand.nameAr} بتجيبه، ${pct(cfg.commission.repeat)} على العميل الراجع، ${pct(cfg.commission.referral)} على عملائك اللي بتبعتهم بكودك\n• فلوسك كل خميس، وبنحجز ${pct(cfg.reserve.percent)} كضمان لمدة ${cfg.reserve.days} يوم\n• تسليم للمندوب خلال 48 ساعة\n• نفس سعر الإنستجرام (ممنوع أرخص بره)\n• ممنوع التواصل مع عملاء ${cfg.brand.nameAr} لأي بيع مباشر. المخالفة = خصم الضمان وإيقاف الحساب`, [row(['✅ موافق على الشروط', 'ap:v:agree'])])];
+      return [msg(chatId, `${n} · ملخص الاتفاق:\n• العمولة: ${pct(cfg.commission.new)} على العميل الجديد اللي ${cfg.brand.nameAr} بتجيبه، ${pct(cfg.commission.repeat)} على العميل الراجع، ${pct(cfg.commission.referral)} على عملائك اللي بتبعتهم بكودك\n• فلوسك كل خميس، وبنحجز ${pct(cfg.reserve.percent)} كضمان لمدة ${cfg.reserve.days} يوم\n• تسليم للمندوب خلال 48 ساعة\n• نفس سعر الإنستجرام (ممنوع أرخص بره)\n• ممنوع التواصل مع عملاء ${cfg.brand.nameAr} لأي بيع مباشر. المخالفة = خصم الضمان وإيقاف الحساب`, [[ap('agree', 'yes', '✅ موافق على الشروط')]])];
     }
   }
 }
@@ -156,27 +177,64 @@ async function applyStep(m: Incoming, s: Extract<Session, { flow: 'apply' }>, ct
   const text = m.text?.trim() ?? '';
   const step = APPLY_STEPS[s.step];
   const retry = (why: string) => [msg(id, why), ...applyAsk(id, s)];
-  // The rest of a photo album arrives as separate messages: ignore them quietly.
-  if (m.photos && s.step > APPLY_STEPS.indexOf('photos')) return [];
+  // The rest of a photo album arrives as separate messages: keep those photos quietly.
+  if (m.photos && s.step > APPLY_STEPS.indexOf('photos')) {
+    s.sampleIds = [...(s.sampleIds ?? []), ...(m.photoIds ?? [])].slice(0, 5);
+    return [];
+  }
+  if (m.photos && step === 'logo' && s.logoId) return []; // a second logo photo
   switch (step) {
     case 'niche': if (!choice || !getNiche(choice)) return retry('اختار من الأزرار.'); s.data.niche = choice; break;
     case 'store': if (text.length < 2) return retry('اكتب اسم المتجر.'); s.data.store = text.slice(0, 60); break;
-    case 'instagram': if (!/^@?[\w.]{2,30}$|instagram\.com\//i.test(text)) return retry('اكتب اليوزر بالشكل ده: @store.name'); s.data.instagram = text.startsWith('@') || text.includes('/') ? text : `@${text}`; break;
+    case 'owner': if (text.length < 2) return retry('اكتب اسمك.'); s.data.owner = text.slice(0, 60); break;
+    case 'phone': {
+      const p = normalizeEgyptPhone(m.contact ?? text);
+      if (!p) return retry('الرقم لازم يكون موبايل مصري 11 رقم (010 / 011 / 012 / 015). دوس "📱 ابعت رقمي" أو اكتبه.');
+      s.data.phone = p;
+      break;
+    }
+    case 'logo':
+      if (choice === 'skip') break;
+      if (!m.photoIds?.length) return retry('ابعت اللوجو كصورة، أو دوس "معنديش لوجو دلوقتي".');
+      s.logoId = m.photoIds[0];
+      break;
+    case 'instagram': {
+      const handle = text.replace(/^https?:\/\/(www\.)?instagram\.com\//i, '').replace(/[/?#].*$/, '').replace(/^@/, '');
+      if (!/^[A-Za-z0-9._]{2,30}$/.test(handle)) return retry('اكتب اليوزر بالشكل ده: @store.name أو ابعت لينك الصفحة.');
+      s.data.instagram = `@${handle}`;
+      break;
+    }
     case 'governorate':
       if (choice === 'other') return [msg(id, 'اكتب اسم المحافظة.')];
       if (choice) s.data.governorate = choice;
       else if (GOVERNORATES.includes(text)) s.data.governorate = text;
       else return retry('مش لاقيين المحافظة دي. اكتبها زي ما هي، مثلاً: الدقهلية');
       break;
-    case 'area': if (text.length < 2) return retry('اكتب المنطقة.'); s.data.area = text.slice(0, 60); break;
-    case 'photos': if (!m.photos) return retry('محتاجين صور، مش كلام 🙂'); s.data.photos = String(m.photos); break;
+    case 'address': if (text.length < 10) return retry('محتاجين العنوان بالتفصيل: المنطقة، الشارع، رقم العمارة.'); s.data.address = text.slice(0, 200); break;
+    case 'photos':
+      if (!m.photos) return retry('محتاجين صور لمنتجاتك، مش كلام 🙂');
+      s.sampleIds = (m.photoIds ?? []).slice(0, 5);
+      s.data.photos = '1';
+      break;
     case 'capacity': if (!choice) return retry('اختار من الأزرار.'); s.data.capacity = choice; break;
-    case 'instapay': { const p = normalizeEgyptPhone(text); if (!p) return retry('الرقم لازم يكون 11 رقم ويبدأ بـ 010 أو 011 أو 012 أو 015.'); s.data.instapay = p; break; }
+    case 'instapay': {
+      const p = choice === 'same' ? s.data.phone : normalizeEgyptPhone(text);
+      if (!p) return retry('الرقم لازم يكون 11 رقم ويبدأ بـ 010 أو 011 أو 012 أو 015.');
+      s.data.instapay = p;
+      break;
+    }
     case 'agree': {
-      if (choice !== 'agree') return retry('لازم توافق على الشروط عشان نكمل.');
+      if (choice !== 'yes') return retry('لازم توافق على الشروط عشان نكمل.');
       ctx.session = null;
       const newId = `n${Date.now().toString(36)}${Math.random().toString(36).slice(2, 5)}`;
-      await saveSeller({ id: newId, niche: s.data.niche, telegramChatId: id, name: s.data.store, area: `${s.data.area}، ${s.data.governorate}`, rating: 0, status: 'applied', instagram: s.data.instagram, instapay: s.data.instapay, capacity: s.data.capacity });
+      const [logo] = s.logoId ? await storePhotos(`sellers/${newId}/logo`, [s.logoId]) : [];
+      const samples = await storePhotos(`sellers/${newId}/samples`, s.sampleIds ?? []);
+      await saveSeller({
+        id: newId, niche: s.data.niche, telegramChatId: id, name: s.data.store, rating: 0, status: 'applied',
+        area: `${s.data.address}، ${s.data.governorate}`.slice(0, 240), governorate: s.data.governorate, pickupAddress: s.data.address,
+        ownerName: s.data.owner, contactPhone: s.data.phone, instagram: s.data.instagram, instapay: s.data.instapay, capacity: s.data.capacity,
+        ...(logo ? { logo } : {}), ...(samples.length ? { samplePhotos: samples } : {}),
+      });
       return [msg(id, 'اتبعت طلبك للمراجعة ✅\nهنراجع الإنستجرام بتاعك، وهنعمل طلب تجريبي من عندك، ونرد عليك خلال 48 ساعة.')];
     }
   }
@@ -200,10 +258,14 @@ function startAdd(seller: Seller, ctx: Ctx): Outgoing[] {
   const attrs = cfg.attributes.required.filter((a) => !VARIANT_ATTRS.includes(a));
   const s: Session = { flow: 'add', step: 0, niche: cfg.id, data: {}, variants: [], attrs, attrIndex: 0, values: {}, photos: 0, photoIds: [] };
   ctx.session = s;
-  return [msg(seller.telegramChatId!, 'يلا 👌 المنتج ده في أنهي قسم؟', [cfg.categories.map((c) => ({ text: c.labelAr, data: `ad:v:${c.id}` }))])];
+  return [msg(seller.telegramChatId!, 'يلا 👌 المنتج ده في أنهي قسم؟', [cfg.categories.map((c) => ({ text: c.labelAr, data: `ad:v:category:${c.id}` }))])];
 }
 
 const ADD_STEPS = ['category', 'photos', 'name', 'price', 'variants', 'stock', 'attrs', 'preview'] as const;
+/** The question an add-product button belongs to (each attribute counts as its own question). */
+const addToken = (s: Extract<Session, { flow: 'add' }>) => (ADD_STEPS[s.step] === 'attrs' ? `a-${s.attrs[s.attrIndex]}` : ADD_STEPS[s.step]);
+/** Arabic-Indic and Persian digits → 0-9 (Egyptian keyboards type ٩٠٠). */
+const latinDigits = (t: string) => t.replace(/[٠-٩]/g, (c) => String(c.charCodeAt(0) - 0x0660)).replace(/[۰-۹]/g, (c) => String(c.charCodeAt(0) - 0x06f0));
 
 function addAsk(chatId: number, s: Extract<Session, { flow: 'add' }>): Outgoing[] {
   const cfg = getNiche(s.niche)!;
@@ -211,12 +273,12 @@ function addAsk(chatId: number, s: Extract<Session, { flow: 'add' }>): Outgoing[
     case 'photos': return [msg(chatId, 'ابعت من 1 لـ 5 صور للمنتج على خلفية فاتحة.')];
     case 'name': return [msg(chatId, 'اسم المنتج؟ (مثلاً: عباية كتان — زيتي)')];
     case 'price': return [msg(chatId, 'السعر للعميل بالجنيه؟\nلازم يكون نفس سعر الإنستجرام بالظبط.')];
-    case 'variants': return [msg(chatId, 'المتاح منه إيه؟ اختار، أو اكتبهم مفصولين بمسافة.', [(VARIANT_PRESETS[cfg.id] ?? []).map(([label], i) => ({ text: label, data: `ad:v:preset${i}` }))])];
-    case 'stock': return [msg(chatId, `كام قطعة متاحة من كل نوع؟ (${s.variants.join('، ')})`, [row(['3', 'ad:v:3'], ['5', 'ad:v:5'], ['10', 'ad:v:10'])])];
+    case 'variants': return [msg(chatId, 'المتاح منه إيه؟ اختار، أو اكتبهم مفصولين بمسافة.', [(VARIANT_PRESETS[cfg.id] ?? []).map(([label], i) => ({ text: label, data: `ad:v:variants:preset${i}` }))])];
+    case 'stock': return [msg(chatId, `كام قطعة متاحة من كل نوع؟ (${s.variants.join('، ')})`, [row(['3', 'ad:v:stock:3'], ['5', 'ad:v:stock:5'], ['10', 'ad:v:stock:10'])])];
     case 'attrs': {
       const key = s.attrs[s.attrIndex];
       const a = ATTR[key] ?? { label: key };
-      return [msg(chatId, `${s.attrIndex + 1}/${s.attrs.length} · ${a.label}؟`, a.choices ? [a.choices.map((c) => ({ text: c, data: `ad:v:${c}` }))] : undefined)];
+      return [msg(chatId, `${s.attrIndex + 1}/${s.attrs.length} · ${a.label}؟`, a.choices ? [a.choices.map((c) => ({ text: c, data: `ad:v:a-${key}:${c}` }))] : undefined)];
     }
     case 'preview': {
       const lines = s.attrs.map((k) => `• ${ATTR[k]?.label.split(' (')[0] ?? k}: ${s.values[k]}`).join('\n');
@@ -243,15 +305,17 @@ async function addStep(m: Incoming, seller: Seller, s: Extract<Session, { flow: 
     case 'category': if (!choice || !cfg.categories.some((c) => c.id === choice)) return [msg(id, 'اختار القسم من الأزرار.')]; s.data.category = choice; break;
     case 'photos': if (!m.photos) return retry('محتاجين صور المنتج.'); s.photoIds = (m.photoIds ?? []).slice(0, 5); s.photos = Math.max(m.photos, s.photoIds.length); break;
     case 'name': if (text.length < 4) return retry('الاسم قصير أوي.'); s.data.name = text.slice(0, 80); break;
-    case 'price': { const p = Number(text.replace(/[^\d.]/g, '')); if (!(p >= 10 && p <= 100000)) return retry('اكتب السعر رقم بس، مثلاً: 850'); s.data.price = String(Math.round(p)); break; }
+    case 'price': { const p = Number(latinDigits(text).replace(/[^\d.]/g, '')); if (!(p >= 10 && p <= 100000)) return retry('اكتب السعر رقم بس، مثلاً: 850'); s.data.price = String(Math.round(p)); break; }
     case 'variants': {
       const preset = choice?.startsWith('preset') ? VARIANT_PRESETS[cfg.id]?.at(Number(choice.slice(6)))?.[1] : null;
       const list = preset ?? text.split(/[\s,،]+/).filter(Boolean).slice(0, 8);
       if (!list.length) return retry('اختار أو اكتب المتاح.');
       s.variants = list;
+      // One size: no size chart to ask for.
+      if (list.length === 1) s.attrs = s.attrs.filter((a) => a !== 'size_chart_cm');
       break;
     }
-    case 'stock': { const n = Number(choice ?? text.replace(/[^\d]/g, '')); if (!(n >= 0 && n <= 999)) return retry('اكتب رقم.'); s.data.stock = String(n); break; }
+    case 'stock': { const digits = choice ?? latinDigits(text).replace(/[^\d]/g, ''); const n = Number(digits); if (!digits || !(n >= 0 && n <= 999)) return retry('اكتب عدد القطع رقم، مثلاً: 5'); s.data.stock = String(n); break; }
     case 'attrs': {
       const key = s.attrs[s.attrIndex];
       let v = choice ?? text;

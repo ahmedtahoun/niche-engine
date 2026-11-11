@@ -136,7 +136,7 @@ export class SupabaseStore implements Store {
     try { await req('niches?select=id&limit=1'); return true; } catch { return false; }
   }
   async missingMigrations() {
-    const checks: [string, string][] = [['0002_database_first.sql', 'wallets?select=version&limit=1'], ['0003_product_photos.sql', 'products?select=images&limit=1']];
+    const checks: [string, string][] = [['0002_database_first.sql', 'wallets?select=version&limit=1'], ['0003_product_photos.sql', 'products?select=images&limit=1'], ['0004_seller_profile.sql', 'sellers?select=owner_name&limit=1']];
     const missing: string[] = [];
     for (const [file, probe] of checks) await req(probe).catch(() => missing.push(file));
     return missing;

@@ -17,7 +17,7 @@ Supabase is the only place data lives. Every request reads and writes it; nothin
 
 ## 1. Supabase (once)
 
-1. Supabase → **SQL Editor** → run `supabase/migrations/0001_init.sql`, then `0002_database_first.sql`, then `0003_product_photos.sql` (in that order; each once). `/api/health` shows `"migrations":"ok"` when none is missing.
+1. Supabase → **SQL Editor** → run `supabase/migrations/0001_init.sql`, then `0002_database_first.sql`, then `0003_product_photos.sql`, then `0004_seller_profile.sql` (in that order; each once). `/api/health` shows `"migrations":"ok"` when none is missing.
 2. **Project Settings → API Keys**: copy the project URL and the **secret** key (`sb_secret_…` or the legacy `service_role`). The secret key goes only into cPanel (step 4), never into the code or a chat.
 
 ## 2. Connect cPanel to GitHub (once)

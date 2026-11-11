@@ -51,7 +51,7 @@ export default async function ProductPage({ params }: P) {
       ) : <div className="big"><Art kind={p.art} color={p.color} /></div>}
       <div style={{ display: 'grid', gap: 6 }}>
         <h1 className="title">{p.nameAr}</h1>
-        <div className="muted">من <b>{s.name}</b> · <span style={{ color: 'var(--ok)', fontWeight: 700 }}>✓ بائع موثّق</span> · ⭐ {s.rating}</div>
+        <div className="muted">{/* eslint-disable-next-line @next/next/no-img-element */}{s.logo && <img className="slogo" src={s.logo} alt="" />}من <b>{s.name}</b> · <span style={{ color: 'var(--ok)', fontWeight: 700 }}>✓ بائع موثّق</span> · ⭐ {s.rating}</div>
         <div className="pprice num" style={{ fontSize: 21 }}>{egp(p.price)}</div>
       </div>
       <div className="eta">

@@ -77,6 +77,7 @@ h1, h2, h3 { margin: 0; line-height: 1.3; text-wrap: balance; }
 .pimg { background: var(--base); border-radius: 10px; aspect-ratio: 1; display: grid; place-items: center; }
 .pimg svg { width: 64%; height: 64%; }
 .pimg, .big { overflow: hidden; }
+.slogo { width: 22px; height: 22px; border-radius: 50%; object-fit: cover; vertical-align: middle; margin-inline-end: 6px; }
 .photo { width: 100%; height: 100%; object-fit: cover; display: block; }
 .gallery { display: grid; grid-auto-flow: column; grid-auto-columns: 100%; overflow-x: auto; scroll-snap-type: x mandatory; gap: 8px; border-radius: 16px; }
 .gallery img { width: 100%; aspect-ratio: 1 / 1.1; object-fit: cover; scroll-snap-align: center; border-radius: 16px; background: var(--base); }

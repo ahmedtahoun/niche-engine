@@ -33,17 +33,27 @@ export default async function Sellers({ searchParams }: { searchParams: Promise<
       <section className="panel">
         <h2>Applications <Pill kind={apps.length ? 'info' : 'mute'}>{apps.length}</Pill></h2>
         {apps.length ? (
-          <div className="tbl"><table className="t">
-            <thead><tr><th>Store</th><th>Niche</th><th>Instagram</th><th>Area</th><th>Weekly capacity</th><th>InstaPay</th><th></th></tr></thead>
-            <tbody>{apps.map((s) => (
-              <tr key={s.id}>
-                <td className="ar"><b>{s.name}</b></td><td>{getNiche(s.niche)?.brand.nameEn}</td>
-                <td>{s.instagram ? <a href={`https://instagram.com/${s.instagram.replace(/^@/, '')}`} target="_blank" rel="noreferrer">{s.instagram}</a> : '—'}</td>
-                <td className="ar">{s.area}</td><td>{s.capacity ?? '—'}</td><td>{s.instapay ?? '—'}</td>
-                <td><div className="acts"><form action={approveSellerAction.bind(null, s.id)}><button className="mini pri">Approve</button></form>{btn(s.id, 'declined', 'Decline', 'mini danger')}</div></td>
-              </tr>
-            ))}</tbody>
-          </table></div>
+          <div style={{ display: 'grid', gap: 10 }}>{apps.map((s) => {
+            const wa = s.contactPhone ? `https://wa.me/2${s.contactPhone}` : null;
+            return (
+              <div key={s.id} className="alert" style={{ '--c': 'var(--a-info)', alignItems: 'flex-start' } as React.CSSProperties}>
+                <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start', minWidth: 0 }}>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  {s.logo ? <img className="logo-lg" src={s.logo} alt="" /> : <span className="logo-lg none">no logo</span>}
+                  <div style={{ display: 'grid', gap: 3, minWidth: 0 }}>
+                    <b className="ar">{s.name}</b>
+                    <small className="ar" style={{ textAlign: 'left' }}>{s.ownerName ?? 'owner not given'}{s.contactPhone ? <> · <a href={`tel:${s.contactPhone}`}>{s.contactPhone}</a>{wa && <> · <a href={wa} target="_blank" rel="noreferrer">WhatsApp</a></>}</> : ' · no contact phone'}</small>
+                    <small>{s.instagram ? <a href={`https://instagram.com/${s.instagram.replace(/^@/, '')}`} target="_blank" rel="noreferrer">{s.instagram}</a> : 'no Instagram'} · capacity {s.capacity ?? '—'} / week · InstaPay {s.instapay ?? '—'}</small>
+                    <small className="ar" style={{ textAlign: 'left' }}>Pickup: {s.pickupAddress ? `${s.pickupAddress}، ${s.governorate ?? ''}` : s.area}</small>
+                    {s.samplePhotos?.length ? (
+                      <div className="thumbs">{s.samplePhotos.map((src) => <a key={src} href={src} target="_blank" rel="noreferrer">{/* eslint-disable-next-line @next/next/no-img-element */}<img src={src} alt="" loading="lazy" /></a>)}</div>
+                    ) : <small style={{ color: 'var(--a-muted)' }}>No sample photos stored</small>}
+                  </div>
+                </div>
+                <div className="acts"><form action={approveSellerAction.bind(null, s.id)}><button className="mini pri">Approve</button></form>{btn(s.id, 'declined', 'Decline', 'mini danger')}</div>
+              </div>
+            );
+          })}</div>
         ) : <p className="empty">No applications waiting. New sellers apply through the Telegram bot.</p>}
       </section>
       <section className="panel">
@@ -56,7 +66,7 @@ export default async function Sellers({ searchParams }: { searchParams: Promise<
             const c = cycleFrom(s.id, delivered, cfg);
             return (
               <tr key={s.id}>
-                <td className="ar"><b>{s.name}</b></td><td>{cfg.brand.nameEn}</td><td className="ar">{s.area}</td>
+                <td className="ar"><b>{s.name}</b>{s.ownerName || s.contactPhone ? <div className="sub">{s.ownerName}{s.contactPhone ? ` · ${s.contactPhone}` : ''}</div> : null}</td><td>{cfg.brand.nameEn}</td><td className="ar">{s.area}</td>
                 <td className="r">{cat.products.filter((p) => p.sellerId === s.id).length}</td>
                 <td className="r">{st.orders}</td>
                 <td className="r" style={{ color: st.rejectRate > 0.1 ? 'var(--a-bad)' : undefined }}>{Math.round(st.rejectRate * 100)}%</td>

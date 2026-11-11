@@ -14,6 +14,17 @@ export interface Seller {
   instapay?: string;
   capacity?: string;
   bostaLocationId?: string;
+  /** Person who runs the store. */
+  ownerName?: string;
+  /** Phone for the team and the courier (shared from Telegram or typed). */
+  contactPhone?: string;
+  /** Store logo (Supabase Storage). */
+  logo?: string;
+  governorate?: string;
+  /** Full pickup address, for the seller's Bosta pickup location. */
+  pickupAddress?: string;
+  /** Product photos sent with the application, for the admin's review. */
+  samplePhotos?: string[];
 }
 
 export interface Variant {

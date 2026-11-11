@@ -14,5 +14,8 @@
   "scripts": {
     "test": "node --test \"packages/*/test/*.test.ts\" \"apps/*/test/*.test.ts\"",
     "check:niches": "node packages/core/scripts/check-niches.ts"
+  },
+  "devDependencies": {
+    "@electric-sql/pglite": "0.5.12"
   }
 }

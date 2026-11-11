@@ -5,6 +5,7 @@
 // another process shows up within a minute. This process's own writes show at once.
 // Writes go straight to the database and clear this process's cache.
 import { cartTotals, matches, searchTerms, type Bundle, type Choice, type NicheConfig } from '@niche-engine/core';
+import { speak, voiceOf, type Lang } from './i18n.ts';
 import { getNiche } from './niches.ts';
 import { store } from './store/index.ts';
 import type { CartLine, OrderItem, PricedLine, Product, Quote, Seller } from './types.ts';
@@ -108,7 +109,7 @@ export class Catalog {
     return this.productsOf(cfg.id)
       .filter((p) => !opts.cat || p.category === opts.cat)
       .filter((p) => p.price >= lo && p.price <= hi)
-      .filter((p) => !terms.length || matches([p.nameAr, p.leadAr, label(p.category), this.sellerOf(p).name, ...Object.values(p.attributes)].join(' '), terms))
+      .filter((p) => !terms.length || matches([p.nameAr, p.leadAr, label(p.category), this.sellerOf(p).name, ...Object.values(p.attributes), p.en?.name ?? '', p.en?.lead ?? '', this.sellerOf(p).nameEn ?? ''].join(' '), terms))
       .sort(sorters[opts.sort ?? 'best']);
   }
 
@@ -134,7 +135,9 @@ export class Catalog {
   }
 
   /** Prices a cart from the catalog. The browser's prices are never used. */
-  quote(cfg: NicheConfig, cart: CartLine[], opts: { promoCode?: string; isFirstOrder: boolean; walletBalance: number; useWallet: boolean }): Quote {
+  quote(cfg: NicheConfig, cart: CartLine[], opts: { promoCode?: string; isFirstOrder: boolean; walletBalance: number; useWallet: boolean; lang?: Lang }): Quote {
+    const sp = speak(opts.lang ?? 'ar', voiceOf(cfg));
+    const shownChoices = (p: Product, picked?: Record<string, string>) => choicesFor(cfg, p).flatMap((c) => { const v = c.values.find((x) => x.id === picked?.[c.id]); return v ? [sp.choiceValue(v)] : []; });
     const problems: string[] = [];
     const priced: PricedLine[] = [];
     const items: OrderItem[] = [];
@@ -154,7 +157,7 @@ export class Catalog {
         const label = [line.variant, ...extra].join(' · ');
         coreLines.push({ sellerId: p.sellerId, unitPrice: unit, qty });
         items.push({ sellerId: p.sellerId, productId: p.id, name: p.nameAr, variant: label, qty, unitPrice: unit });
-        priced.push({ key: `${i}`, title: `${p.nameAr} · ${label}`, by: this.sellerOf(p).name, art: p.art, color: p.color, qty, amount: unit * qty, isBundle: false, ...(p.images?.[0] ? { image: p.images[0] } : {}) });
+        priced.push({ key: `${i}`, title: [sp.product(p), sp.variant(p, line.variant), ...shownChoices(p, line.choice)].join(' · '), by: this.sellerOf(p) ? sp.seller(this.sellerOf(p)) : '', art: p.art, color: p.color, qty, amount: unit * qty, isBundle: false, ...(p.images?.[0] ? { image: p.images[0] } : {}) });
       } else {
         const bv = this.bundleView(cfg, line.id);
         if (!bv) return void problems.push(`bundle_unavailable:${line.id}`);
@@ -170,9 +173,9 @@ export class Catalog {
           items.push(r);
         }
         const full = rows.reduce((a, r) => a + r.unitPrice * r.qty, 0);
-        const picked = (cfg.choices ?? []).flatMap((c) => c.values.find((v) => v.id === line.choice?.[c.id])?.labelAr ?? []);
+        const picked = (cfg.choices ?? []).flatMap((c) => { const v = c.values.find((x) => x.id === line.choice?.[c.id]); return v ? [sp.choiceValue(v)] : []; });
         bundleDiscount += bv.bundle.discountEgp * qty;
-        priced.push({ key: `${i}`, title: [bv.bundle.nameAr, line.variant, ...picked].filter(Boolean).join(' · '), by: `من ${new Set(bv.parts.map((x) => x.product.sellerId)).size} بائعين`, art: 'kit', color: '', qty, amount: full, isBundle: true, parts: bv.parts.map((x) => ({ art: x.product.art, color: x.product.color })) });
+        priced.push({ key: `${i}`, title: [sp.bundle(bv.bundle), line.variant, ...picked].filter(Boolean).join(' · '), by: ((n) => (n === 1 ? sp.t('by', { name: sp.seller(this.sellerOf(bv.parts[0].product)) }) : sp.en ? `from ${n} sellers` : `من ${n} بائعين`))(new Set(bv.parts.map((x) => x.product.sellerId)).size), art: 'kit', color: '', qty, amount: full, isBundle: true, parts: bv.parts.map((x) => ({ art: x.product.art, color: x.product.color })) });
       }
     });
 

@@ -150,12 +150,15 @@ function applyIntro(chatId: number, ctx: Ctx, start = false): Outgoing[] {
   if (!start) {
     return [msg(chatId, 'أهلاً بيك 👋 ده بوت البائعين.\n• مش هتدفع أي حاجة غير لما تبيع\n• الطلبات بتوصلك هنا\n• فلوسك بتتحول كل خميس\n\nافتح متجرك في 5 دقايق.', [row(['🚀 ابدأ التقديم', 'ap:start'])])];
   }
-  const niches = Object.keys(allNiches());
+  const niches = openNiches().map((c) => c.id);
   // With one niche there is nothing to choose: start at the store name.
   const s: Session = niches.length === 1 ? { flow: 'apply', step: 1, data: { niche: niches[0] } } : { flow: 'apply', step: 0, data: {} };
   ctx.session = s;
   return applyAsk(chatId, s);
 }
+
+/** Niches that take seller applications through the bot. */
+const openNiches = () => Object.values(allNiches()).filter((c) => c.acceptsSellers !== false);
 
 const APPLY_STEPS = ['niche', 'store', 'owner', 'phone', 'logo', 'instagram', 'governorate', 'address', 'photos', 'capacity', 'instapay', 'agree'] as const;
 type ApplyStep = (typeof APPLY_STEPS)[number];
@@ -163,11 +166,11 @@ type ApplyStep = (typeof APPLY_STEPS)[number];
 const ap = (step: ApplyStep, value: string, text = value) => ({ text, data: `ap:v:${step}:${value}` });
 
 function applyAsk(chatId: number, s: Extract<Session, { flow: 'apply' }>): Outgoing[] {
-  const single = Object.keys(allNiches()).length === 1;
+  const single = openNiches().length === 1;
   const total = APPLY_STEPS.length - (single ? 1 : 0);
   const n = `${s.step + (single ? 0 : 1)}/${total}`;
   switch (APPLY_STEPS[s.step]) {
-    case 'niche': return [msg(chatId, `${n} · بتبيع إيه؟`, [Object.values(allNiches()).map((c) => ap('niche', c.id, c.brand.nameAr))])];
+    case 'niche': return [msg(chatId, `${n} · بتبيع إيه؟`, [openNiches().map((c) => ap('niche', c.id, c.brand.nameAr))])];
     case 'store': return [msg(chatId, `${n} · اسم المتجر؟ (اكتبه زي ما العملاء يعرفوه)`)];
     case 'owner': return [msg(chatId, `${n} · اسمك؟ (صاحب المتجر أو المسؤول عن الطلبات)`)];
     case 'phone': return [msg(chatId, `${n} · رقم موبايل نتواصل معاك عليه (ومندوب بوسطة بيكلمك عليه وقت الاستلام).\nدوس الزرار تحت يبعته بضغطة، أو اكتبه.`, undefined, { askContact: '📱 ابعت رقمي' })];
@@ -198,7 +201,7 @@ async function applyStep(m: Incoming, s: Extract<Session, { flow: 'apply' }>, ct
   }
   if (m.photos && step === 'logo' && s.logoId) return []; // a second logo photo
   switch (step) {
-    case 'niche': if (!choice || !getNiche(choice)) return retry('اختار من الأزرار.'); s.data.niche = choice; break;
+    case 'niche': if (!choice || !openNiches().some((c) => c.id === choice)) return retry('اختار من الأزرار.'); s.data.niche = choice; break;
     case 'store': if (text.length < 2) return retry('اكتب اسم المتجر.'); s.data.store = text.slice(0, 60); break;
     case 'owner': if (text.length < 2) return retry('اكتب اسمك.'); s.data.owner = text.slice(0, 60); break;
     case 'phone': {

@@ -2,7 +2,7 @@
 // On localhost, open /umrah directly; "/" falls back to DEFAULT_NICHE.
 import { NextResponse, type NextRequest } from 'next/server';
 
-const NICHE_IDS = (process.env.NICHE_IDS ?? 'umrah').split(',');
+const NICHE_IDS = (process.env.NICHE_IDS ?? 'umrah,coffee').split(',');
 const DOMAINS = Object.fromEntries(
   (process.env.NICHE_DOMAINS ?? '').split(',').filter(Boolean).map((pair) => pair.split('=') as [string, string]),
 );

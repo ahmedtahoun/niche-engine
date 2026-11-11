@@ -206,3 +206,41 @@ What changes from the journey above:
 4. **Bot:** adding a coffee product asks the coffee questions; order messages show the grind in large letters.
 5. **Quiz**, then the cups-per-day reorder reminder.
 6. **Launch:** cairoroast.com domain, second Node app domain mapping, test order.
+
+---
+
+## 8. First catalog: Bonds Coffee Roasters (from shop.wheretospot.com, read 2026-11-11)
+
+**Roaster:** Bonds Coffee Roasters (بوندز لتحميص القهوة) · instagram.com/bondscoffeeroasters · "Coffee roasters · private label & tailored roasting".
+
+| Product | Type | Tasting notes (Arabic, as listed) | Body / acidity | 250 g | 1 kg |
+|---|---|---|---|---|---|
+| Chrome (كروم بلند) | Blend | كراميل، شوكولاتة داكنة، مكسرات محمصة | full · mild acidity | 225 | 900 |
+| Amber (أمبر بلند) | Blend | شوكولاتة داكنة، عسل أسود، بندق محمص | rich · low acidity | 255 | 1,020 |
+| Sienna (سيينا بلند) | Blend | سكر بني، كاكاو، مكسرات محمصة | medium · low acidity | 269 | 1,074 |
+| Ethiopia Limu (إثيوبيا ليمو) | Single origin · Limu · Heirloom · Natural | شوكولاتة داكنة، مكسرات محمصة، شاي أسود، سكر بني وبرتقال | — | 285 | 1,140 |
+| Brazil Cerrado (البرازيل سيرادو) | Single origin · Cerrado · Catuai · Natural | توفي، شوكولاتة داكنة، بندق، شراب القيقب | — | 297 | 1,188 |
+
+How their shop presents it:
+- **One option:** weight (1 kg / 250 g), each with its own price. 250 g is exactly a quarter of the 1 kg price, so there's no saving for buying the bigger bag.
+- **Whole beans only:** no grind choice, no roast level, no roast date, no brew recipe.
+- **Good:** tasting notes in the subtitle; region, variety and process for single origins; an "in short" answer line; cash on delivery, card or wallet; 14-day returns; 2–5 day delivery.
+- **Weak:**
+  - the page asks for broken template image addresses (e.g. `{{ mainImg }}`), which return 404 errors;
+  - large blank areas on mobile;
+  - no reviews yet;
+  - one photo per product;
+  - coffee sits next to NFC cards and acrylic stands, so it doesn't feel like a coffee store.
+
+### How it maps to our engine
+
+| Bonds data | Our engine |
+|---|---|
+| Brand | Seller "Bonds Coffee Roasters" with logo and story ("about the roaster" card); shown on cards as "من بوندز" |
+| Weight variants with prices | Option axis `weight` (250 جم / 1 كجم), each variant with its own `price` (step 1 supports it) |
+| Blend / single origin | Categories `blends` and `single-origin` (specialty side); Turkish later if Bonds or we add it |
+| Tasting notes | Headline under the name plus a flavor family (Chrome, Amber, Sienna → "شوكولاتة ومكسرات"; Limu → "فواكه وشاي"; Cerrado → "حلو ومكسرات") |
+| Region, variety, process | Details folded under "للمحترفين" ("for experts") |
+| Whole beans | Grind choice **only if Bonds grinds to order**; otherwise "حبوب كاملة" (whole beans) only, and the page says so |
+
+The grind can't be printed on the bag or on Bonds' label until Bonds confirms they will grind each order.

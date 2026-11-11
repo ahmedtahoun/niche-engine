@@ -2,26 +2,26 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { ProductCard } from '@/components/ProductCard';
 import { catalog, type PriceBand, type SortKey } from '@/lib/catalog';
+import { speaker } from '@/lib/lang';
 import { getNiche } from '@/lib/niches';
 
-export const metadata = { title: 'بحث' };
+export async function generateMetadata() { return { title: (await speaker()).t('nav.search') }; }
 
-const POPULAR: Record<string, string[]> = {
-  umrah: ['عباية عمرة', 'نقاب بالخمار', 'طرحة شيفون', 'إحرام رجالي'],
-};
-const SORTS: [SortKey, string][] = [['best', 'الأكثر طلباً'], ['low', 'الأقل سعراً'], ['high', 'الأعلى سعراً'], ['rating', 'الأعلى تقييماً']];
-const BANDS: [PriceBand, string][] = [['lt300', 'أقل من 300'], ['mid', '300–900'], ['gt900', 'فوق 900']];
+const SORTS: SortKey[] = ['best', 'low', 'high', 'rating'];
+const BANDS: Exclude<PriceBand, 'all'>[] = ['lt300', 'mid', 'gt900'];
 
 type SP = { q?: string; cat?: string; sort?: string; price?: string };
 
 export default async function SearchPage({ params, searchParams }: { params: Promise<{ niche: string }>; searchParams: Promise<SP> }) {
   const cfg = getNiche((await params).niche);
   if (!cfg) notFound();
+  const s = await speaker(cfg);
+  const t = s.t;
   const sp = await searchParams;
   const q = (sp.q ?? '').slice(0, 80);
   const cat = cfg.categories.some((c) => c.id === sp.cat) ? sp.cat : undefined;
-  const sort = (SORTS.find((s) => s[0] === sp.sort)?.[0] ?? 'best') as SortKey;
-  const price = (BANDS.find((b) => b[0] === sp.price)?.[0] ?? 'all') as PriceBand;
+  const sort = (SORTS.find((k) => k === sp.sort) ?? 'best') as SortKey;
+  const price = (BANDS.find((b) => b === sp.price) ?? 'all') as PriceBand;
   const catl = await catalog();
   const results = q || cat ? catl.search(cfg, { q, cat, sort, price }) : [];
   const link = (patch: Partial<SP>) => {
@@ -35,40 +35,40 @@ export default async function SearchPage({ params, searchParams }: { params: Pro
     <main className="page">
       <form className="sbox" role="search" action={`/${cfg.id}/search`}>
         {cat && <input type="hidden" name="cat" value={cat} />}
-        <input name="q" type="search" defaultValue={q} placeholder="دوري على منتج…" aria-label="بحث" autoFocus={!q && !cat} />
-        <button className="btn primary" type="submit">بحث</button>
+        <input name="q" type="search" defaultValue={q} placeholder={t('searchPh')} aria-label={t('nav.search')} autoFocus={!q && !cat} />
+        <button className="btn primary" type="submit">{t('nav.search')}</button>
       </form>
-      <nav className="chips" aria-label="الأقسام">
+      <nav className="chips" aria-label={t('categories')}>
         {cfg.categories.map((c) => (
-          <Link key={c.id} className="chip" aria-current={cat === c.id ? 'true' : undefined} href={link({ cat: cat === c.id ? undefined : c.id })}>{c.labelAr}</Link>
+          <Link key={c.id} className="chip" aria-current={cat === c.id ? 'true' : undefined} href={link({ cat: cat === c.id ? undefined : c.id })}>{s.category(c)}</Link>
         ))}
       </nav>
 
       {!q && !cat ? (
         <section style={{ display: 'grid', gap: 10 }}>
-          <h2 className="h4">الأكثر بحثاً</h2>
+          <h2 className="h4">{t('popular')}</h2>
           <div className="chips" style={{ flexWrap: 'wrap' }}>
-            {(POPULAR[cfg.id] ?? []).map((x) => <Link key={x} className="chip" href={link({ q: x })}>{x}</Link>)}
+            {((s.en && cfg.popularSearches?.en) || cfg.popularSearches?.ar || []).map((x) => <Link key={x} className="chip" href={link({ q: x })}>{x}</Link>)}
           </div>
         </section>
       ) : (
         <>
           <div style={{ display: 'grid', gap: 6 }}>
-            <span className="label">ترتيب</span>
-            <div className="chips">{SORTS.map(([k, l]) => <Link key={k} className="chip" aria-current={sort === k ? 'true' : undefined} href={link({ sort: k === 'best' ? undefined : k })}>{l}</Link>)}</div>
-            <span className="label">السعر</span>
-            <div className="chips">{BANDS.map(([k, l]) => <Link key={k} className="chip" aria-current={price === k ? 'true' : undefined} href={link({ price: price === k ? undefined : k })}>{l}</Link>)}</div>
+            <span className="label">{t('sort')}</span>
+            <div className="chips">{SORTS.map((k) => <Link key={k} className="chip" aria-current={sort === k ? 'true' : undefined} href={link({ sort: k === 'best' ? undefined : k })}>{t(`sort.${k}`)}</Link>)}</div>
+            <span className="label">{t('price')}</span>
+            <div className="chips">{BANDS.map((k) => <Link key={k} className="chip" aria-current={price === k ? 'true' : undefined} href={link({ price: price === k ? undefined : k })}>{t(`band.${k}`)}</Link>)}</div>
           </div>
           {results.length ? (
             <>
-              <p className="muted" style={{ margin: 0 }}>{results.length} منتج{q ? ` لـ "${q}"` : ''}</p>
-              <div className="grid">{results.map((p) => <ProductCard key={p.id} p={p} seller={catl.sellerOf(p)} />)}</div>
+              <p className="muted" style={{ margin: 0 }}>{t('resultsN', { n: results.length })}{q ? t('resultsFor', { q }) : ''}</p>
+              <div className="grid">{results.map((p) => <ProductCard key={p.id} p={p} seller={catl.sellerOf(p)} s={s} />)}</div>
             </>
           ) : (
             <div className="box" style={{ textAlign: 'center', justifyItems: 'center' }}>
-              <b>مش لاقيين {q ? `"${q}"` : 'منتجات هنا'}</b>
-              <span className="muted">جربي كلمة أبسط، أو شيلي فلتر السعر، أو اسألينا على واتساب ونلاقيهولك.</span>
-              {price !== 'all' && <Link className="btn ghost" href={link({ price: undefined })}>شيلي فلتر السعر</Link>}
+              <b>{q ? t('noResultsQ', { q }) : t('noResults')}</b>
+              <span className="muted">{t('noResultsHint')}</span>
+              {price !== 'all' && <Link className="btn ghost" href={link({ price: undefined })}>{t('clearPrice')}</Link>}
             </div>
           )}
         </>

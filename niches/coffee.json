@@ -1,0 +1,148 @@
+{
+  "id": "coffee",
+  "status": "draft",
+  "acceptsSellers": false,
+  "brand": {
+    "nameAr": "محمصة القاهرة",
+    "nameEn": "Cairo Roast",
+    "domain": "cairoroast.com",
+    "logo": "/brands/coffee/mark.svg",
+    "icon": "/brands/coffee/icon.svg",
+    "palette": {
+      "base": "#F3E9D8",
+      "primary": "#B4552D",
+      "accent": "#C8963E"
+    },
+    "tagline": {
+      "ar": "قهوة مختصة طازة",
+      "en": "Fresh specialty coffee"
+    }
+  },
+  "categories": [
+    {
+      "id": "blends",
+      "labelAr": "بلندات",
+      "labelEn": "Blends"
+    },
+    {
+      "id": "single-origin",
+      "labelAr": "أحادية المصدر",
+      "labelEn": "Single origin"
+    }
+  ],
+  "attributes": {
+    "required": [
+      "tasting_notes",
+      "origin",
+      "process"
+    ],
+    "optional": [
+      "roast_level",
+      "body",
+      "acidity",
+      "variety",
+      "roast_date"
+    ]
+  },
+  "commission": {
+    "new": 0.15,
+    "repeat": 0.06,
+    "referral": 0.02
+  },
+  "reserve": {
+    "percent": 0.1,
+    "days": 30
+  },
+  "shippingEgp": 65,
+  "risk": {
+    "depositAboveEgp": 1500,
+    "depositEgp": 65,
+    "requireWhatsappConfirm": false,
+    "openBeforePay": true
+  },
+  "wallet": {
+    "cashback": 0.04,
+    "expiresDays": 45
+  },
+  "priceCheckDays": 14,
+  "searchSynonyms": {
+    "بن": "قهوه",
+    "كافيه": "قهوه",
+    "coffee": "قهوه",
+    "blend": "بلند",
+    "ethiopia": "اثيوبيا",
+    "ethiopian": "اثيوبيا",
+    "اثيوبي": "اثيوبيا",
+    "brazil": "برازيل",
+    "برازيلي": "برازيل",
+    "شيكولاته": "شوكولاته",
+    "chocolate": "شوكولاته",
+    "bonds": "بوندز",
+    "بوند": "بوندز"
+  },
+  "optionAxes": [
+    {
+      "id": "weight",
+      "labelAr": "الوزن",
+      "labelEn": "Weight",
+      "valuesEn": {
+        "250 جم": "250 g",
+        "1 كجم": "1 kg"
+      }
+    }
+  ],
+  "bundles": [
+    {
+      "id": "discovery_box",
+      "nameAr": "صندوق الاكتشاف: 3 قهوات من بوندز",
+      "parts": [
+        {
+          "product": "bonds-chrome",
+          "qty": 1,
+          "variant": "250 جم"
+        },
+        {
+          "product": "bonds-ethiopia-limu",
+          "qty": 1,
+          "variant": "250 جم"
+        },
+        {
+          "product": "bonds-brazil-cerrado",
+          "qty": 1,
+          "variant": "250 جم"
+        }
+      ],
+      "discountEgp": 57,
+      "nameEn": "Discovery box: 3 Bonds coffees"
+    }
+  ],
+  "promos": [],
+  "partners": [
+    "offices",
+    "coworking_spaces",
+    "cafes"
+  ],
+  "reorderTrigger": "2 days before the bag runs out: weight_g / (cups_per_day * 15 g)",
+  "homeEyebrow": {
+    "ar": "جرّب 3 قهوات بسعر أقل",
+    "en": "Try 3 coffees for less"
+  },
+  "homeSection": {
+    "ar": "قهوات بوندز",
+    "en": "Bonds coffees"
+  },
+  "popularSearches": {
+    "ar": [
+      "بلند",
+      "إثيوبيا",
+      "البرازيل",
+      "شوكولاتة"
+    ],
+    "en": [
+      "Blend",
+      "Ethiopia",
+      "Brazil",
+      "Chocolate"
+    ]
+  }
+}

@@ -173,6 +173,13 @@ ${ar(W / 2, 1590, 28, 'احفظها في مكان ناشف بعيد عن الش�
 
 for (const [name, content] of Object.entries(files)) writeFileSync(out(name), content);
 
+// Lean marks for the website (no fonts inside, a few hundred bytes): header logo and browser icon.
+const site = path.join(root, 'apps', 'web', 'public', 'brands', 'coffee');
+mkdirSync(site, { recursive: true });
+const lean = (w, h, body, bg) => `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${w} ${h}">${bg ? `<rect width="${w}" height="${h}" rx="${w * 0.22}" fill="${bg}"/>` : ''}${body}</svg>`;
+writeFileSync(path.join(site, 'mark.svg'), lean(200, 240, mark(onLight)));
+writeFileSync(path.join(site, 'icon.svg'), lean(280, 280, mark({ ...onDark, x: 40, y: 20 }), C.espresso));
+
 // ---------- PNG exports ----------
 const CHROME = ['/Applications/Google Chrome.app/Contents/MacOS/Google Chrome', '/Applications/Brave Browser.app/Contents/MacOS/Brave Browser'].find(existsSync);
 const sizeOf = (s) => s.match(/viewBox="0 0 (\d+) (\d+)"/).slice(1).map(Number);

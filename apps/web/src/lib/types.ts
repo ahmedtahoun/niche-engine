@@ -25,6 +25,8 @@ export interface Seller {
   pickupAddress?: string;
   /** Product photos sent with the application, for the admin's review. */
   samplePhotos?: string[];
+  /** Store name for the English site. */
+  nameEn?: string;
 }
 
 export interface Variant {
@@ -39,6 +41,8 @@ export interface Variant {
   price?: number;
   /** Option values by the niche's option axes, e.g. { roast: "وسط", weight: "250 جم" }. */
   opts?: Record<string, string>;
+  /** Label shown on the English site (the Arabic label stays the cart and order key). */
+  labelEn?: string;
 }
 
 export interface Product {
@@ -61,6 +65,8 @@ export interface Product {
   /** Photo addresses (Supabase Storage). Without photos the page shows a drawing. */
   images?: string[];
   faq: [string, string][];
+  /** English texts for the English site; anything missing shows in Arabic. */
+  en?: { name?: string; lead?: string; attributes?: Record<string, string>; faq?: [string, string][] };
 }
 
 /** What the browser keeps in its cart. Prices are never trusted from here. */

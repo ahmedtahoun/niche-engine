@@ -15,13 +15,15 @@ import '@fontsource/ibm-plex-sans-arabic/latin-500.css';
 import '@fontsource/ibm-plex-sans-arabic/latin-600.css';
 import '@fontsource/ibm-plex-sans-arabic/latin-700.css';
 import './globals.css';
+import { getLang } from '@/lib/lang';
 
 export const metadata: Metadata = { title: 'niche-engine' };
 export const viewport: Viewport = { width: 'device-width', initialScale: 1, viewportFit: 'cover' };
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
+  const lang = await getLang();
   return (
-    <html lang="ar" dir="rtl">
+    <html lang={lang} dir={lang === 'en' ? 'ltr' : 'rtl'}>
       <head>
         {/* Product photos come from Supabase Storage: open that connection early. */}
         {process.env.SUPABASE_URL && <link rel="preconnect" href={new URL(process.env.SUPABASE_URL).origin} crossOrigin="" />}

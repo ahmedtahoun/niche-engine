@@ -23,6 +23,7 @@ export interface BundlePart {
 export interface Bundle {
   id: string;
   nameAr: string;
+  nameEn?: string;
   parts: BundlePart[];
   /** Discount in EGP, funded by the platform out of its commission. */
   discountEgp: number;
@@ -42,6 +43,15 @@ export interface Promo {
 export interface OptionAxis {
   id: string;
   labelAr: string;
+  labelEn?: string;
+  /** English names of this axis's values, e.g. { "250 جم": "250 g" }. */
+  valuesEn?: Record<string, string>;
+}
+
+/** Text in both store languages (English falls back to Arabic when missing). */
+export interface Bilingual {
+  ar: string;
+  en?: string;
 }
 
 /**
@@ -51,8 +61,9 @@ export interface OptionAxis {
 export interface Choice {
   id: string;
   labelAr: string;
+  labelEn?: string;
   categories: string[];
-  values: { id: string; labelAr: string; hintAr?: string }[];
+  values: { id: string; labelAr: string; labelEn?: string; hintAr?: string; hintEn?: string }[];
 }
 
 /** Fresh products: a date attribute, and how old a product may get before it is hidden. */
@@ -62,6 +73,7 @@ export interface Freshness {
   maxAgeDays: number;
   /** Line shown when the product is made after the order. */
   madeToOrderAr: string;
+  madeToOrderEn?: string;
 }
 
 export interface NicheConfig {
@@ -72,8 +84,13 @@ export interface NicheConfig {
     nameEn: string;
     domain: string;
     palette: { base: string; primary: string; accent: string };
+    /** Header mark and browser icon, paths under the site's public folder (e.g. /brands/coffee/mark.svg). */
+    logo?: string;
+    icon?: string;
+    /** Short line next to the name in the header. */
+    tagline?: Bilingual;
   };
-  categories: { id: string; labelAr: string }[];
+  categories: { id: string; labelAr: string; labelEn?: string }[];
   attributes: {
     /** The seller bot refuses to publish a product without these. */
     required: string[];
@@ -103,6 +120,15 @@ export interface NicheConfig {
   /** Per-order choices that are not stocked. */
   choices?: Choice[];
   freshness?: Freshness;
+  /** false = the seller bot doesn't offer this niche to new applicants (sellers are added by the team). */
+  acceptsSellers?: boolean;
+  /** Arabic voice: "f" speaks to women (اختاري), default speaks to everyone (اختار). */
+  voice?: 'f' | 'm';
+  /** Small text on the home page: above the hero, and the products heading. */
+  homeEyebrow?: Bilingual;
+  homeSection?: Bilingual;
+  /** Shown on the empty search page. English terms should map to catalog words through searchSynonyms. */
+  popularSearches?: { ar: string[]; en?: string[] };
 }
 
 const isFraction = (n: unknown) => typeof n === 'number' && n >= 0 && n < 1;

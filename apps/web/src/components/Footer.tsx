@@ -1,17 +1,18 @@
 import type { NicheConfig } from '@niche-engine/core';
+import type { Speaker } from '@/lib/i18n';
 
-export function Footer({ cfg }: { cfg: NicheConfig }) {
+export function Footer({ cfg, s }: { cfg: NicheConfig; s: Speaker }) {
   return (
     <footer className="foot">
       <div className="trust">
-        {cfg.risk.openBeforePay && <div>افتحي الشحنة قبل ما تدفعي</div>}
-        <div>استبدال مجاني خلال 14 يوم</div>
-        <div>سجل تجاري مسجل في مصر</div>
+        {cfg.risk.openBeforePay && <div>{s.t('ft.open')}</div>}
+        <div>{s.t('ft.exchange')}</div>
+        <div>{s.t('ft.cr')}</div>
       </div>
-      <div className="row"><span>واتساب خدمة العملاء</span><span className="num" dir="ltr">0100 000 0000</span></div>
-      <div className="row"><span>مواعيد الرد</span><span>كل يوم من 10 ص لـ 10 م</span></div>
-      <div className="links"><span>سياسة الاستبدال</span><span>الشحن والتوصيل</span><span>الخصوصية</span><span>بيعي معانا</span></div>
-      <span className="muted">{cfg.brand.nameAr} · {cfg.brand.domain}</span>
+      <div className="row"><span>{s.t('ft.wa')}</span><span className="num" dir="ltr">0100 000 0000</span></div>
+      <div className="row"><span>{s.t('ft.hours')}</span><span>{s.t('ft.hoursText')}</span></div>
+      <div className="links"><span>{s.t('ft.exchangePolicy')}</span><span>{s.t('ft.shipping')}</span><span>{s.t('ft.privacy')}</span><span>{s.t('ft.sell')}</span></div>
+      <span className="muted">{s.brand(cfg)} · {cfg.brand.domain}</span>
     </footer>
   );
 }

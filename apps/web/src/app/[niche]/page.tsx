@@ -4,55 +4,54 @@ import { BundleArt } from '@/components/Art';
 import { Footer } from '@/components/Footer';
 import { ProductCard } from '@/components/ProductCard';
 import { catalog } from '@/lib/catalog';
-import { egp } from '@/lib/eta';
+import { speaker } from '@/lib/lang';
 import { getNiche } from '@/lib/niches';
-
-const HERO_EYEBROW: Record<string, string> = { umrah: 'موسم عمرة رمضان 2027' };
-const SECTION: Record<string, string> = { umrah: 'الأكثر طلباً قبل رمضان' };
 
 export default async function Home({ params }: { params: Promise<{ niche: string }> }) {
   const cfg = getNiche((await params).niche);
   if (!cfg) notFound();
+  const s = await speaker(cfg);
   const cat = await catalog();
   const hero = cfg.bundles[0] ? cat.bundleView(cfg, cfg.bundles[0].id) : null;
   const products = cat.search(cfg, { sort: 'best' });
+  const text = (b?: { ar: string; en?: string }) => (b ? (s.en && b.en) || b.ar : '');
   return (
     <main className="page">
       {hero && (
         <section className="hero">
           <div className="art"><BundleArt parts={hero.parts.map((p) => p.product)} /></div>
           <div>
-            <span className="small" style={{ opacity: 0.85 }}>{HERO_EYEBROW[cfg.id]}</span>
-            <h2>{hero.bundle.nameAr}</h2>
-            <p>{hero.parts.map((p) => p.product.nameAr.split(' — ')[0]).join(' + ')}</p>
-            <div className="price num"><b>{egp(hero.price)}</b><s>{egp(hero.fullPrice)}</s></div>
-            <Link className="btn" href={`/${cfg.id}/b/${hero.bundle.id}`} style={{ marginTop: 8 }}>شوف التفاصيل</Link>
+            <span className="small" style={{ opacity: 0.85 }}>{text(cfg.homeEyebrow)}</span>
+            <h2>{s.bundle(hero.bundle)}</h2>
+            <p>{hero.parts.map((p) => s.product(p.product).split(' — ')[0]).join(' + ')}</p>
+            <div className="price num"><b>{s.egp(hero.price)}</b><s>{s.egp(hero.fullPrice)}</s></div>
+            <Link className="btn" href={`/${cfg.id}/b/${hero.bundle.id}`} style={{ marginTop: 8 }}>{s.t('home.details')}</Link>
           </div>
         </section>
       )}
       <div className="how">
-        <div><b>1. اطلب في دقيقة</b>وحسابك بيتعمل برقم موبايلك</div>
-        <div><b>2. يوصلك تأكيد</b>رسالة من بوسطة فيها رقم التتبع</div>
-        <div><b>3. استلم في 2–4 أيام</b>والدفع كاش عند الباب</div>
+        <div><b>{s.t('how.1')}</b>{s.t('how.1s')}</div>
+        <div><b>{s.t('how.2')}</b>{s.t('how.2s')}</div>
+        <div><b>{s.t('how.3')}</b>{s.t('how.3s')}</div>
       </div>
       {products.length ? (
         <>
-          <nav className="chips" aria-label="الأقسام">
-            {cfg.categories.map((c) => <Link key={c.id} className="chip" href={`/${cfg.id}/search?cat=${c.id}`}>{c.labelAr}</Link>)}
+          <nav className="chips" aria-label={s.t('categories')}>
+            {cfg.categories.map((c) => <Link key={c.id} className="chip" href={`/${cfg.id}/search?cat=${c.id}`}>{s.category(c)}</Link>)}
           </nav>
-          <h2 className="sec">{SECTION[cfg.id]}</h2>
-          <div className="grid">{products.map((p) => <ProductCard key={p.id} p={p} seller={cat.sellerOf(p)} />)}</div>
+          <h2 className="sec">{text(cfg.homeSection)}</h2>
+          <div className="grid">{products.map((p) => <ProductCard key={p.id} p={p} seller={cat.sellerOf(p)} s={s} />)}</div>
         </>
       ) : (
         <section className="box soon">
-          <b>{cfg.brand.nameAr} بتفتح قريب</b>
-          <span className="muted">بنجهز أول مجموعة من أحسن البائعين في مصر. ارجعولنا قريب، أو تابعونا عشان تعرفوا أول ما نفتح.</span>
+          <b>{s.t('soon.title', { brand: s.brand(cfg) })}</b>
+          <span className="muted">{s.t('soon.text')}</span>
           <div className="chips" style={{ flexWrap: 'wrap', justifyContent: 'center' }}>
-            {cfg.categories.map((c) => <span key={c.id} className="chip">{c.labelAr}</span>)}
+            {cfg.categories.map((c) => <span key={c.id} className="chip">{s.category(c)}</span>)}
           </div>
         </section>
       )}
-      <Footer cfg={cfg} />
+      <Footer cfg={cfg} s={s} />
     </main>
   );
 }

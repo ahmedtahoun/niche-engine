@@ -77,3 +77,28 @@ test('freshness: no date means made to order; a dated product goes stale after t
   assert.equal((freshnessOf(cfg, product({ slug: 'b', attributes: { roast_date: '2026-10-01' } }), now) as { stale: boolean }).stale, true);
   assert.equal(freshnessOf(base, eth, now), null);
 });
+
+test('Cairo Roast: the Bonds seed SQL loads into real Postgres, re-runs keep stock, and checkout prices each weight', async () => {
+  const { readFileSync } = await import('node:fs');
+  const { startFakeSupabase } = await import('./postgrest-fake.ts');
+  const { rowToProduct, rowToSeller } = await import('../src/lib/store/rows.ts');
+  const { db } = await startFakeSupabase();
+  const seed = readFileSync(new URL('../../../supabase/seed/coffee-bonds.sql', import.meta.url), 'utf8');
+  await db.exec(seed);
+  await db.exec(`update products set variants = jsonb_set(variants, '{0,stock}', '7') where id = 'bonds-chrome'`);
+  await db.exec(seed);
+  const products = (await db.query<Record<string, unknown>>('select * from products order by id')).rows.map((r) => rowToProduct(r as never));
+  const sellers = (await db.query<Record<string, unknown>>('select * from sellers')).rows.map((r) => rowToSeller(r as never));
+  assert.equal(products.length, 5);
+  const chrome = products.find((p) => p.id === 'bonds-chrome')!;
+  assert.equal(chrome.variants[0].stock, 7);
+  assert.deepEqual(chrome.variants.map((v) => v.price), [225, 900]);
+  const coffeeCfg = getNiche('coffee')!;
+  const live = new Catalog(sellers, products);
+  assert.deepEqual(live.bundleProblems(coffeeCfg), []);
+  const q = live.quote(coffeeCfg, [{ kind: 'item', slug: 'bonds-ethiopia-limu', variant: '1 كجم', qty: 1 }, { kind: 'bundle', id: 'discovery_box', variant: '', qty: 1 }], opts);
+  assert.deepEqual(q.problems, []);
+  assert.equal(q.subtotal, 1140 + 225 + 285 + 297);
+  assert.equal(q.bundleDiscount, 57);
+  assert.equal(live.search(coffeeCfg, { q: 'بن اثيوبي' })[0]?.slug, 'bonds-ethiopia-limu');
+});

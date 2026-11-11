@@ -1,5 +1,6 @@
 // DEMO DATA ONLY. Replaced by Supabase reads once the keys are in place.
 import type { Product, Seller } from './types.ts';
+import { BONDS, BONDS_PRODUCTS } from './seeds/bonds.ts';
 
 const v = (o: Record<string, number>) => Object.entries(o).map(([label, stock]) => ({ label, stock }));
 
@@ -8,17 +9,13 @@ export const SELLERS: Seller[] = [
   { id: 's2', telegramChatId: 1002, niche: 'umrah', name: 'نقاب الهدى', area: 'المنصورة', rating: 4.6, status: 'active' },
   { id: 's3', telegramChatId: 1003, niche: 'umrah', name: 'استوديو طرحة', area: 'الإسكندرية', rating: 4.9, status: 'active' },
   { id: 's4', telegramChatId: 1004, niche: 'umrah', name: 'إحرام مكة', area: 'الجيزة', rating: 4.2, status: 'warning' },
+  { ...BONDS, telegramChatId: 1005 },
 ];
 
 const ABAYA_FAQ: [string, string][] = [
   ['العباية دي مناسبة للعمرة في الحر؟', 'أيوه، القماش خفيف وبيسمح بالتهوية، وواسعة ومش بتحدد الجسم.'],
   ['أختار مقاس إيه؟', 'استخدمي "اعرفي مقاسك" فوق، أو جدول المقاسات بالسنتيمتر. ولو طلع مش مظبوط الاستبدال مجاني.'],
 ];
-const COFFEE_FAQ: [string, string][] = [
-  ['البن ده محمص إمتى؟', 'تاريخ التحميص مكتوب في المواصفات. بنعرض البن لحد 45 يوم من التحميص بس.'],
-  ['أطحنه إزاي؟', 'استخدم "اختار الطحنة" فوق، أو اطلبه حبوب لو عندك مطحنة.'],
-];
-const GRINDS = (n: number) => v({ 'حبوب': n, 'مطحون فلتر': n, 'مطحون اسبريسو': n, 'مطحون تركي': Math.max(0, n - 4) });
 
 export const PRODUCTS: Product[] = [
   // ---------- Umrah ----------
@@ -51,4 +48,6 @@ export const PRODUCTS: Product[] = [
     attributes: { 'القماش': 'قطن فوطة', 'المقاس': '2 × 110 × 220 سم' }, variants: v({ M: 8, L: 4 }), views: 640,
     reviews: [{ name: 'أم يوسف', tags: ['L', 'مظبوط'], text: 'القطن تقيل وبيشرب العرق.' }], faq: [] },
 
+  // ---------- Coffee (Cairo Roast) ----------
+  ...BONDS_PRODUCTS,
 ];

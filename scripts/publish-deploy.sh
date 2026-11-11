@@ -19,10 +19,18 @@ cp -R apps/web/.next/standalone/. bundle/
 rm -rf bundle/node_modules/sharp bundle/node_modules/@img
 mkdir -p bundle/apps/web/.next
 cp -R apps/web/.next/static bundle/apps/web/.next/static
+# Logo, icons, share card and product photos (standalone builds leave public/ out).
+[ -d apps/web/public ] && cp -R apps/web/public bundle/apps/web/public
 cp -R niches bundle/niches
 cp deploy/cpanel/.cpanel.yml bundle/.cpanel.yml
 cp deploy/cpanel/README.md bundle/README.md
 echo "$SHA" > bundle/REVISION
+# The deploy branch is public: refuse to publish private business files (supplier costs, margins).
+if find bundle -name '*.local.*' -o -path '*/private/*' | grep -q .; then
+  echo "Private files found in the bundle; not publishing:" >&2
+  find bundle -name '*.local.*' -o -path '*/private/*' >&2
+  exit 1
+fi
 
 rm -rf out
 git clone --quiet --depth 1 --branch deploy "$REMOTE" out

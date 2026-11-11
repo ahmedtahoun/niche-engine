@@ -41,6 +41,7 @@ jobs:
           cp -R apps/web/.next/standalone/. bundle/
           mkdir -p bundle/apps/web/.next
           cp -R apps/web/.next/static bundle/apps/web/.next/static
+          if [ -d apps/web/public ]; then cp -R apps/web/public bundle/apps/web/public; fi
           cp -R niches bundle/niches
           cp deploy/cpanel/.cpanel.yml bundle/.cpanel.yml
           cp deploy/cpanel/README.md bundle/README.md

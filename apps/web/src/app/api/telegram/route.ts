@@ -16,7 +16,7 @@ interface TgUpdate {
 const same = (a: string, b: string) => a.length === b.length && timingSafeEqual(Buffer.from(a), Buffer.from(b));
 
 export async function POST(req: Request) {
-  const secret = process.env.TELEGRAM_WEBHOOK_SECRET;
+  const secret = process.env.TELEGRAM_WEBHOOK_SECRET?.trim();
   if (!secret || !same(req.headers.get('x-telegram-bot-api-secret-token') ?? '', secret)) {
     return NextResponse.json({ ok: false }, { status: 401 });
   }

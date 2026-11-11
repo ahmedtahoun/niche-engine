@@ -12,6 +12,7 @@ export function Nav({ counts }: { counts: { orders: number; review: number } }) 
     ['/admin/sellers', 'Sellers'],
     ['/admin/products', 'Products & review', counts.review],
     ['/admin/payouts', 'Payouts'],
+    ['/admin/telegram', 'Telegram bot'],
   ];
   return (
     <nav style={{ display: 'contents' }} aria-label="Admin sections">

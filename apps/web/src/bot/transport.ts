@@ -32,7 +32,7 @@ export async function deliver(outs: Outgoing[]) {
 }
 
 async function sendTelegram(o: Outgoing) {
-  const base = `https://api.telegram.org/bot${process.env.TELEGRAM_BOT_TOKEN}`;
+  const base = `https://api.telegram.org/bot${process.env.TELEGRAM_BOT_TOKEN?.trim()}`;
   const reply_markup = o.buttons
     ? { inline_keyboard: o.buttons.map((r) => r.map((b) => ({ text: b.text, callback_data: b.data }))) }
     : o.keyboard ? { keyboard: o.keyboard.map((r) => r.map((text) => ({ text }))), resize_keyboard: true, is_persistent: true } : undefined;
@@ -52,5 +52,5 @@ async function sendTelegram(o: Outgoing) {
 
 export async function answerCallback(id: string) {
   if (!process.env.TELEGRAM_BOT_TOKEN) return;
-  await fetch(`https://api.telegram.org/bot${process.env.TELEGRAM_BOT_TOKEN}/answerCallbackQuery`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ callback_query_id: id }) });
+  await fetch(`https://api.telegram.org/bot${process.env.TELEGRAM_BOT_TOKEN?.trim()}/answerCallbackQuery`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ callback_query_id: id }) });
 }

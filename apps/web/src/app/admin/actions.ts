@@ -13,6 +13,7 @@ import { getNiche } from '@/lib/niches';
 import { mutateOrder, orderById, type OrderStatus } from '@/lib/orders';
 import { markPaid, paidThisCycle, sellerCycle } from '@/lib/payouts';
 import { allow, clientIp } from '@/lib/rate-limit';
+import { connectWebhook } from '@/lib/telegram-setup';
 
 async function guard() {
   if (!(await isAdmin())) redirect('/admin/login');
@@ -113,4 +114,11 @@ export async function markPaidAction(sellerId: string) {
   if (!(await markPaid(sellerId, c.payable))) return;
   if (s.telegramChatId) await deliver([{ chatId: s.telegramChatId, text: `💰 اتحولك ${egp(c.payable)} على إنستاباي${s.instapay ? ` (${s.instapay.slice(0, 3)}••••${s.instapay.slice(-4)})` : ''}.\nمحجوز كضمان: ${egp(c.reserveHeld)}\nشكراً 🤍` }]);
   done();
+}
+
+// ---------- Telegram ----------
+export async function connectTelegram() {
+  await guard();
+  const r = await connectWebhook();
+  redirect(`/admin/telegram?ok=${r.ok ? 1 : 0}&result=${encodeURIComponent(r.message)}`);
 }

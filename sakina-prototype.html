@@ -1,0 +1,1161 @@
+<meta charset="utf-8">
+<title>Sakina Marketplace Prototype</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=El+Messiri:wght@500;600;700&family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: a control strip (view switcher + journey) above a stage. Customer & seller views sit in a phone frame with a notes column; admin is a full-width console. */
+:root{
+  --bg:#EDEFE9; --surface:#FFFFFF; --surface-2:#F6F5EF; --ink:#17201D; --muted:#5C6862; --line:#DADCD2;
+  --emerald:#1F5C4A; --emerald-ink:#FFFFFF; --emerald-soft:#E0ECE5; --gold:#85662A; --sand:#EEE7DA; --frame:#151A18;
+  --ok:#2C7A4D; --ok-soft:#E1F0E6; --warn:#9A620F; --warn-soft:#FAEED6; --bad:#B0372D; --bad-soft:#F7E0DC; --info:#2D5B88; --info-soft:#E0E9F3;
+  --tg-bg:#D3E0CC; --tg-head:#4C789E; --tg-in:#FFFFFF; --tg-out:#E4F6D3; --tg-btn:rgba(255,255,255,.78); --tg-btn-ink:#285C84;
+  --wa-bg:#E9E2D7; --wa-head:#0E6B59; --wa-in:#FFFFFF; --wa-out:#D8F6C3;
+  --f-display:'El Messiri','IBM Plex Sans Arabic',Georgia,serif;
+  --f-body:'IBM Plex Sans Arabic',system-ui,-apple-system,'Segoe UI',sans-serif;
+  --f-mono:'IBM Plex Mono',ui-monospace,Menlo,monospace;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --bg:#0E1311; --surface:#161D1A; --surface-2:#1B231F; --ink:#E6EBE7; --muted:#97A39D; --line:#2A3530;
+  --emerald:#53A98A; --emerald-ink:#0A1310; --emerald-soft:#1B3128; --gold:#D3B172; --sand:#232E29; --frame:#000000;
+  --ok:#5DC28C; --ok-soft:#163323; --warn:#E3AA4C; --warn-soft:#3A2B11; --bad:#F07C70; --bad-soft:#3C1D1A; --info:#82B0E2; --info-soft:#19293A;
+  --tg-bg:#0E1621; --tg-head:#17212B; --tg-in:#182533; --tg-out:#2B5278; --tg-btn:rgba(255,255,255,.08); --tg-btn-ink:#8CC4F2;
+  --wa-bg:#0B141A; --wa-head:#1F2C34; --wa-in:#202C33; --wa-out:#005C4B; color-scheme:dark }}
+:root[data-theme="dark"]{
+  --bg:#0E1311; --surface:#161D1A; --surface-2:#1B231F; --ink:#E6EBE7; --muted:#97A39D; --line:#2A3530;
+  --emerald:#53A98A; --emerald-ink:#0A1310; --emerald-soft:#1B3128; --gold:#D3B172; --sand:#232E29; --frame:#000000;
+  --ok:#5DC28C; --ok-soft:#163323; --warn:#E3AA4C; --warn-soft:#3A2B11; --bad:#F07C70; --bad-soft:#3C1D1A; --info:#82B0E2; --info-soft:#19293A;
+  --tg-bg:#0E1621; --tg-head:#17212B; --tg-in:#182533; --tg-out:#2B5278; --tg-btn:rgba(255,255,255,.08); --tg-btn-ink:#8CC4F2;
+  --wa-bg:#0B141A; --wa-head:#1F2C34; --wa-in:#202C33; --wa-out:#005C4B; color-scheme:dark }
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:14px;line-height:1.5}
+button{font:inherit;color:inherit;cursor:pointer}
+button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid var(--emerald);outline-offset:2px}
+.num{font-family:var(--f-mono);font-variant-numeric:tabular-nums}
+.wrap{padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:16px 40px;max-width:1280px;margin:0 auto}
+
+/* top strip */
+.top{display:flex;flex-wrap:wrap;align-items:center;gap:12px 20px;justify-content:space-between}
+.brand{display:flex;align-items:baseline;gap:10px}
+.brand b{font-family:var(--f-display);font-size:26px;color:var(--emerald);font-weight:700}
+.brand span{color:var(--muted);font-size:13px}
+.seg{display:flex;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:4px;gap:4px;flex-wrap:wrap}
+.seg button{border:0;background:transparent;padding:8px 14px;border-radius:9px;font-weight:600;font-size:13px;color:var(--muted);display:flex;gap:8px;align-items:center}
+.seg button[aria-pressed="true"]{background:var(--emerald);color:var(--emerald-ink)}
+.badge{min-width:18px;height:18px;border-radius:9px;background:var(--bad);color:#fff;font-size:11px;display:inline-grid;place-items:center;padding:0 5px}
+.guide{margin-top:14px;display:flex;gap:8px;overflow-x:auto;padding-bottom:4px}
+.step{flex:0 0 auto;display:flex;align-items:center;gap:8px;border:1px solid var(--line);background:var(--surface);border-radius:10px;padding:7px 10px;font-size:12.5px;max-width:260px;text-align:start}
+.step i{font-style:normal;width:20px;height:20px;border-radius:50%;display:grid;place-items:center;font-size:11px;font-weight:700;background:var(--surface-2);border:1px solid var(--line);flex:0 0 auto}
+.step.done{border-color:var(--ok);background:var(--ok-soft)} .step.done i{background:var(--ok);color:#fff;border-color:var(--ok)}
+.step.next{border-color:var(--emerald)} .step.next i{background:var(--emerald);color:var(--emerald-ink);border-color:var(--emerald)}
+
+/* stage */
+.stage{margin-top:18px;display:grid;grid-template-columns:minmax(0,400px) minmax(0,1fr);gap:28px;align-items:start;justify-content:center}
+@media (max-width:900px){.stage{grid-template-columns:minmax(0,1fr)}}
+.phone{width:min(390px,100%);height:780px;max-height:calc(100vh - 40px);min-height:600px;margin:0 auto;border:10px solid var(--frame);border-radius:42px;overflow:hidden;display:flex;flex-direction:column;background:var(--surface);box-shadow:0 18px 50px rgba(0,0,0,.12)}
+.sbar{height:30px;flex:0 0 auto;display:flex;justify-content:space-between;align-items:center;padding:0 22px;font-size:12px;font-weight:600;background:inherit}
+.notes{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:20px;min-width:0}
+.notes h3{margin:0 0 4px;font-size:16px}
+.notes .kicker{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--gold);font-weight:700}
+.notes ul{margin:10px 0 0;padding-inline-start:18px;display:grid;gap:8px}
+.notes li{line-height:1.55}
+.notes pre{background:var(--surface-2);border:1px solid var(--line);border-radius:10px;padding:12px;font-family:var(--f-mono);font-size:11.5px;overflow:auto;max-height:280px;margin:14px 0 0;direction:ltr;text-align:left}
+.chatswitch{display:flex;justify-content:center;margin-bottom:12px}
+
+/* customer app */
+.c{direction:rtl;display:flex;flex-direction:column;height:100%;min-height:0;background:var(--surface);flex:1}
+.c-head{display:flex;align-items:center;justify-content:space-between;padding:8px 16px 10px;border-bottom:1px solid var(--line)}
+.c-logo{font-family:var(--f-display);font-size:24px;font-weight:700;color:var(--emerald)}
+.c-logo small{font-family:var(--f-body);font-size:10px;color:var(--muted);font-weight:500;margin-inline-start:6px}
+.chip{border:1px solid var(--line);background:var(--surface-2);border-radius:999px;padding:8px 13px;min-height:36px;font-size:12.5px;font-weight:600;display:inline-flex;align-items:center}
+.chip.gold{border-color:var(--gold);color:var(--gold);background:transparent}
+.c-scroll{flex:1;overflow-y:auto;min-height:0}
+.c-pad{padding:14px 16px 20px;display:grid;gap:16px}
+.hero{background:var(--emerald);color:var(--emerald-ink);border-radius:18px;padding:16px;display:grid;grid-template-columns:110px 1fr;gap:12px;align-items:center}
+.hero h2{font-family:var(--f-display);margin:2px 0 4px;font-size:22px;line-height:1.25}
+.hero p{margin:0 0 8px;font-size:12.5px;opacity:.9}
+.hero .art{background:rgba(255,255,255,.12);border-radius:14px;aspect-ratio:1;display:grid;place-items:center;max-width:100%}
+.eyebrow{font-size:11px;font-weight:600;opacity:.85}
+.price{display:flex;gap:8px;align-items:baseline}
+.price b{font-size:18px} .price s{opacity:.7;font-size:12px}
+.btn{border:0;border-radius:12px;padding:11px 16px;font-weight:700;font-size:14px}
+.btn.primary{background:var(--emerald);color:var(--emerald-ink)}
+.hero .btn.primary{background:var(--surface);color:var(--emerald);padding:8px 14px;font-size:13px}
+.btn.ghost{background:transparent;border:1px solid var(--line)}
+.btn.block{width:100%}
+.btn[disabled]{opacity:.45;cursor:not-allowed}
+.trust{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.trust div{background:var(--surface-2);border:1px solid var(--line);border-radius:12px;padding:8px;font-size:11px;text-align:center;line-height:1.35;display:grid;gap:4px;justify-items:center}
+.trust svg{width:18px;height:18px;color:var(--emerald)}
+.cats{display:flex;gap:8px;overflow-x:auto}
+.cats .chip{flex:0 0 auto}
+.sec{font-family:var(--f-display);font-size:18px;margin:0}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.pcard{border:1px solid var(--line);background:var(--surface);border-radius:14px;padding:8px;text-align:start;display:grid;gap:3px}
+.pimg{background:var(--sand);border-radius:10px;aspect-ratio:1;display:grid;place-items:center;max-width:100%}
+.pimg svg{width:62%;height:62%}
+.pname{font-weight:600;font-size:12.5px;line-height:1.35}
+.pby{font-size:11px;color:var(--muted)}
+.pprice{font-weight:700;color:var(--emerald)}
+.learn{display:block;border:1px dashed var(--gold);border-radius:14px;padding:12px;background:transparent;text-align:start}
+.learn b{display:block;font-size:14px} .learn span{font-size:12px;color:var(--muted)}
+.tabbar{display:grid;grid-template-columns:repeat(4,1fr);border-top:1px solid var(--line);background:var(--surface);padding-bottom:4px}
+.tabbar button{border:0;background:transparent;padding:9px 0 7px;font-size:11px;color:var(--muted);display:grid;justify-items:center;gap:2px;font-weight:600}
+.tabbar button[aria-current="true"]{color:var(--emerald)}
+.tabbar svg{width:20px;height:20px}
+.back{border:0;background:transparent;font-weight:600;color:var(--emerald);padding:0}
+.big-img{background:var(--sand);border-radius:16px;aspect-ratio:1/0.85;display:grid;place-items:center}
+.big-img svg{width:52%;height:62%}
+.ptitle{font-family:var(--f-display);font-size:21px;margin:0;line-height:1.3}
+.by{display:flex;gap:6px;align-items:center;font-size:12px;color:var(--muted)}
+.verified{color:var(--ok);font-weight:700}
+.lead{background:var(--emerald-soft);border-radius:12px;padding:10px 12px;font-size:13px;line-height:1.6}
+.sizes{display:flex;gap:8px;flex-wrap:wrap}
+.sz{min-width:52px;border:1.5px solid var(--line);background:var(--surface);border-radius:10px;padding:7px 10px;font-weight:700;display:grid;justify-items:center;gap:0}
+.sz small{font-weight:500;font-size:10px;color:var(--muted)}
+.sz[aria-pressed="true"]{border-color:var(--emerald);background:var(--emerald-soft)}
+.sz[disabled]{opacity:.4}
+.spec{width:100%;border-collapse:collapse;font-size:12.5px}
+.spec td{padding:7px 4px;border-bottom:1px solid var(--line)}
+.spec td:first-child{color:var(--muted);width:40%}
+.h4{font-weight:700;font-size:14px;margin:0 0 6px}
+.rev{border:1px solid var(--line);border-radius:12px;padding:10px;display:grid;gap:4px;font-size:12.5px}
+.rev .meta{display:flex;gap:6px;flex-wrap:wrap}
+.tag{font-size:10.5px;border-radius:6px;padding:1px 7px;background:var(--surface-2);border:1px solid var(--line)}
+details{border-bottom:1px solid var(--line);padding:8px 0;font-size:13px}
+summary{font-weight:600;cursor:pointer}
+details p{margin:6px 0 0;color:var(--muted)}
+.sticky{position:sticky;bottom:0;background:var(--surface);border-top:1px solid var(--line);padding:10px 16px;display:flex;gap:10px;align-items:center;justify-content:space-between}
+.sticky .tot{font-weight:700;font-size:16px}
+.part{display:grid;grid-template-columns:56px 1fr auto;gap:10px;align-items:center;border:1px solid var(--line);border-radius:12px;padding:8px}
+.part .pimg{border-radius:8px}
+.part .pimg svg{width:70%;height:70%}
+.row{display:flex;justify-content:space-between;gap:10px;font-size:13px}
+.row.total{font-weight:700;font-size:15px;border-top:1px solid var(--line);padding-top:8px}
+.note{border-radius:12px;padding:10px 12px;font-size:12.5px;line-height:1.55}
+.note.warn{background:var(--warn-soft);color:var(--warn)}
+.note.ok{background:var(--ok-soft);color:var(--ok)}
+.note.info{background:var(--info-soft);color:var(--info)}
+.field{display:grid;gap:4px;font-size:12px;color:var(--muted)}
+.field input,.field select{font:inherit;font-size:14px;color:var(--ink);background:var(--surface-2);border:1px solid var(--line);border-radius:10px;padding:9px 10px}
+.radio{display:flex;gap:10px;align-items:flex-start;border:1.5px solid var(--line);border-radius:12px;padding:10px;font-size:13px}
+.radio[aria-checked="true"]{border-color:var(--emerald);background:var(--emerald-soft)}
+.radio b{display:block}
+.toggle{display:flex;align-items:center;justify-content:space-between;gap:10px;font-size:13px;border:1px solid var(--line);border-radius:12px;padding:10px}
+.sw{width:42px;height:24px;border-radius:12px;background:var(--line);position:relative;border:0;flex:0 0 auto}
+.sw::after{content:"";position:absolute;top:3px;inset-inline-start:3px;width:18px;height:18px;border-radius:50%;background:#fff;transition:inset-inline-start .15s}
+.sw[aria-checked="true"]{background:var(--emerald)}
+.sw[aria-checked="true"]::after{inset-inline-start:21px}
+.tl{display:grid;gap:0}
+.tl div{display:grid;grid-template-columns:22px 1fr;gap:10px;padding-bottom:14px;position:relative;font-size:13px}
+.tl div::before{content:"";position:absolute;inset-inline-start:10px;top:20px;bottom:0;width:2px;background:var(--line)}
+.tl div:last-child::before{display:none}
+.tl i{width:22px;height:22px;border-radius:50%;border:2px solid var(--line);background:var(--surface);font-style:normal;display:grid;place-items:center;font-size:11px}
+.tl .on i{background:var(--emerald);border-color:var(--emerald);color:var(--emerald-ink)}
+.tl small{display:block;color:var(--muted)}
+.card{border:1px solid var(--line);border-radius:14px;padding:12px;display:grid;gap:8px}
+
+/* chat apps */
+.chat{display:flex;flex-direction:column;height:100%;min-height:0;flex:1;direction:rtl}
+.chat-head{display:flex;align-items:center;gap:10px;padding:8px 12px;color:#fff}
+.chat-head .av{width:36px;height:36px;border-radius:50%;display:grid;place-items:center;font-family:var(--f-display);font-weight:700;background:rgba(255,255,255,.2);flex:0 0 auto}
+.chat-head b{display:block;font-size:14px} .chat-head small{font-size:11px;opacity:.8}
+.chat-body{flex:1;overflow-y:auto;padding:12px 10px;display:flex;flex-direction:column;gap:8px;min-height:0}
+.msg{max-width:86%;border-radius:14px;padding:8px 11px;font-size:13px;line-height:1.55;white-space:pre-line;position:relative}
+.msg.in{align-self:flex-start;border-start-start-radius:4px}
+.msg.out{align-self:flex-end;border-start-end-radius:4px}
+.msg time{display:block;text-align:end;font-size:10px;opacity:.6;margin-top:2px;white-space:normal}
+.tg .chat-head{background:var(--tg-head)} .tg .chat-body{background:var(--tg-bg)}
+.tg .msg.in{background:var(--tg-in)} .tg .msg.out{background:var(--tg-out)}
+.wa .chat-head{background:var(--wa-head)} .wa .chat-body{background:var(--wa-bg)}
+.wa .msg.in{background:var(--wa-in)} .wa .msg.out{background:var(--wa-out)}
+.ibtns{display:grid;grid-template-columns:1fr 1fr;gap:5px;margin-top:5px;max-width:86%;align-self:flex-start;width:86%}
+.ibtns.one{grid-template-columns:1fr}
+.ibtns button{border:0;border-radius:10px;padding:8px 6px;font-size:12.5px;font-weight:600;background:var(--tg-btn);color:var(--tg-btn-ink)}
+.wa .ibtns button{background:var(--wa-in);color:var(--wa-head)}
+:root[data-theme="dark"] .wa .ibtns button{color:#53BDA5}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .wa .ibtns button{color:#53BDA5}}
+.ibtns button[disabled]{opacity:.45;cursor:default}
+.file{display:flex;gap:10px;align-items:center;white-space:normal}
+.file .ic{width:38px;height:38px;border-radius:50%;background:var(--tg-head);color:#fff;display:grid;place-items:center;font-size:11px;font-weight:700;flex:0 0 auto}
+.photos{display:grid;grid-template-columns:repeat(3,1fr);gap:4px;white-space:normal;width:200px;max-width:100%}
+.photos div{aspect-ratio:1;border-radius:8px;display:grid;place-items:center;background:var(--sand)}
+.photos svg{width:70%;height:70%}
+.pcardmsg{white-space:normal;display:grid;gap:6px}
+.pcardmsg .pimg{aspect-ratio:16/9}
+.pcardmsg .pimg svg{width:auto;height:70%}
+.share{background:var(--surface-2);border-radius:8px;padding:6px 8px;font-size:12px}
+.kb{display:grid;grid-template-columns:1fr 1fr;gap:5px;padding:6px;background:var(--surface-2);border-top:1px solid var(--line)}
+.kb button{border:0;border-radius:8px;padding:9px 4px;background:var(--surface);font-size:12.5px;font-weight:600;box-shadow:0 1px 0 var(--line)}
+.inputbar{display:flex;gap:8px;padding:8px;background:var(--surface);border-top:1px solid var(--line);align-items:center;font-size:12.5px;color:var(--muted)}
+.inputbar span{flex:1;background:var(--surface-2);border-radius:18px;padding:8px 12px}
+
+/* admin */
+.admin{display:grid;grid-template-columns:210px minmax(0,1fr);gap:18px;margin-top:18px;align-items:start}
+@media (max-width:860px){.admin{grid-template-columns:minmax(0,1fr)}}
+.side{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:10px;display:grid;gap:2px;position:sticky;top:max(12px,env(safe-area-inset-top,0px))}
+@media (max-width:860px){.side{position:static;display:flex;overflow-x:auto}}
+.side .niche{padding:8px 10px 12px;border-bottom:1px solid var(--line);margin-bottom:6px}
+@media (max-width:860px){.side .niche{display:none}}
+.side .niche b{display:block;font-family:var(--f-display);font-size:18px;color:var(--emerald)}
+.side .niche small{color:var(--muted)}
+.side button{border:0;background:transparent;text-align:start;padding:9px 10px;border-radius:9px;font-weight:600;font-size:13px;display:flex;justify-content:space-between;align-items:center;gap:8px;white-space:nowrap}
+.side button[aria-current="true"]{background:var(--emerald-soft);color:var(--emerald)}
+.main{display:grid;gap:16px;min-width:0}
+.main h2{margin:0;font-size:20px}
+.main .sub{color:var(--muted);margin:2px 0 0;font-size:13px}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px}
+.kpi{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:12px 14px}
+.kpi small{color:var(--muted);font-size:12px;display:block}
+.kpi b{font-family:var(--f-mono);font-size:21px;font-weight:500;display:block;margin-top:2px}
+.kpi span{font-size:11.5px;color:var(--muted)}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:16px;min-width:0}
+.panel h3{margin:0 0 10px;font-size:15px;display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+.cols{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(0,1fr);gap:16px}
+@media (max-width:1050px){.cols{grid-template-columns:minmax(0,1fr)}}
+.tbl{overflow-x:auto}
+table.t{width:100%;border-collapse:collapse;font-size:12.5px;min-width:640px}
+.t th{text-align:left;font-weight:600;color:var(--muted);font-size:11.5px;padding:8px;border-bottom:1px solid var(--line);white-space:nowrap}
+.t td{padding:9px 8px;border-bottom:1px solid var(--line);vertical-align:middle}
+.t tr.click{cursor:pointer} .t tr.click:hover td{background:var(--surface-2)}
+.t td.r,.t th.r{text-align:right}
+.ar{direction:rtl;unicode-bidi:isolate;font-family:var(--f-body)}
+.pill{display:inline-flex;align-items:center;gap:5px;border-radius:999px;padding:2px 9px;font-size:11.5px;font-weight:600;white-space:nowrap}
+.pill::before{content:"";width:6px;height:6px;border-radius:50%;background:currentColor}
+.pill.ok{background:var(--ok-soft);color:var(--ok)} .pill.warn{background:var(--warn-soft);color:var(--warn)}
+.pill.bad{background:var(--bad-soft);color:var(--bad)} .pill.info{background:var(--info-soft);color:var(--info)}
+.pill.mute{background:var(--surface-2);color:var(--muted)}
+.mini{border:1px solid var(--line);background:var(--surface);border-radius:8px;padding:4px 9px;font-size:12px;font-weight:600;white-space:nowrap}
+.mini.pri{background:var(--emerald);border-color:var(--emerald);color:var(--emerald-ink)}
+.mini.danger{color:var(--bad);border-color:var(--bad)}
+.acts{display:flex;gap:6px;flex-wrap:wrap}
+.alerts{display:grid;gap:8px}
+.alert{display:grid;grid-template-columns:4px 1fr auto;gap:10px;align-items:center;border:1px solid var(--line);border-radius:10px;padding:8px 10px 8px 0;font-size:12.5px;overflow:hidden}
+.alert::before{content:"";align-self:stretch;margin:-8px 0;background:var(--c)}
+.alert small{display:block;color:var(--muted)}
+.filters{display:flex;gap:6px;flex-wrap:wrap}
+.filters button{border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:5px 12px;font-size:12px;font-weight:600}
+.filters button[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.stockchips{display:flex;gap:4px;flex-wrap:wrap}
+.sc{font-family:var(--f-mono);font-size:11px;border:1px solid var(--line);border-radius:6px;padding:1px 6px;white-space:nowrap}
+.sc.low{border-color:var(--bad);color:var(--bad);background:var(--bad-soft)}
+.qcard{display:grid;grid-template-columns:110px minmax(0,1fr) auto;gap:14px;align-items:start;border:1px solid var(--line);border-radius:14px;padding:12px}
+@media (max-width:640px){.qcard{grid-template-columns:minmax(0,1fr)}}
+.qcard .pimg{border-radius:10px}
+.check{display:grid;gap:4px;font-size:12.5px;margin-top:6px}
+.check label{display:flex;gap:8px;align-items:center}
+.form{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px}
+.form label{display:grid;gap:4px;font-size:12px;color:var(--muted)}
+.form input{font:inherit;font-family:var(--f-mono);font-size:14px;color:var(--ink);background:var(--surface-2);border:1px solid var(--line);border-radius:10px;padding:8px 10px;width:100%}
+.nichecards{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px}
+.nc{border:1.5px solid var(--line);border-radius:14px;padding:12px;text-align:start;background:var(--surface);display:grid;gap:6px}
+.nc[aria-pressed="true"]{border-color:var(--emerald)}
+.nc .sw3{display:flex;gap:4px} .nc .sw3 span{width:22px;height:22px;border-radius:6px;border:1px solid var(--line)}
+.attrs{display:flex;gap:6px;flex-wrap:wrap}
+.attrs span{font-family:var(--f-mono);font-size:11.5px;border:1px solid var(--line);border-radius:6px;padding:2px 8px}
+.attrs span.req{border-color:var(--emerald);color:var(--emerald)}
+.chart svg{width:100%;height:auto;display:block}
+.drawer-bg{position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:40;display:flex;justify-content:flex-end}
+.drawer{width:min(460px,100%);height:100%;background:var(--surface);overflow-y:auto;padding:20px max(20px,env(safe-area-inset-right,0px)) 30px 20px;display:grid;gap:14px;align-content:start;padding-top:max(20px,env(safe-area-inset-top,0px))}
+.drawer h2{margin:0;font-size:19px}
+.dl{display:grid;grid-template-columns:auto 1fr;gap:6px 14px;font-size:13px}
+.dl dt{color:var(--muted)} .dl dd{margin:0}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:max(18px,calc(env(safe-area-inset-bottom,0px) + 12px));z-index:50;background:var(--ink);color:var(--bg);border-radius:14px;padding:10px 12px 10px 16px;display:flex;gap:12px;align-items:center;font-size:13px;box-shadow:0 10px 30px rgba(0,0,0,.25);max-width:calc(100% - 32px)}
+.toast button{border:0;background:var(--emerald);color:var(--emerald-ink);border-radius:9px;padding:6px 12px;font-weight:700;white-space:nowrap}
+.toast .x{background:transparent;color:var(--bg);opacity:.7;padding:6px}
+.legend{font-size:12px;color:var(--muted)}
+.pw{position:relative;display:grid}
+.heart{position:absolute;top:12px;inset-inline-end:12px;width:36px;height:36px;border-radius:50%;border:0;background:var(--surface);display:grid;place-items:center;box-shadow:0 1px 3px rgba(0,0,0,.15);padding:0;color:var(--muted)}
+.heart svg{width:18px;height:18px}
+.heart[aria-pressed="true"]{color:var(--bad)}
+.heart.inline{position:static;box-shadow:none;border:1px solid var(--line);flex:0 0 auto}
+.jump{position:sticky;top:0;z-index:3;display:flex;gap:4px;background:var(--surface);border-bottom:1px solid var(--line);margin:0 -16px;padding:6px 16px;overflow-x:auto}
+.jump button{border:0;background:transparent;font-weight:600;font-size:12.5px;color:var(--muted);padding:8px 10px;border-radius:8px;white-space:nowrap;min-height:36px}
+.jump button:hover{background:var(--surface-2);color:var(--ink)}
+[id^="sec-"]{scroll-margin-top:56px}
+.ctrl{display:flex;gap:6px;overflow-x:auto;padding-bottom:2px}
+.ctrl .chip{flex:0 0 auto;font-size:12px}
+.ctrl-label{font-size:11.5px;color:var(--muted);font-weight:600}
+.sk{background:linear-gradient(90deg,var(--surface-2) 25%,var(--line) 50%,var(--surface-2) 75%);background-size:200% 100%;animation:shimmer 1.2s infinite linear;border-radius:12px}
+@keyframes shimmer{from{background-position:200% 0}to{background-position:-200% 0}}
+.offline{background:var(--warn-soft);color:var(--warn);font-size:12px;font-weight:600;padding:7px 14px;text-align:center;direction:rtl}
+.iconbtn{width:40px;height:40px;border-radius:50%;border:1px solid var(--line);background:var(--surface-2);display:grid;place-items:center;padding:0}
+.iconbtn svg{width:18px;height:18px}
+.sbox{flex:1;display:flex;align-items:center;gap:8px;background:var(--surface-2);border:1px solid var(--line);border-radius:12px;padding:0 10px;min-width:0}
+.sbox svg{width:18px;height:18px;color:var(--muted);flex:0 0 auto}
+.sbox input{flex:1;min-width:0;border:0;background:transparent;font:inherit;font-size:14px;color:var(--ink);padding:10px 0;outline:none}
+.sbox input::-webkit-search-cancel-button{display:none}
+.sbox button{border:0;background:transparent;color:var(--muted);padding:4px}
+.sbox:focus-within{border-color:var(--emerald)}
+.chip[aria-pressed="true"]{background:var(--emerald);border-color:var(--emerald);color:var(--emerald-ink)}
+button.chip{cursor:pointer}
+.pmeta{font-size:11px;color:var(--muted)}
+.qty{display:flex;align-items:center;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.qty button{border:0;background:var(--surface-2);width:26px;height:26px;font-weight:700}
+.qty span{min-width:24px;text-align:center;font-family:var(--f-mono);font-size:12px}
+.ferr{color:var(--bad);font-size:11.5px}
+.field input[aria-invalid="true"]{border-color:var(--bad)}
+.kitrow{display:grid;grid-template-columns:72px 1fr auto;gap:10px;align-items:center;border:1.5px solid var(--emerald);border-radius:14px;padding:8px;background:var(--emerald-soft);text-align:start;width:100%}
+.kitrow .art{background:var(--surface);border-radius:10px;aspect-ratio:1;display:grid;place-items:center}
+.cfoot{border-top:1px solid var(--line);padding-top:16px;display:grid;gap:10px;margin-top:4px}
+.flinks{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:12px;color:var(--emerald);font-weight:600}
+.eta{background:var(--surface-2);border:1px solid var(--line);border-radius:12px;padding:10px 12px;display:grid;gap:2px;font-size:13px}
+.eta span{font-size:12px;color:var(--muted)}
+.ugc{display:grid;gap:6px}.ugc>div{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}.ugc>div span{aspect-ratio:1;border-radius:10px;display:grid;place-items:center}.ugc svg{width:60%;height:60%}
+.how{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;counter-reset:h}.how div{border-top:3px solid var(--emerald);padding-top:6px;font-size:11.5px;line-height:1.4}.how b{display:block;font-size:12.5px}
+@media (prefers-reduced-motion: reduce){*{transition:none!important;animation:none!important}}
+</style>
+
+<div class="wrap">
+  <div class="top">
+    <div class="brand"><b>سكينة</b><span>Marketplace engine · clickable prototype · demo data</span></div>
+    <div class="seg" role="group" aria-label="Choose a view" id="viewseg"></div>
+  </div>
+  <div class="guide" id="guide" aria-label="Journey to try"></div>
+  <div id="stage"></div>
+</div>
+<div id="overlay"></div>
+
+<script>
+/* ---------------- config & helpers ---------------- */
+const CFG={rates:{new:.18,repeat:.06,referral:.02},reserve:.12,depositAbove:1200,deposit:65,ship:65,cashback:.04,kitDiscount:100,priceCheckDays:14,returnFee:45};
+const TODAY='2026-11-11', LAST_PAYOUT='2026-11-05';
+const AR=n=>Number(n).toLocaleString('en-US');
+const egp=n=>`${AR(Math.round(n))} ج`;
+const EGP=n=>`EGP ${AR(Math.round(n))}`;
+const pct=n=>`${Math.round(n*1000)/10}%`;
+let seed=11; const rnd=()=>{seed=(seed*16807)%2147483647;return (seed-1)/2147483646};
+function dayStr(back){const d=new Date(Date.UTC(2026,10,11));d.setUTCDate(d.getUTCDate()-back);return d.toISOString().slice(0,10)}
+function daysSince(s){return Math.round((Date.UTC(2026,10,11)-Date.parse(s+'T00:00:00Z'))/864e5)}
+const MONTHS=['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'];
+const arDate=s=>{const [y,m,d]=s.split('-');return `${+d} ${MONTHS[+m-1]}`};
+const enDate=s=>{const d=new Date(s+'T00:00:00Z');return d.toLocaleDateString('en-GB',{day:'numeric',month:'short',timeZone:'UTC'})};
+const sizeLbl=k=>k==='one'?'مقاس واحد':k;
+const GOVS=['القاهرة','الجيزة','القليوبية','الإسكندرية','الدقهلية','الغربية','الشرقية','المنوفية','أسيوط','سوهاج','أسوان'];
+const eta=g=>['القاهرة','الجيزة','القليوبية'].includes(g)?'السبت 14 نوفمبر':'الأحد 15 نوفمبر';
+
+/* ---------------- data ---------------- */
+const S={
+  view:'customer',
+  sellers:[
+    {id:'s1',name:'بيت سارة للعبايات',en:'Sara Abayas',area:'مدينة نصر، القاهرة',rating:4.8,ship:21,reject:2,status:'active',joined:'2026-08-30',ig:'@sara.abayas',pay:'010••••4471',views:2840},
+    {id:'s2',name:'نقاب الهدى',en:'Al-Huda Niqab',area:'المنصورة',rating:4.6,ship:29,reject:4,status:'active',joined:'2026-09-06',ig:'@alhuda.niqab',pay:'012••••8830',views:1910},
+    {id:'s3',name:'استوديو طرحة',en:'Tarha Studio',area:'الإسكندرية',rating:4.9,ship:17,reject:1,status:'active',joined:'2026-09-02',ig:'@tarha.studio',pay:'011••••5102',views:3320},
+    {id:'s4',name:'إحرام مكة',en:'Makkah Ihram',area:'الجيزة',rating:4.2,ship:52,reject:9,status:'warning',joined:'2026-09-20',ig:'@makkah.ihram',pay:'015••••0067',views:880},
+    {id:'s5',name:'خمار وردة',en:'Warda Khimar',area:'طنطا',rating:0,ship:0,reject:0,status:'pending',joined:'2026-11-10',ig:'@warda.khimar',pay:'010••••3315',views:0,capacity:'20 / week',cats:'خمار، طرح'}
+  ],
+  products:[
+    {id:'p1',sid:'s1',kind:'abaya',name:'عباية عمرة كريب — بيج',en:'Crepe Umrah abaya, beige',price:850,color:'#D8C6A6',fabric:'كريب مطفي',length:'140 سم (مقاس 2)',opacity:'غير شفافة',stock:{'1':5,'2':2,'3':6,'4':3},status:'live',priceOk:'2026-11-02',views:1840,
+     lead:'عباية كريب واسعة ومريحة للعمرة في الجو الحر، غير شفافة، ومتاحة من مقاس 1 لـ 4.'},
+    {id:'p2',sid:'s1',kind:'abaya',name:'عباية ندى سوداء — قصة كلوش',en:'Black nada abaya, flared',price:1150,color:'#26292D',fabric:'ندى ياباني',length:'142 سم (مقاس 2)',opacity:'غير شفافة',stock:{'2':4,'3':4,'4':2},status:'live',priceOk:'2026-11-05',views:960,
+     lead:'عباية سوداء بقصة كلوش واسعة، قماش ندى تقيل ومبيكسرش، تنفع للعمرة وللمناسبات.'},
+    {id:'p3',sid:'s2',kind:'niqab',name:'نقاب طبقتين — أسود',en:'Two-layer niqab, black',price:220,color:'#1E2022',fabric:'شيفون مزدوج',length:'60 سم',opacity:'الطبقة التانية ساترة',stock:{one:18},status:'live',priceOk:'2026-11-01',views:1220,
+     lead:'نقاب بطبقتين خفيفين، الطبقة التانية بتنزل على العين، مريح للبس ساعات طويلة.'},
+    {id:'p4',sid:'s2',kind:'niqab',name:'نقاب بالخمار — أسود',en:'Niqab with khimar, black',price:380,color:'#2A2D30',fabric:'جيرسيه + شيفون',length:'خمار 90 سم',opacity:'غير شفاف',stock:{one:9},status:'live',priceOk:'2026-11-01',views:1460,
+     lead:'نقاب متصل بخمار قصير، بيتلبس في ثواني ومش محتاج دبابيس، مناسب للطواف والسعي.'},
+    {id:'p5',sid:'s3',kind:'hijab',name:'طرحة شيفون — رملي',en:'Chiffon hijab, sand',price:180,color:'#CBBDA5',fabric:'شيفون كوري',length:'180 × 70 سم',opacity:'محتاجة بندانة',stock:{one:30},status:'live',priceOk:'2026-11-04',views:2210,
+     lead:'طرحة شيفون خفيفة بلون رملي هادي، مقاس كبير 180 × 70 سم، بتتلف بسهولة.'},
+    {id:'p6',sid:'s3',kind:'hijab',name:'طرحة جيرسيه — زيتي فاتح',en:'Jersey hijab, light olive',price:160,color:'#8D9B8A',fabric:'جيرسيه قطن',length:'170 × 60 سم',opacity:'غير شفافة',stock:{one:3},status:'live',priceOk:'2026-11-04',views:1110,
+     lead:'طرحة جيرسيه قطن مش بتتزحلق، مناسبة لليوم الطويل وللسفر.'},
+    {id:'p7',sid:'s4',kind:'ihram',name:'إحرام قطن رجالي — قطعتين',en:'Cotton ihram, 2 pieces',price:450,color:'#F1F0E8',fabric:'قطن فوطة',length:'2 × 110 × 220 سم',opacity:'—',stock:{M:8,L:4},status:'live',priceOk:'2026-10-20',views:640,
+     lead:'إحرام قطن فوطة بيشرب العرق، قطعتين مقاس كبير، مع شنطة قماش للحفظ.'},
+    {id:'p8',sid:'s3',kind:'khimar',name:'خمار نص كم — موف رمادي',en:'Elbow khimar, grey mauve',price:340,color:'#A39AA7',fabric:'شيفون مبطن',length:'نص كم',opacity:'مبطن',stock:{one:12},status:'review',priceOk:'2026-11-10',views:0,
+     lead:'خمار شيفون مبطن لحد نص الكم، ساتر وخفيف، بيتلبس فوق أي عباية.'}
+  ],
+  orders:[], reports:[], survey:{sent:214,yes:1},
+  cart:[], walletUse:true, wallet:75, walletExp:'2026-11-21', pay:'cod', trip:'2027-03',
+  cview:'home', cparam:null, selSize:null, fav:{}, known:false, loading:false, offline:false, sort:'best', price:'all', q:'', cat:null, perr:false, focusQ:false, sf:false, sfH:null, sfW:null, exch:{}, nudged:{}, kitSize:'2', lastOrderId:null, waMode:'confirm', repeatCheckout:false, surveyed:{},
+  cust:{name:'منى عبد الرحمن',phone:'01012345678',city:'القاهرة',area:'مدينة نصر',addr:'14 شارع الطيران، عمارة 3',land:'قدام مسجد السلام'},
+  tgChat:'sara', tg:{sara:[],app:[]}, flow:null, app:null, mid:0,
+  aview:'overview', ofilter:'all', drawer:null, niche:'umrah', paid:{},
+  done:{}, toast:null, nextId:0
+};
+const P=id=>S.products.find(p=>p.id===id);
+const SL=id=>S.sellers.find(s=>s.id===id);
+const kitParts=size=>[{pid:'p1',size,qty:1},{pid:'p4',size:'one',qty:1},{pid:'p5',size:'one',qty:2}];
+const KIT_FULL=850+380+360;
+
+const NAMES=['هبة','سلمى','نورهان','آية','دينا','مريم','رحاب','إسراء','شيماء','أمل','ياسمين','ندى','ريم','فاطمة','بسمة'];
+const CITIES=['القاهرة','الجيزة','الإسكندرية','المنصورة','طنطا','أسيوط','الزقازيق','بنها'];
+(function seedOrders(){
+  let id=1001; const live=['p1','p2','p3','p4','p5','p6','p7','p5','p3'];
+  for(let d=13;d>=0;d--){
+    const n=1+Math.floor(rnd()*3)+(d<6?1:0);
+    for(let k=0;k<n;k++){
+      const isKit=rnd()<.25; let items, discount=0;
+      if(isKit){items=kitParts(['1','2','3','4'][Math.floor(rnd()*4)]).map(x=>({...x,sid:P(x.pid).sid,price:P(x.pid).price}));discount=CFG.kitDiscount}
+      else{const p=P(live[Math.floor(rnd()*live.length)]);const ks=Object.keys(p.stock);items=[{pid:p.id,sid:p.sid,size:ks[Math.floor(rnd()*ks.length)],qty:rnd()<.8?1:2,price:p.price}]}
+      const r=rnd(), type=r<.6?'new':r<.9?'repeat':'referral', r2=rnd();
+      let status;
+      if(d>=4) status=r2<.13?'refused':'delivered';
+      else if(d>=2) status=r2<.5?'delivered':'picked';
+      else if(d===1) status=r2<.5?'picked':'accepted';
+      else status=r2<.6?'confirmed':'awaiting';
+      S.orders.push({id:id++,date:dayStr(d),cust:NAMES[Math.floor(rnd()*NAMES.length)],phone:'01'+Math.floor(rnd()*3)+String(Math.floor(10000000+rnd()*89999999)),city:CITIES[Math.floor(rnd()*CITIES.length)],items,kit:isKit,discount,wallet:0,ship:CFG.ship,type,status,delivered:status==='delivered'?dayStr(Math.max(0,d-2)):null});
+    }
+  }
+  S.nextId=id; S.orders.reverse();
+  const o4=S.orders.find(o=>o.items.some(i=>i.sid==='s4')&&o.status==='delivered');
+  S.reports=[{id:'R-07',date:'2026-11-09',order:o4?o4.id:1012,sid:'s4',text:'البائع كلمني على واتساب بعد ما الطلب وصل وعرض خصم 10٪ لو طلبت منه على طول.',status:'open'}];
+})();
+
+/* ---------------- money ---------------- */
+const sub=o=>o.items.reduce((a,i)=>a+i.price*i.qty,0);
+const comm=o=>sub(o)*CFG.rates[o.type];
+const custPays=o=>sub(o)-o.discount-o.wallet+o.ship;
+const cashbackOf=o=>o.status==='delivered'?sub(o)*CFG.cashback:0;
+const platNet=o=>comm(o)-o.discount-o.wallet-cashbackOf(o);
+const live=o=>!['refused','cancelled'].includes(o.status);
+function sellerCycle(sid){
+  let sales=0,c=0,all=0;
+  S.orders.filter(o=>o.status==='delivered').forEach(o=>o.items.filter(i=>i.sid===sid).forEach(i=>{
+    const v=i.price*i.qty; all+=v*(1-CFG.rates[o.type]);
+    if(o.delivered>=LAST_PAYOUT){sales+=v;c+=v*CFG.rates[o.type]}
+  }));
+  const net=sales-c, reserve=net*CFG.reserve;
+  return {sales,commission:c,net,reserve,payable:net-reserve,reserveAll:all*CFG.reserve};
+}
+
+/* ---------------- graphics ---------------- */
+const SHAPES={
+  abaya:'M40 12 Q50 7 60 12 L70 20 L88 54 L80 58 L68 40 L75 93 L25 93 L32 40 L20 58 L12 54 L30 20 Z',
+  niqab:'M27 16 Q50 2 73 16 L78 62 Q50 84 22 62 Z M33 33 L67 33 L67 40 L33 40 Z',
+  khimar:'M50 7 Q72 9 76 33 L91 90 L9 90 L24 33 Q28 9 50 7 Z M40 28 Q50 20 60 28 L60 43 Q50 51 40 43 Z',
+  hijab:'M16 34 L50 12 L84 34 L78 76 L50 92 L22 76 Z',
+  ihram:'M16 16 L84 16 L84 44 L16 44 Z M20 52 L80 52 L80 90 L20 90 Z'
+};
+const garment=(kind,color)=>`<svg viewBox="0 0 100 100" aria-hidden="true"><path d="${SHAPES[kind]}" fill="${color}" fill-rule="evenodd" stroke="rgba(0,0,0,.22)" stroke-width="1.2"/></svg>`;
+const kitArt=()=>`<svg viewBox="0 0 120 100" aria-hidden="true" style="width:86%;height:86%"><g transform="translate(30 4) scale(.82)"><path d="${SHAPES.abaya}" fill="#D8C6A6" stroke="rgba(0,0,0,.25)"/></g><g transform="translate(2 40) scale(.52)"><path d="${SHAPES.niqab}" fill="#2A2D30" fill-rule="evenodd" stroke="rgba(255,255,255,.3)"/></g><g transform="translate(70 46) scale(.5)"><path d="${SHAPES.hijab}" fill="#CBBDA5" stroke="rgba(0,0,0,.25)"/></g></svg>`;
+const ICON={
+  shield:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3l8 3v6c0 4.5-3.4 8.3-8 9-4.6-.7-8-4.5-8-9V6z"/><path d="M8.5 12l2.5 2.5 4.5-5"/></svg>',
+  swap:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 8h13l-3-3M20 16H7l3 3"/></svg>',
+  doc:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M7 3h7l5 5v13H7z"/><path d="M14 3v5h5M10 13h6M10 17h6"/></svg>',
+  home:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 11l8-7 8 7v9H4z"/></svg>',
+  bag:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M5 8h14l-1 13H6z"/><path d="M9 8a3 3 0 016 0"/></svg>',
+  cart:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 4h3l2 12h11l2-8H7"/><circle cx="10" cy="20" r="1.3"/><circle cx="17" cy="20" r="1.3"/></svg>',
+  search:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><circle cx="11" cy="11" r="6.5"/><path d="M20 20l-4.2-4.2"/></svg>',
+  heart:'<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 21s-7.5-4.6-9.6-9.2C.9 8.4 3 4.5 6.8 4.5c2.1 0 3.6 1.2 5.2 3 1.6-1.8 3.1-3 5.2-3 3.8 0 5.9 3.9 4.4 7.3C19.5 16.4 12 21 12 21z"/></svg>',
+  heartO:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><path d="M12 20s-7-4.3-9-8.6C1.6 8.3 3.5 5 6.9 5c2 0 3.4 1.1 5.1 3 1.7-1.9 3.1-3 5.1-3 3.4 0 5.3 3.3 3.9 6.4C19 15.7 12 20 12 20z"/></svg>',
+  user:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6"/></svg>'
+};
+
+/* ---------------- customer content ---------------- */
+const REVIEWS={
+  abaya:[{n:'هبة',h:162,s:'2',fit:'المقاس مظبوط',t:'القماش مريح جداً في الحر ومش شفاف خالص، لبستها في العمرة 4 أيام.'},{n:'رحاب',h:170,s:'3',fit:'طويلة سنة',t:'التقفيل نضيف، طولها مناسب مع الشوز.'}],
+  niqab:[{n:'آية',h:158,s:'مقاس واحد',fit:'مريح',t:'خفيف ومش بيكتم النفس، الطبقة التانية ساترة.'}],
+  hijab:[{n:'ريم',h:165,s:'مقاس واحد',fit:'مقاس كبير',t:'اللون زي الصورة بالظبط وبيتلف من غير دبابيس كتير.'}],
+  ihram:[{n:'أم يوسف',h:0,s:'L',fit:'مظبوط',t:'جبته لجوزي، القطن تقيل وبيشرب العرق.'}],
+  khimar:[{n:'ندى',h:160,s:'مقاس واحد',fit:'ساتر',t:'البطانة حلوة ومش بيلزق.'}]
+};
+const FAQ={
+  abaya:[['العباية دي مناسبة للعمرة في الصيف؟','أيوه، الكريب المطفي خفيف وبيسمح بالتهوية، وواسعة ومش بتحدد الجسم.'],['أختار مقاس إيه؟','لو طولك من 155 لـ 165 سم اختاري مقاس 2. شوفي جدول المقاسات بالسنتيمتر تحت.'],['ينفع أفتح الشحنة قبل ما أدفع؟','أيوه، افتحي وقيسي قدام المندوب، ولو مش مناسبة ترجع من غير ما تدفعي غير الشحن.']],
+  niqab:[['النقاب ده بيكتم في الحر؟','لأ، الشيفون المزدوج خفيف وبيسمح بالتنفس.'],['ينفع في الإحرام؟','المرأة المحرمة مبتلبسش النقاب أثناء الإحرام، بتسدل على وشها من غير ما تربطه. اسألي مرجع موثوق في مذهبك.']],
+  hijab:[['محتاجة بندانة تحتها؟','الشيفون خفيف فالأفضل بندانة قطن تحتها.']],
+  ihram:[['الإحرام كام قطعة؟','قطعتين: إزار ورداء، قطن فوطة بيشرب العرق.']],
+  khimar:[['الخمار شفاف؟','لأ، مبطن بالكامل.']]
+};
+const SIZECHART=[['1','135','56'],['2','140','58'],['3','145','61'],['4','150','64']];
+
+function cHead(){return `<header class="c-head"><button class="back c-logo" data-act="cnav" data-v="home">سكينة<small>لبس العمرة والمحجبات</small></button><div style="display:flex;gap:8px;align-items:center"><button class="iconbtn" data-act="opensearch" aria-label="بحث">${ICON.search}</button>${S.known?`<button class="chip gold" data-act="cnav" data-v="account" aria-label="رصيد المحفظة">${egp(S.wallet)}</button>`:''}</div></header>`}
+function scHome(){
+  const prods=S.products.filter(p=>p.status==='live'&&SL(p.sid).status!=='suspended');
+  return cHead()+`<div class="c-scroll"><div class="c-pad">
+  <section class="hero"><div class="art">${kitArt()}</div><div>
+    <span class="eyebrow">موسم عمرة رمضان 2027</span><h2>شنطة العمرة الكاملة</h2>
+    <p>عباية + نقاب بالخمار + 2 طرحة، من 3 بائعات موثّقات، في طلب واحد</p>
+    <div class="price"><b>${egp(KIT_FULL-CFG.kitDiscount)}</b><s>${egp(KIT_FULL)}</s></div>
+    <button class="btn primary" data-act="cnav" data-v="kit">شوفي الشنطة</button></div></section>
+  <div class="how"><div><b>1. اطلبي</b>من غير حساب، في دقيقة</div><div><b>2. أكدي على واتساب</b>ضغطة واحدة</div><div><b>3. استلمي في 2–4 أيام</b>والدفع كاش عند الباب</div></div>
+  <div class="cats">${CATS.map(c=>`<button class="chip" data-act="cat" data-v="${c[0]}">${c[1]}</button>`).join('')}</div>
+  <h3 class="sec">الأكثر طلباً قبل رمضان</h3>
+  <div class="grid">${prods.map(pcard).join('')}</div>
+  <button class="learn" data-act="noop"><b>هلبس إيه في العمرة؟ الدليل الكامل للستات</b><span>الشروط، الأقمشة المناسبة للحر، وقائمة الشنطة. مراجَع من مصادر موثوقة · اتحدّث 1 نوفمبر</span></button>
+  <footer class="cfoot">
+   <div class="trust"><div>${ICON.shield}افتحي الشحنة قبل ما تدفعي</div><div>${ICON.swap}استبدال مجاني للمقاس خلال 14 يوم</div><div>${ICON.doc}سجل تجاري 123456 · القاهرة</div></div>
+   <div class="row"><span>واتساب خدمة العملاء</span><span class="num" dir="ltr">0100 123 4567</span></div>
+   <div class="row"><span>مواعيد الرد</span><span>كل يوم من 10 ص لـ 10 م</span></div>
+   <div class="flinks"><span>سياسة الاستبدال</span><span>الشحن والتوصيل</span><span>الخصوصية</span><span>بيعي معانا</span></div>
+   <span class="pby">سكينة · سجل تجاري 123456 · بطاقة ضريبية 000-000-000</span>
+  </footer>
+  </div></div>`;
+}
+const SF_H=[['150–155',1],['156–162',2],['163–168',3],['169+',4]];
+const SF_W=[['أقل من 65',0],['65–85',0],['فوق 85',1]];
+function sizeFinder(p){
+  if(p.kind!=='abaya') return '';
+  if(!S.sf) return `<button class="learn" style="border-style:solid;border-color:var(--emerald)" data-act="sfopen"><b>مش متأكدة من مقاسك؟</b><span>جاوبي على سؤالين واعرفي مقاسك في 10 ثواني</span></button>`;
+  const rec=S.sfH!=null&&S.sfW!=null?String(Math.min(4,SF_H[S.sfH][1]+SF_W[S.sfW][1])):null;
+  return `<div class="card" style="border-color:var(--emerald)"><b>اعرفي مقاسك</b>
+   <span class="pby">طولك كام؟</span><div class="sizes">${SF_H.map((h,i)=>`<button class="sz" aria-pressed="${S.sfH===i}" data-act="sfh" data-i="${i}">${h[0]}<small>سم</small></button>`).join('')}</div>
+   <span class="pby">وزنك تقريباً؟</span><div class="sizes">${SF_W.map((w,i)=>`<button class="sz" aria-pressed="${S.sfW===i}" data-act="sfw" data-i="${i}">${w[0]}<small>كجم</small></button>`).join('')}</div>
+   ${rec?`<div class="note ok">مقاسك غالباً <b>${rec}</b>. 91٪ من العميلات اللي طولهم زيك اختاروه وقالوا إنه مظبوط. اخترناهولك تحت، ولو طلع مش مظبوط الاستبدال مجاني.</div>`:''}</div>`;
+}
+function scProduct(){
+  const p=P(S.cparam), s=SL(p.sid), ks=Object.keys(p.stock), single=ks.length===1;
+  if(single) S.selSize=ks[0];
+  const revs=REVIEWS[p.kind]||[], faq=FAQ[p.kind]||[];
+  return cHead()+`<div class="c-scroll"><div class="c-pad">
+   <button class="back" data-act="cnav" data-v="home">→ رجوع</button>
+   <div class="big-img">${garment(p.kind,p.color)}</div>
+   <div class="ugc"><span class="pby">صور حقيقية من العميلات (12)</span><div>${['#E9E2D6','#DDD3C3','#D3C7B4','#E3DACB'].map(c=>`<span style="background:${c}">${garment(p.kind,p.color)}</span>`).join('')}</div></div>
+   <div style="display:grid;gap:6px"><div style="display:flex;gap:10px;justify-content:space-between;align-items:start"><h1 class="ptitle">${p.name}</h1>${heartBtn(p,true)}</div>
+   <div class="by">من <b>${s.name}</b> <span class="verified">✓ بائعة موثّقة</span> · ⭐ ${s.rating} (${revs.length*23} تقييم)</div>
+   <div class="pprice" style="font-size:20px">${egp(p.price)}</div></div>
+   <div class="eta"><div><b>يوصلك ${eta(S.cust.city)}</b> لـ${S.cust.city} <button class="back" style="font-size:12px" data-act="govcycle">غيّري</button></div><span>الشحن ${egp(CFG.ship)} بس · مفيش أي رسوم تانية · افتحي وقيسي قبل ما تدفعي</span></div>
+   <nav class="jump" aria-label="أقسام الصفحة">${[['sec-sizes','المقاس'],['sec-specs','المواصفات'],['sec-revs','الآراء'],['sec-faq','أسئلة']].map(j=>`<button data-act="jump" data-v="${j[0]}">${j[1]}</button>`).join('')}</nav>
+   <div class="lead">${p.lead}</div>
+   ${sizeFinder(p)}
+   <div id="sec-sizes"><p class="h4">${single?'المقاس':'اختاري المقاس'}</p><div class="sizes">${ks.map(k=>`<button class="sz" aria-pressed="${S.selSize===k}" ${p.stock[k]?'':'disabled'} data-act="size" data-k="${k}">${sizeLbl(k)}<small>${p.stock[k]<=3?`فاضل ${p.stock[k]}`:'متاح'}</small></button>`).join('')}</div></div>
+   <div id="sec-specs"><p class="h4">المواصفات</p><table class="spec"><tr><td>القماش</td><td>${p.fabric}</td></tr><tr><td>الطول</td><td>${p.length}</td></tr><tr><td>الشفافية</td><td>${p.opacity}</td></tr><tr><td>الاستبدال</td><td>مجاني خلال 14 يوم: المندوب بياخد القديمة ويسلمك الجديدة في نفس الزيارة</td></tr></table></div>
+   ${p.kind==='abaya'?`<div><p class="h4">جدول المقاسات (سم)</p><table class="spec"><tr><td>المقاس</td><td>الطول · عرض الصدر</td></tr>${SIZECHART.map(r=>`<tr><td>${r[0]}</td><td>${r[1]} · ${r[2]}</td></tr>`).join('')}</table></div>`:''}
+   <div id="sec-revs" style="display:grid;gap:8px"><p class="h4">آراء المشتريات</p>${revs.map(r=>`<div class="rev"><div class="meta"><b>${r.n}</b>${r.h?`<span class="tag">طولي ${r.h} سم</span>`:''}<span class="tag">مقاس ${r.s}</span><span class="tag">${r.fit}</span></div>${r.t}</div>`).join('')}</div>
+   <div id="sec-faq"><p class="h4">أسئلة شائعة</p>${faq.map(f=>`<details><summary>${f[0]}</summary><p>${f[1]}</p></details>`).join('')}</div>
+   <button class="btn ghost block" data-act="askwa">عندك سؤال؟ اسألينا على واتساب</button>
+  </div>
+  <div class="sticky" style="display:grid;gap:6px"><div style="display:flex;gap:8px"><button class="btn ghost" ${S.selSize?'':'disabled'} data-act="addcart">للسلة</button><button class="btn primary" style="flex:1" ${S.selSize?'':'disabled'} data-act="buynow">${S.selSize?`اطلبي دلوقتي · ${egp(p.price)}`:'اختاري المقاس الأول'}</button></div><span class="pby" style="text-align:center">كاش عند الاستلام · استبدال مجاني خلال 14 يوم</span></div></div>`;
+}
+function scKit(){
+  const parts=kitParts(S.kitSize);
+  return cHead()+`<div class="c-scroll"><div class="c-pad">
+   <button class="back" data-act="cnav" data-v="home">→ رجوع</button>
+   <div class="big-img" style="aspect-ratio:1/.7">${kitArt()}</div>
+   <div><h1 class="ptitle">شنطة العمرة الكاملة للستات</h1><div class="lead" style="margin-top:8px">كل اللي محتاجاه للعمرة في طلب واحد: عباية كريب، نقاب بالخمار، وطرحتين شيفون. كل قطعة من بائعة متخصصة، وكلها بتوصلك بنفس رقم الطلب في أكياس سكينة.</div></div>
+   <div style="display:grid;gap:8px">${parts.map(x=>{const p=P(x.pid);return `<div class="part"><div class="pimg">${garment(p.kind,p.color)}</div><div><b style="font-size:13px">${p.name}${x.qty>1?` × ${x.qty}`:''}</b><div class="pby">من ${SL(p.sid).name}</div></div><span class="num" style="font-size:12px">${egp(p.price*x.qty)}</span></div>`}).join('')}</div>
+   <div><p class="h4">مقاس العباية</p><div class="sizes">${['1','2','3','4'].map(k=>`<button class="sz" aria-pressed="${S.kitSize===k}" data-act="kitsize" data-k="${k}">${k}<small>${SIZECHART[+k-1][1]} سم</small></button>`).join('')}</div></div>
+   <div class="note info">بتوصلك في 2–3 شحنات بنفس رقم الطلب، لأن كل بائعة بتشحن من مكانها. الشحن بيتحسب مرة واحدة.</div>
+  </div>
+  <div class="sticky"><span class="tot">${egp(KIT_FULL-CFG.kitDiscount)} <s style="font-size:12px;color:var(--muted);font-weight:500">${egp(KIT_FULL)}</s></span><button class="btn primary" style="flex:1" data-act="addkit">أضيفي الشنطة للسلة</button></div></div>`;
+}
+function cartLines(){
+  const lines=[];
+  S.cart.forEach((c,ix)=>{
+    if(c.type==='kit') lines.push({ix,label:`شنطة العمرة الكاملة · عباية مقاس ${c.size}`,by:'من 3 بائعات',price:KIT_FULL,kind:'kit'});
+    else{const p=P(c.pid);lines.push({ix,label:`${p.name} · ${sizeLbl(c.size)}${c.qty>1?` × ${c.qty}`:''}`,by:`من ${SL(p.sid).name}`,price:p.price*c.qty,p})}
+  });
+  return lines;
+}
+function cartTotals(){
+  const subt=cartLines().reduce((a,l)=>a+l.price,0);
+  const disc=S.cart.filter(c=>c.type==='kit').length*CFG.kitDiscount;
+  const w=S.known&&S.walletUse?Math.min(S.wallet,subt-disc):0;
+  const total=subt-disc-w+(S.cart.length?CFG.ship:0);
+  return {subt,disc,w,total,deposit:total>CFG.depositAbove};
+}
+function scCart(){
+  if(!S.cart.length) return cHead()+`<div class="c-scroll"><div class="c-pad"><h1 class="ptitle">السلة</h1><div class="card" style="text-align:center"><p style="margin:0">السلة فاضية.</p><button class="btn primary" data-act="cnav" data-v="kit">ابدئي بشنطة العمرة</button></div></div></div>`;
+  const t=cartTotals();
+  return cHead()+`<div class="c-scroll"><div class="c-pad">
+   <h1 class="ptitle">السلة</h1>
+   <div style="display:grid;gap:8px">${cartLines().map(l=>`<div class="part"><div class="pimg">${l.kind==='kit'?kitArt():garment(l.p.kind,l.p.color)}</div><div><b style="font-size:13px">${l.label}</b><div class="pby">${l.by}</div></div><div style="display:grid;gap:4px;justify-items:end"><span class="num" style="font-size:12px">${egp(l.price)}</span>${l.kind==='kit'?'':`<div class="qty"><button data-act="qty" data-ix="${l.ix}" data-d="-1" aria-label="قللي الكمية">−</button><span>${S.cart[l.ix].qty}</span><button data-act="qty" data-ix="${l.ix}" data-d="1" aria-label="زودي الكمية">+</button></div>`}<button class="back" style="font-size:11px;color:var(--bad)" data-act="rmcart" data-ix="${l.ix}">شيلي</button></div></div>`).join('')}</div>
+   ${S.known&&S.wallet>0?`<div class="toggle"><div><b>استخدمي رصيد المحفظة</b><div class="pby">${egp(S.wallet)} متاحة · بتنتهي ${arDate(S.walletExp)}</div></div><button class="sw" role="switch" aria-checked="${S.walletUse}" aria-label="استخدام المحفظة" data-act="wallet"></button></div>`:''}
+   <div class="card">
+    <div class="row"><span>المنتجات</span><span class="num">${egp(t.subt)}</span></div>
+    ${t.disc?`<div class="row"><span>خصم الشنطة</span><span class="num">− ${egp(t.disc)}</span></div>`:''}
+    ${t.w?`<div class="row"><span>من المحفظة</span><span class="num">− ${egp(t.w)}</span></div>`:''}
+    <div class="row"><span>الشحن</span><span class="num">${egp(CFG.ship)}</span></div>
+    <div class="row total"><span>الإجمالي</span><span class="num">${egp(t.total)}</span></div>
+   </div>
+   ${t.deposit?`<div class="note warn">الطلبات فوق ${AR(CFG.depositAbove)} ج بنطلب فيها مصاريف الشحن بس مقدماً (${egp(CFG.deposit)})، وبتتخصم من الإجمالي.</div>`:''}
+   <div class="note ok">هتكسبي ${egp(t.subt*CFG.cashback)} في محفظتك بعد ما الطلب يوصل.</div>
+  </div>
+  <div class="sticky"><span class="tot num">${egp(t.total)}</span><button class="btn primary" style="flex:1" data-act="cnav" data-v="checkout">كمّلي الطلب</button></div></div>`;
+}
+function scCheckout(){
+  const t=cartTotals(), c=S.cust;
+  return cHead()+`<div class="c-scroll"><div class="c-pad">
+   <button class="back" data-act="cnav" data-v="cart">→ السلة</button>
+   <div><h1 class="ptitle">خطوة واحدة وتخلصي</h1><p class="pby" style="margin:4px 0 0">مش محتاجة تعملي حساب. رقمك هو حسابك.</p></div>
+   ${S.repeatCheckout?`<div class="note ok">أهلاً تاني يا منى، بياناتك محفوظة. اضغطي تأكيد بس.</div>`:''}
+   <label class="field">رقم الموبايل (واتساب)<input id="f-phone" value="${c.phone}" inputmode="tel" dir="ltr" style="text-align:right" aria-invalid="${!!S.perr}">${S.perr?'<span class="ferr">الرقم لازم يكون 11 رقم ويبدأ بـ 010 أو 011 أو 012 أو 015</span>':''}</label>
+   <label class="field">الاسم<input id="f-name" value="${c.name}"></label>
+   <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px"><label class="field">المحافظة<select id="f-city">${GOVS.map(g=>`<option ${g===c.city?'selected':''}>${g}</option>`).join('')}</select></label><label class="field">المنطقة<input id="f-area" value="${c.area}"></label></div>
+   <label class="field">الشارع ورقم العمارة<input id="f-addr" value="${c.addr}"></label>
+   <label class="field">علامة مميزة (اختياري، بتساعد المندوب)<input id="f-land" value="${c.land}" placeholder="مثلاً: جنب صيدلية …"></label>
+   <div class="note info">يوصلك <b>${eta(c.city)}</b>، والمندوب هيكلمك قبل ما يوصل.</div>
+   <div style="display:grid;gap:8px"><p class="h4">الدفع</p>
+    <div class="radio" role="radio" tabindex="0" aria-checked="${S.pay==='cod'}" data-act="pay" data-v="cod"><div><b>كاش عند الاستلام</b><span class="pby">افتحي الشحنة وقيسي قبل ما تدفعي</span></div></div>
+    <div class="radio" role="radio" tabindex="0" aria-checked="${S.pay==='instapay'}" data-act="pay" data-v="instapay"><div><b>إنستاباي / محفظة موبايل</b><span class="pby">ادفعي دلوقتي وخدي 2٪ زيادة في محفظتك</span></div></div>
+   </div>
+   ${t.deposit&&S.pay==='cod'?`<div class="note warn">علشان الطلب فوق ${AR(CFG.depositAbove)} ج، بنطلب مصاريف الشحن بس مقدماً (${egp(CFG.deposit)}) على إنستاباي، وبتتخصم من الإجمالي. لو الطلب متأخر أو مش مطابق، بترجعلك كاملة.</div>`:''}
+   <details><summary>مسافرة عمرة قريب؟ (اختياري)</summary><p>قوليلنا الميعاد ونبعتلك قائمة الشنطة قبلها بأسبوع.</p><select id="f-trip" style="margin-top:6px;font:inherit;padding:8px;border-radius:10px;border:1px solid var(--line);background:var(--surface-2);color:var(--ink)"><option value="2027-02">فبراير 2027</option><option value="2027-03" selected>مارس 2027 (رمضان)</option><option value="none">هدية لحد</option></select></details>
+   <div class="card">
+    <div class="row"><span>المنتجات</span><span class="num">${egp(t.subt)}</span></div>
+    ${t.disc?`<div class="row"><span>خصم الشنطة</span><span class="num">− ${egp(t.disc)}</span></div>`:''}
+    ${t.w?`<div class="row"><span>من المحفظة</span><span class="num">− ${egp(t.w)}</span></div>`:''}
+    <div class="row"><span>الشحن</span><span class="num">${egp(CFG.ship)}</span></div>
+    <div class="row total"><span>الإجمالي</span><span class="num">${egp(t.total)}</span></div>
+    <span class="pby">ده كل المطلوب. مفيش رسوم تانية عند الاستلام.</span>
+   </div>
+   <p class="pby" style="margin:0">بياناتك بتتبعت لشركة الشحن والبائعة للتوصيل بس، وممنوع استخدامها في أي حاجة تانية.</p>
+  </div>
+  <div class="sticky"><span class="tot num">${egp(t.total)}</span><button class="btn primary" style="flex:1" data-act="place">${S.repeatCheckout?'تأكيد الطلب':'اطلبي'}</button></div></div>`;
+}
+function scWA(){
+  const o=S.orders.find(x=>x.id===S.lastOrderId);
+  let body='';
+  if(S.waMode==='reorder'){
+    body=`<div class="msg in">حمدلله على السلامة يا منى 🤍
+اتقبل الله منك. لو حد من العيلة مسافر قريب، ابعتيله الكود SAKINA-MONA وياخد خصم 15٪.</div>
+<div class="msg in">وكمان طرحة الشيفون الرملي اللي طلبتيها الشهر اللي فات رجعت تاني 🌿
+عندك ${egp(S.wallet)} في المحفظة بتنتهي ${arDate(S.walletExp)}.
+تحبي نفس الطلب؟</div>
+<div class="ibtns"><button data-act="reorder">اطلبي نفس الطلب</button><button data-act="cnav" data-v="home">شوفي الجديد</button></div>`;
+  } else if(o){
+    const lines=o.items.map(i=>`• ${P(i.pid).name} (${sizeLbl(i.size)})${i.qty>1?` × ${i.qty}`:''}`).join('\n');
+    body=`<div class="msg in">أهلاً ${S.cust.name.split(' ')[0]} 🤍 وصلنا طلبك #${o.id}
+${lines}
+الإجمالي: ${egp(custPays(o))}${o.deposit?`\nالعربون: ${egp(CFG.deposit)} على إنستاباي 0100••••221`:''}
+اضغطي تأكيد عشان نبدأ نجهزه.<time>${'10:42'}</time></div>
+${o.status==='awaiting'?`<div class="ibtns"><button data-act="waconfirm">✅ تأكيد الطلب</button><button data-act="noop">✏️ تعديل</button></div>`:`
+<div class="msg out">✅ تأكيد الطلب<time>10:43</time></div>
+<div class="msg in">تمام، اتأكد ✅
+هيوصلك في 2–4 أيام في أكياس سكينة. هنبعتلك رقم التتبع أول ما يخرج.<time>10:43</time></div>
+<div class="ibtns one"><button data-act="cnav" data-v="track">تتبعي طلبك على الموقع</button></div>`}`;
+  }
+  return `<div class="chat wa"><div class="chat-head"><button class="back" style="color:#fff;font-size:18px" data-act="cnav" data-v="${S.waMode==='reorder'?'account':'track'}" aria-label="رجوع">→</button><div class="av">س</div><div><b>سكينة ✓</b><small>حساب أعمال · واتساب</small></div></div><div class="chat-body">${body}</div><div class="inputbar"><span>اكتبي رسالة…</span></div></div>`;
+}
+const STEPS=[['confirmed','الطلب اتأكد'],['accepted','البائعات جهزوا الطلب'],['picked','مع مندوب بوسطة'],['delivered','وصل']];
+const RANK={awaiting:0,confirmed:1,accepted:2,picked:3,delivered:4,refused:4,cancelled:0};
+function scTrack(){
+  const o=S.orders.find(x=>x.id===S.lastOrderId);
+  if(!o) return cHead()+`<div class="c-scroll"><div class="c-pad"><h1 class="ptitle">طلباتي</h1><p>مفيش طلبات لسه.</p></div></div>`;
+  const r=RANK[o.status], sellers=[...new Set(o.items.map(i=>i.sid))];
+  const ab=o.items.find(i=>P(i.pid).kind==='abaya');
+  const ex=S.exch[o.id];
+  let exHTML='';
+  if(o.status==='delivered'&&ab){
+    if(!ex) exHTML=`<button class="btn ghost block" data-act="exopen">المقاس مش مظبوط؟ بدّليه مجاناً</button>`;
+    else if(ex==='pick') exHTML=`<div class="card"><b>اختاري المقاس الجديد</b><span class="pby">المندوب هييجي ياخد العباية القديمة ويسلمك الجديدة في نفس الزيارة. مجاناً.</span><div class="sizes">${['1','2','3','4'].filter(k=>k!==ab.size).map(k=>`<button class="sz" data-act="exsize" data-k="${k}">${k}<small>${SIZECHART[+k-1][1]} سم</small></button>`).join('')}</div></div>`;
+    else exHTML=`<div class="note ok">طلب الاستبدال اتسجل: مقاس ${ex} بدل ${ab.size}. المندوب هيعدي عليكي ${eta(o.city)}، ومش هتدفعي حاجة.</div>`;
+  }
+  return cHead()+`<div class="c-scroll"><div class="c-pad">
+   <h1 class="ptitle">طلب #${o.id}</h1>
+   ${o.status==='awaiting'?`<div class="note warn">فاضل خطوة: أكدي الطلب على واتساب. <button class="back" data-act="cnav" data-v="wa">افتحي الرسالة</button></div>`:''}
+   ${o.status==='cancelled'?`<div class="note warn">الطلب اتلغى. مفيش أي مبلغ عليكي.</div>`:''}
+   ${!['delivered','cancelled','refused'].includes(o.status)?`<div class="eta"><div><b>يوصلك ${eta(o.city)}</b></div><span>المندوب هيكلمك قبل ما يوصل.</span></div>`:''}
+   <div class="tl">${STEPS.map((s,i)=>`<div class="${r>=i+1&&o.status!=='cancelled'?'on':''}"><i>${r>=i+1&&o.status!=='cancelled'?'✓':i+1}</i><div><b>${s[1]}</b>${i===2&&sellers.length>1?`<small>${sellers.length} شحنات بنفس رقم الطلب، كل واحدة بتوصل لوحدها</small>`:''}</div></div>`).join('')}</div>
+   ${['awaiting','confirmed'].includes(o.status)?`<button class="btn ghost block" data-act="ccancel">غيّرتي رأيك؟ الغي الطلب</button>`:''}
+   ${o.status==='delivered'?`<div class="note ok">اتضاف ${egp(sub(o)*CFG.cashback)} لمحفظتك (كاش باك 4٪).</div>${exHTML}
+   <div class="card"><b>سؤال سريع</b><span style="font-size:13px">حد كلمك بعد الطلب بعرض أو خصم بره الموقع؟ لو حصل، بلغينا وخدي 100 ج في محفظتك.</span>
+   ${S.surveyed[o.id]?`<span class="pby">شكراً، اتسجل ردك.</span>`:`<div style="display:flex;gap:8px"><button class="btn ghost" style="flex:1" data-act="survey" data-v="no">لأ</button><button class="btn ghost" style="flex:1" data-act="survey" data-v="yes">أيوه حصل</button></div>`}</div>`:''}
+   ${['confirmed','accepted','picked'].includes(o.status)?`<div class="note info">الخطوة الجاية بتحصل عند البائعة (تليجرام) وفي لوحة الأدمن (بوسطة). جربي التنقل من فوق.</div>`:''}
+   <div class="card">${o.items.map(i=>`<div class="row"><span>${P(i.pid).name}${i.qty>1?` × ${i.qty}`:''}</span><span class="num">${egp(i.price*i.qty)}</span></div>`).join('')}<div class="row total"><span>هتدفعي عند الاستلام</span><span class="num">${egp(custPays(o)-(o.deposit?CFG.deposit:0))}</span></div></div>
+   <button class="btn ghost block" data-act="askwa">محتاجة مساعدة؟ كلمينا على واتساب</button>
+  </div></div>`;
+}
+function favBlock(){const fs=S.products.filter(p=>S.fav[p.id]&&p.status==='live');return `<div style="display:grid;gap:8px"><p class="h4">المفضلة (${fs.length})</p>${fs.length?`<div class="grid">${fs.map(pcard).join('')}</div>`:`<span class="pby">اضغطي على القلب في أي منتج وهيتحفظ هنا.</span>`}</div>`}
+function scAccount(){
+  const mine=S.orders.filter(o=>o.demo);
+  if(!S.known) return cHead()+`<div class="c-scroll"><div class="c-pad">
+   <h1 class="ptitle">ادخلي برقم موبايلك</h1>
+   <p class="pby" style="margin:0">مفيش باسورد. هنبعتلك كود على واتساب، وطلباتك ومقاساتك وعنوانك بيتحفظوا.</p>
+   <label class="field">رقم الموبايل<input id="f-login" value="${S.cust.phone}" inputmode="tel" dir="ltr" style="text-align:right"></label>
+   <button class="btn primary block" data-act="login">ابعتيلي الكود على واتساب</button>
+   ${favBlock()}
+  </div></div>`;
+  return cHead()+`<div class="c-scroll"><div class="c-pad">
+   <h1 class="ptitle">أهلاً ${S.cust.name.split(' ')[0]}</h1>
+   <div class="card" style="background:var(--emerald);color:var(--emerald-ink);border:0"><span style="font-size:12px;opacity:.85">رصيد المحفظة</span><b style="font-size:26px" class="num">${egp(S.wallet)}</b><span style="font-size:12px;opacity:.85">بينتهي ${arDate(S.walletExp)} · بيتجمع من الكاش باك والمكافآت</span></div>
+   <div class="card"><b>بياناتي المحفوظة</b><div class="row"><span>الدخول</span><span>برقم الموبايل + كود واتساب، من غير باسورد</span></div><div class="row"><span>مقاس العباية</span><span>2</span></div><div class="row"><span>العنوان</span><span>${S.cust.addr}</span></div><div class="row"><span>ميعاد العمرة</span><span>مارس 2027</span></div></div>
+   <div style="display:grid;gap:8px"><p class="h4">طلباتي</p>
+    ${mine.map(o=>`<button class="part" style="text-align:start;background:var(--surface)" data-act="opentrack" data-id="${o.id}"><div class="pimg">${o.kit?kitArt():garment(P(o.items[0].pid).kind,P(o.items[0].pid).color)}</div><div><b style="font-size:13px">#${o.id} · ${o.kit?'شنطة العمرة':P(o.items[0].pid).name}</b><div class="pby">${arDate(o.date)}</div></div><span class="num" style="font-size:12px">${egp(custPays(o))}</span></button>`).join('')}
+    <div class="part"><div class="pimg">${garment('hijab','#CBBDA5')}</div><div><b style="font-size:13px">#0988 · طرحة شيفون — رملي × 2</b><div class="pby">12 أكتوبر · وصل</div></div><span class="num" style="font-size:12px">${egp(425)}</span></div>
+   </div>
+   ${favBlock()}
+   <button class="btn ghost block" data-act="openreorder">شوفي رسالة إعادة الطلب على واتساب (ديمو)</button>
+  </div></div>`;
+}
+const CATS=[['abaya','عبايات'],['niqab','نقاب'],['khimar','خمار'],['hijab','طرح'],['ihram','إحرام رجالي']];
+const KIND_AR={abaya:'عبايه عبايات اسدال',niqab:'نقاب نقابات',khimar:'خمار خمارات',hijab:'طرحه طرح حجاب',ihram:'احرام رجالي'};
+const POPULAR=['عباية عمرة','نقاب بالخمار','طرحة شيفون','عباية سوداء','إحرام رجالي'];
+const SYN={'اسدال':'عبايه','حجاب':'طرحه','لفه':'طرحه','ايشارب':'طرحه','طقم':'شنطه'};
+const esc=t=>String(t).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const norm=t=>String(t).toLowerCase().replace(/[ً-ْـ]/g,'').replace(/[أإآ]/g,'ا').replace(/ة/g,'ه').replace(/ى/g,'ي');
+function heartBtn(p,inline){const on=!!S.fav[p.id];return `<button class="heart${inline?' inline':''}" data-act="fav" data-id="${p.id}" aria-pressed="${on}" aria-label="${on?'شيليها من المفضلة':'ضيفيها للمفضلة'}">${on?ICON.heart:ICON.heartO}</button>`}
+function pcard(p){return `<div class="pw"><button class="pcard" data-act="cprod" data-id="${p.id}"><div class="pimg">${garment(p.kind,p.color)}</div><div class="pname">${p.name}</div><div class="pby">من ${SL(p.sid).name}</div><div class="pmeta">⭐ ${SL(p.sid).rating} · يوصل ${eta(S.cust.city).split(' ')[0]}</div><div class="pprice">${egp(p.price)}</div></button>${heartBtn(p)}</div>`}
+function kitCard(){return `<button class="kitrow" data-act="cnav" data-v="kit"><div class="art">${kitArt()}</div><div><b style="font-size:13px">شنطة العمرة الكاملة</b><div class="pby">عباية + نقاب بالخمار + 2 طرحة · من 3 بائعات</div></div><span class="pprice">${egp(KIT_FULL-CFG.kitDiscount)}</span></button>`}
+function searchTerms(){return norm(S.q).split(/\s+/).filter(Boolean).map(w=>SYN[w]||w)}
+function searchHits(){
+  const terms=searchTerms();
+  return S.products.filter(p=>p.status==='live'&&SL(p.sid).status!=='suspended'&&(!S.cat||p.kind===S.cat)).filter(p=>{
+    const hay=norm([p.name,p.fabric,KIND_AR[p.kind],SL(p.sid).name,p.lead].join(' '));
+    return terms.every(w=>hay.includes(w)||hay.includes(w.replace(/^ال/,'')));
+  });
+}
+function searchResults(){
+  if(!S.q.trim()&&!S.cat) return `<div style="display:grid;gap:12px"><p class="h4" style="margin:0">الأكثر بحثاً</p><div class="cats" style="flex-wrap:wrap">${POPULAR.map(x=>`<button class="chip" data-act="sq" data-v="${x}">${x}</button>`).join('')}</div><p class="h4" style="margin:0">الأكثر طلباً قبل رمضان</p>${kitCard()}</div>`;
+  const terms=searchTerms(), hits=searchHits();
+  const kit=(!S.cat||S.cat==='abaya')&&terms.some(w=>['عمره','شنطه','كامل','عبايه','عبايات','نقاب'].includes(w));
+  if(!hits.length&&!kit) return `<div class="card" style="text-align:center;justify-items:center"><b>مش لاقيين "${esc(S.q)}"</b><span class="pby">جربي كلمة أبسط، أو اختاري من دول:</span><div class="cats" style="flex-wrap:wrap;justify-content:center">${POPULAR.slice(0,3).map(x=>`<button class="chip" data-act="sq" data-v="${x}">${x}</button>`).join('')}</div><button class="btn ghost" data-act="askwa">قوليلنا بتدوري على إيه على واتساب</button></div>`;
+  const PR={all:[0,1e9],lt300:[0,299],mid:[300,900],gt900:[901,1e9]}[S.price];
+  const shown=hits.filter(p=>p.price>=PR[0]&&p.price<=PR[1]).sort({best:(a,b)=>b.views-a.views,low:(a,b)=>a.price-b.price,high:(a,b)=>b.price-a.price,rating:(a,b)=>SL(b.sid).rating-SL(a.sid).rating}[S.sort]);
+  const ctrls=`<div style="display:grid;gap:6px"><span class="ctrl-label">ترتيب</span><div class="ctrl">${[['best','الأكثر طلباً'],['low','الأقل سعراً'],['high','الأعلى سعراً'],['rating','الأعلى تقييماً']].map(x=>`<button class="chip" aria-pressed="${S.sort===x[0]}" data-act="sort" data-v="${x[0]}">${x[1]}</button>`).join('')}</div><span class="ctrl-label">السعر</span><div class="ctrl">${[['lt300','أقل من 300'],['mid','300–900'],['gt900','فوق 900']].map(x=>`<button class="chip" aria-pressed="${S.price===x[0]}" data-act="pricef" data-v="${x[0]}">${x[1]}</button>`).join('')}</div></div>`;
+  return `<div style="display:grid;gap:10px">${ctrls}<p class="pby" style="margin:0">${shown.length} منتج${S.q.trim()?` لـ "${esc(S.q)}"`:''}${S.cat?` في ${CATS.find(c=>c[0]===S.cat)[1]}`:''}</p>${kit&&S.price!=='lt300'?kitCard():''}${shown.length?`<div class="grid">${shown.map(pcard).join('')}</div>`:`<span class="pby">مفيش منتجات في الرينج ده. <button class="back" data-act="pricef" data-v="${S.price}">شيلي فلتر السعر</button></span>`}</div>`;
+}
+function scSearch(){
+  return `<header class="c-head" style="gap:8px"><button class="back" data-act="cnav" data-v="home" aria-label="رجوع" style="font-size:18px">→</button><div class="sbox">${ICON.search}<input id="q" type="search" value="${esc(S.q)}" placeholder="دوري على عباية، نقاب، طرحة…" autocomplete="off" aria-label="بحث في سكينة"><button data-act="clearq" aria-label="امسحي البحث" ${S.q?'':'hidden'}>✕</button></div></header>
+  <div class="c-scroll"><div class="c-pad"><div class="cats">${CATS.map(c=>`<button class="chip" aria-pressed="${S.cat===c[0]}" data-act="cat" data-v="${c[0]}">${c[1]}</button>`).join('')}</div><div id="sres">${searchResults()}</div></div></div>`;
+}
+function tabbar(){
+  const n=S.cart.length, t=[['home','الرئيسية',ICON.home],['search','بحث',ICON.search],['cart',`السلة${n?` (${n})`:''}`,ICON.cart],['account','حسابي',ICON.user]];
+  return `<nav class="tabbar">${t.map(x=>`<button data-act="cnav" data-v="${x[0]}" aria-current="${S.cview===x[0]}">${x[2]}${x[1]}</button>`).join('')}</nav>`;
+}
+const CNOTES={
+  home:['Home','The platform brand leads.',['Sellers show only as a small "من …" (by …) line. No Instagram links or phone numbers.','The hero product is a <b>multi-seller kit</b>. No single seller can offer it, so it has zero leakage and a 3–4× order value.','Search sits in the header and the tab bar. Category chips open filtered results with sort and price filters.','Hearts save favorites. The wallet stays hidden until she signs in with a WhatsApp code or places an order.','Trust details (open before paying, exchange, CR number, support hours) moved to a footer at the end, so the top of the page goes straight to products.','The guide card at the bottom is AEO/GEO content: the Arabic answer page ChatGPT and Google can cite.']],
+  search:['Search','Finds things the way people type them.',['Arabic-aware: أ/إ/ا, ة/ه and ى/ي match each other, so "عبايه" finds "عباية".','Common words are mapped: اسدال finds abayas, حجاب finds hijabs.','Searching عمرة or عباية puts the Umrah kit first.','Empty state shows popular searches. No results offers a WhatsApp question instead of a dead end.','Every search is logged, including searches with no results. Those tell you which products sellers should add next.']],
+  product:['Product page','Answers every doubt before the customer has to ask.',['<b>"Will it fit?"</b> A two-question size finder picks the size for her, backed by reviews that include height, and a free exchange at the door.','<b>"What will I really pay, and when?"</b> The delivery date and shipping fee sit right under the price, so there are no surprises in the cart.','<b>"Is it really like the photo?"</b> Customer photos come before the long description.','<b>Buy now</b> skips the cart and goes straight to the one-screen checkout. Questions go to WhatsApp with the platform, not the seller.','The JSON-LD below is generated from the same product record, so every niche gets SEO for free.']],
+  kit:['Umrah kit','The leakage-proof hero.',['Parts come from 3 sellers. Each seller ships their part with the same order number, in Sakina bags.','The 100 EGP kit discount comes out of platform commission, so seller prices stay at parity with Instagram.']],
+  cart:['Cart','Rules from the niche config.',['A deposit is required above 1,200 EGP (editable in Admin → Niche settings).','The wallet balance has an expiry date. Loss aversion brings people back.','Cashback is promised up front and credited only after delivery.']],
+  checkout:['Checkout','One screen, no account.',['The phone number comes first. It is her account, her WhatsApp, and her saved details for next time.','The address follows the Egyptian pattern: governorate, area, street, and an optional landmark the courier actually uses.','The total says "this is everything, no other fees at the door". Hidden fees are the top reason for refusals.','The deposit appears only above 1,200 EGP, is only the shipping fee, and is refundable, all said in plain words.','The trip date is optional and folded away. It powers the packing-list message a week before travel.']],
+  wa:['WhatsApp','Confirm before anything ships.',['No confirmation means nothing reaches the seller and nothing ships. This is the main fix for the 25–30% of COD orders that fail.','The customer messages first, which opens a free reply window and keeps costs near zero.','The reorder message opens a pre-filled cart on the site, so the pixel, wallet and data stay yours.']],
+  track:['Tracking','No silence after the order.',['A delivery date and "the courier will call you first" from the moment of ordering.','Cancel with one tap before the seller accepts. An easy way out makes people braver about ordering.','After delivery: <b>one-tap size exchange</b>. The courier swaps the old size for the new one in a single visit, and the seller gets a Telegram message to prepare it.','Cashback lands in the wallet, plus the survey that turns every customer into a leakage detector.']],
+  account:['Account','Making repeat orders effortless.',['Login is phone plus a WhatsApp code. No passwords.','Sizes and address are saved, so a repeat order is one tap.','A repeat order carries a 6% commission instead of 18%, so the seller saves little by poaching.']]
+};
+function jsonld(p){return JSON.stringify({"@context":"https://schema.org","@type":"Product",name:p.en,brand:{"@type":"Brand",name:SL(p.sid).en},material:p.fabric,color:p.en.split(', ')[1],offers:{"@type":"Offer",priceCurrency:"EGP",price:p.price,availability:"https://schema.org/InStock",shippingDetails:{"@type":"OfferShippingDetails",shippingRate:{"@type":"MonetaryAmount",value:CFG.ship,currency:"EGP"},deliveryTime:{"@type":"ShippingDeliveryTime",transitTime:{"@type":"QuantitativeValue",minValue:2,maxValue:4,unitCode:"DAY"}}},hasMerchantReturnPolicy:{"@type":"MerchantReturnPolicy",merchantReturnDays:14,returnFees:"https://schema.org/FreeReturn"}},aggregateRating:{"@type":"AggregateRating",ratingValue:SL(p.sid).rating,reviewCount:(REVIEWS[p.kind]||[]).length}},null,2)}
+
+function skeleton(){return cHead()+`<div class="c-scroll" aria-busy="true" aria-label="جاري التحميل"><div class="c-pad"><div class="sk" style="aspect-ratio:1/.85"></div><div class="sk" style="height:24px;width:70%"></div><div class="sk" style="height:16px;width:40%"></div><div class="sk" style="height:64px"></div><div style="display:flex;gap:8px">${'<div class="sk" style="height:44px;flex:1"></div>'.repeat(4)}</div></div></div>`}
+function renderCustomer(){
+  const scr=S.loading?skeleton():{home:scHome,product:scProduct,kit:scKit,cart:scCart,checkout:scCheckout,wa:scWA,track:scTrack,account:scAccount,search:scSearch}[S.cview]();
+  const n=CNOTES[S.cview];
+  const extra=S.cview==='product'?`<pre>${jsonld(P(S.cparam)).replace(/</g,'&lt;')}</pre>`:'';
+  return `<div class="stage"><div class="phone"><div class="sbar" style="background:${S.cview==='wa'?'var(--wa-head)':'var(--surface)'};color:${S.cview==='wa'?'#fff':'inherit'}"><span>9:41</span><span>5G ▮▮▮</span></div>${S.offline?'<div class="offline" role="status">النت فاصل. السلة محفوظة، وهنكمل أول ما يرجع.</div>':''}${scr}${S.cview==='wa'?'':tabbar()}</div>
+  <aside class="notes"><span class="kicker">Customer · ${n[0]}</span><h3>${n[1]}</h3><ul>${n[2].map(x=>`<li>${x}</li>`).join('')}</ul>${extra}<div style="margin-top:14px;display:flex;gap:8px;flex-wrap:wrap"><button class="mini" data-act="offline">${S.offline?'End offline demo':'Simulate offline network'}</button><button class="mini" data-act="theme">Toggle light / dark</button></div></aside></div>`;
+}
+
+/* ---------------- seller (telegram) ---------------- */
+function tgPush(chat,m){m.id=++S.mid;m.t=m.t||'now';S.tg[chat].push(m);return m}
+const bot=(chat,text,extra={})=>tgPush(chat,{from:'bot',text,...extra});
+const me=(chat,text,extra={})=>tgPush(chat,{from:'me',text,...extra});
+bot('sara','أهلاً سارة 👋 ده بوت سكينة للبائعات.\nكل طلباتك وفلوسك وأرقامك هنا، من غير أي لوحة تحكم.',{t:'Sep 2'});
+bot('sara','💰 اتحولك 4,215 ج على إنستاباي (010••••4471)\nمحجوز كضمان: 612 ج (بيرجعلك بعد 30 يوم)\nالتحويل الجاي: الخميس 12 نوفمبر',{t:'Thu 5 Nov'});
+bot('sara','🔎 مراجعة الأسعار (كل أسبوعين):\n• عباية عمرة كريب — بيج: 850 ج\n• عباية ندى سوداء: 1,150 ج\nالأسعار دي لسه زي الإنستجرام؟',{t:'Mon 9 Nov',btns:[['✅ أيوه كلها','pricesok'],['✏️ تحديث سعر','pricesupd']]});
+bot('app','أهلاً بيكي في سكينة 🤍\nافتحي متجرك في 5 دقايق.\n• مش هتدفعي أي حاجة غير لما تبيعي\n• الطلبات بتوصلك هنا على تليجرام\n• فلوسك بتتحول كل خميس',{t:'now',btns:[['🚀 ابدأي التقديم','app:start']],one:true});
+
+const APPQ=[
+  ['اسم المتجر؟',['نور للخمارات','بيت الحجاب']],
+  ['لينك الإنستجرام (للتحقق بس)',['@nour.khimar']],
+  ['منطقتك؟ (عشان مندوب بوسطة ييجي يستلم)',['المعادي، القاهرة','سموحة، الإسكندرية']],
+  ['بتبيعي إيه؟',['خمار','طرح','عبايات']],
+  ['ابعتي 3 صور لمنتجاتك',['📷 إرسال 3 صور (ديمو)']],
+  ['تقدري تشحني كام قطعة في الأسبوع؟',['10','25','50+']],
+  ['رقم إنستاباي اللي هنحولك عليه',['011••••2098']]
+];
+function msgHTML(m,chat){
+  let inner=m.html||m.text;
+  return `<div class="msg ${m.from==='bot'?'in':'out'}">${inner}<time>${m.t}</time></div>${m.btns?`<div class="ibtns ${m.one||m.btns.length===1?'one':''}">${m.btns.map(b=>`<button ${m.used?'disabled':''} data-act="tg" data-a="${b[1]}" data-m="${m.id}" data-chat="${chat}">${b[0]}</button>`).join('')}</div>`:''}`;
+}
+function renderSeller(){
+  const chat=S.tgChat, msgs=S.tg[chat];
+  const approved=chat==='app'&&S.done.applicantApproved;
+  const kb=chat==='sara'||approved?`<div class="kb"><button data-act="kb" data-a="orders" data-chat="${chat}">📦 طلبات مفتوحة</button><button data-act="kb" data-a="add" data-chat="${chat}">➕ منتج جديد</button><button data-act="kb" data-a="stats" data-chat="${chat}">📊 أرقامي</button><button data-act="kb" data-a="money" data-chat="${chat}">💰 فلوسي</button></div>`:`<div class="inputbar"><span>استخدمي الأزرار للرد…</span></div>`;
+  const who=chat==='sara'?'سارة · بيت سارة للعبايات':'متقدمة جديدة';
+  const notes=chat==='sara'?['Seller · Telegram bot','The seller never opens a dashboard.',[
+    'A new order arrives with <b>Accept / Not available</b> buttons. The chat shows the first name and city only, never the phone number. Customer details appear only on the printed waybill.',
+    'Each order shows the seller\'s share before they accept, and each new product shows it before publishing. No surprises about commission.',
+    '"Not available" hides the product automatically until the seller confirms stock again.',
+    'A price check every 14 days keeps prices equal to Instagram (price parity) and stops refusals from stale prices.',
+    'The Thursday payout message is the main reason sellers stay.']]
+    :['Seller · application','Applying in 5 minutes.',[
+    'Seven quick answers (most are tap-to-answer), then a plain-language agreement with one "I agree" button.',
+    'After applying, you review their Instagram and place one <b>test order</b> before approving. Approve in Admin → Review queue.',
+    'Once approved, the seller gets the full menu: orders, new product, numbers, money.']];
+  return `<div class="stage"><div><div class="chatswitch"><div class="seg" role="group" aria-label="Chat"><button aria-pressed="${chat==='sara'}" data-act="tgchat" data-v="sara">Sara (active seller)</button><button aria-pressed="${chat==='app'}" data-act="tgchat" data-v="app">New applicant</button></div></div>
+  <div class="phone"><div class="sbar" style="background:var(--tg-head);color:#fff"><span>9:41</span><span>5G ▮▮▮</span></div>
+  <div class="chat tg"><div class="chat-head"><div class="av">س</div><div><b>بوت سكينة للبائعات</b><small>bot · ${who}</small></div></div>
+  <div class="chat-body" id="tgbody">${msgs.map(m=>msgHTML(m,chat)).join('')}</div>${kb}</div></div></div>
+  <aside class="notes"><span class="kicker">${notes[0]}</span><h3>${notes[1]}</h3><ul>${notes[2].map(x=>`<li>${x}</li>`).join('')}</ul></aside></div>`;
+}
+function orderMsg(o){
+  const mine=o.items.filter(i=>i.sid==='s1'); if(!mine.length) return;
+  const share=mine.reduce((a,i)=>a+i.price*i.qty*(1-CFG.rates[o.type]),0);
+  const tl={new:'عميلة جديدة من سكينة',repeat:'عميلة راجعة',referral:'من كودك'}[o.type];
+  bot('sara',`🔔 طلب جديد #${o.id}${o.kit?' (جزء من شنطة العمرة)':''}\n${mine.map(i=>`• ${P(i.pid).name} | مقاس ${sizeLbl(i.size)} | × ${i.qty}`).join('\n')}\nالعميلة: ${o.cust.split(' ')[0]} — ${o.city}\nالاستلام: بكرة من 12 لـ 4\nنصيبك: ${egp(share)} (${tl})`,{btns:[['✅ قبول',`accept:${o.id}`],['❌ مش متاح',`reject:${o.id}`]]});
+}
+function tgAction(a,chat,mid){
+  const m=S.tg[chat].find(x=>x.id==mid); if(m) m.used=true;
+  const [k,v,w]=a.split(':');
+  if(k==='accept'){const o=S.orders.find(x=>x.id==v);o.status='accepted';me(chat,'✅ قبول');
+    bot(chat,'',{html:`<div class="file"><div class="ic">PDF</div><div><b>AWB-${o.id}.pdf</b><br><small>بوليصة بوسطة · 48 KB</small></div></div>`});
+    bot(chat,'📄 البوليصة جاهزة. اطبعيها والزقيها على كيس سكينة 🛍️\nمندوب بوسطة جاي بكرة من 12 لـ 4.\nبيانات العميلة على البوليصة بس، وممنوع استخدامها لأي حاجة غير الشحن.',{btns:[['📦 سلمت للمندوب',`handed:${o.id}`]],one:true});}
+  else if(k==='reject'){const o=S.orders.find(x=>x.id==v);me(chat,'❌ مش متاح');const it=o.items.find(i=>i.sid==='s1');const p=P(it.pid);p.status='hidden';o.status='cancelled';
+    bot(chat,`تمام. خفينا "${p.name}" من الموقع لحد ما تأكدي إنه متاح تاني.\nالرفض بيأثر على ترتيبك، فحدّثي المخزون أول بأول.`,{btns:[['متاح تاني',`avail:${p.id}`]],one:true});}
+  else if(k==='avail'){P(v).status='live';me(chat,'متاح تاني');bot(chat,'رجع اتعرض على الموقع ✅');}
+  else if(k==='handed'){const o=S.orders.find(x=>x.id==v);o.status='picked';me(chat,'📦 سلمت للمندوب');bot(chat,`تمام 👌 الطلب #${o.id} مع بوسطة. هنبلغك أول ما يتسلم.`);S.done.handed=true;
+    toast('The order is with the courier. Mark it delivered in Admin, which simulates the Bosta update.','Open admin orders',()=>{S.view='admin';S.aview='orders';S.ofilter='transit'});}
+  else if(k==='pricesok'){me(chat,'✅ أيوه كلها');S.products.filter(p=>p.sid==='s1').forEach(p=>p.priceOk=TODAY);bot(chat,'شكراً! هنسألك تاني بعد أسبوعين.');}
+  else if(k==='pricesupd'){me(chat,'✏️ تحديث سعر');bot(chat,'ابعتي اسم المنتج والسعر الجديد، زي:\nعباية كريب 890\n(في النسخة الحقيقية بتكتبي هنا)');}
+  else if(k==='add'){addFlow(chat,v,w)}
+  else if(k==='app'){appFlow(v,w)}
+  render(); scrollChat();
+}
+function addFlow(chat,step,val){
+  const F=S.flow||(S.flow={});
+  if(step==='photos'){me(chat,'',{html:`<div class="photos">${['#6E7A5A','#6E7A5A','#596347'].map(c=>`<div>${garment('abaya',c)}</div>`).join('')}</div>`});bot(chat,'حلوين 👌 السعر للعميلة كام؟\n(لازم يكون نفس سعر الإنستجرام)',{btns:[['650','add:price:650'],['750','add:price:750'],['850','add:price:850']]});}
+  else if(step==='price'){F.price=+val;me(chat,val);bot(chat,'المقاسات المتاحة؟',{btns:[['1 2 3','add:sizes:1-2-3'],['1 2 3 4','add:sizes:1-2-3-4']]});}
+  else if(step==='sizes'){F.sizes=val.split('-');me(chat,F.sizes.join(' '));bot(chat,'كام قطعة من كل مقاس؟',{btns:[['3','add:qty:3'],['5','add:qty:5'],['10','add:qty:10']]});}
+  else if(step==='qty'){F.qty=+val;me(chat,val);
+    const n=F.price*(1-CFG.rates.new), r=F.price*(1-CFG.rates.repeat);
+    bot(chat,'',{html:`<div class="pcardmsg"><b>✨ جهزنا المنتج (مكتوب بالذكاء الاصطناعي من صورك):</b><div class="pimg">${garment('abaya','#6E7A5A')}</div><b>عباية كتان — زيتي، قصة واسعة</b><span>عباية كتان طبيعي بلون زيتي هادي، خفيفة وبتشرب العرق، مناسبة للعمرة والصيف. مقاسات ${F.sizes.join('، ')}.</span><span>القسم: عبايات · القماش: كتان · اللون: زيتي</span><div class="share">💰 سعر العميلة: <b>${egp(F.price)}</b><br>💵 نصيبك: <b>${egp(n)}</b> (عميلة جديدة) / <b>${egp(r)}</b> (عميلة راجعة)</div><span style="font-size:11.5px;opacity:.75">ناقص: جدول المقاسات بالسنتيمتر. استخدمنا الجدول المعتاد لمتجرك، تقدري تعدليه.</span></div>`,btns:[['✅ نشر','add:publish'],['✏️ تعديل','add:edit']]});}
+  else if(step==='publish'){me(chat,'✅ نشر');const st={};F.sizes.forEach(s=>st[s]=F.qty);
+    S.products.push({id:'p9',sid:'s1',kind:'abaya',name:'عباية كتان — زيتي',en:'Linen abaya, olive',price:F.price,color:'#6E7A5A',fabric:'كتان طبيعي',length:'140 سم (مقاس 2)',opacity:'غير شفافة',stock:st,status:'review',priceOk:TODAY,views:0,lead:'عباية كتان طبيعي بلون زيتي هادي، خفيفة وبتشرب العرق، مناسبة للعمرة والصيف.'});
+    S.flow=null;bot(chat,'اتبعت للمراجعة ✅ فريق سكينة بيراجع الصور والسعر وهنبلغك أول ما يتنشر.');
+    toast('Sara submitted a new product. It is waiting for your review.','Open review queue',()=>{S.view='admin';S.aview='review'});}
+  else if(step==='edit'){me(chat,'✏️ تعديل');bot(chat,'تعديل إيه؟ (في النسخة الحقيقية: الاسم، الوصف، السعر، المقاسات، المخزون)',{btns:[['خلاص، انشري','add:publish']],one:true});}
+}
+function appFlow(step,val){
+  const A=S.app||(S.app={i:0,ans:[]});
+  if(step==='start'){me('app','🚀 ابدأي التقديم');A.i=0;askApp();return}
+  if(step==='ans'){const q=APPQ[A.i];const v=q[1][+val];
+    if(A.i===4) me('app','',{html:`<div class="photos">${['#E9E3EC','#A39AA7','#3B3540'].map(c=>`<div>${garment('khimar',c)}</div>`).join('')}</div>`}); else me('app',v);
+    A.ans.push(v);A.i++;
+    if(A.i<APPQ.length) askApp();
+    else bot('app',`📝 ملخص الاتفاق:\n• العمولة: ${pct(CFG.rates.new)} على العميلة الجديدة اللي سكينة بتجيبها، ${pct(CFG.rates.repeat)} على العميلة الراجعة، ${pct(CFG.rates.referral)} على عميلاتك اللي بتبعتيهم بكودك\n• فلوسك كل خميس، وبنحجز ${pct(CFG.reserve)} كضمان لمدة 30 يوم\n• تسليم للمندوب خلال 48 ساعة\n• نفس سعر الإنستجرام (ممنوع أرخص بره)\n• ممنوع التواصل مع عميلات سكينة لأي بيع مباشر، والمخالفة = خصم الضمان وإيقاف الحساب`,{btns:[['✅ أوافق على الشروط','app:agree'],['📄 الاتفاق كامل','app:full']]});
+    return}
+  if(step==='full'){bot('app','(في النسخة الحقيقية: لينك للاتفاق الكامل بالعامية المصرية)');return}
+  if(step==='agree'){me('app','✅ أوافق على الشروط');
+    S.sellers.push({id:'s6',name:A.ans[0],en:'Nour Khimar',area:A.ans[2],rating:0,ship:0,reject:0,status:'pending',joined:TODAY,ig:A.ans[1],pay:A.ans[6],views:0,capacity:A.ans[5]+' / week',cats:A.ans[3]});
+    bot('app','اتبعت طلبك للمراجعة ✅\nهنراجع الإنستجرام بتاعك، وهنعمل طلب تجريبي من عندك، ونرد عليكي خلال 48 ساعة.');
+    S.done.applied=true;
+    toast('A new seller applied. Approve them in Admin.','Open review queue',()=>{S.view='admin';S.aview='review'});}
+}
+function askApp(){const q=APPQ[S.app.i];bot('app',`${S.app.i+1}/${APPQ.length} · ${q[0]}`,{btns:q[1].map((b,ix)=>[b,`app:ans:${ix}`]),one:q[1].length===1})}
+function kbAction(a,chat){
+  if(chat==='app'){me(chat,{orders:'📦 طلبات مفتوحة',add:'➕ منتج جديد',stats:'📊 أرقامي',money:'💰 فلوسي'}[a]);bot(chat,a==='add'?'ابعتي صور المنتج وهنكمل سوا (ديمو: جربي من حساب سارة).':'لسه مفيش طلبات. أول ما تيجي هتوصلك هنا 🔔');render();scrollChat();return}
+  if(a==='orders'){me(chat,'📦 طلبات مفتوحة');const os=S.orders.filter(o=>['confirmed','accepted','picked'].includes(o.status)&&o.items.some(i=>i.sid==='s1'));
+    const lbl={confirmed:'مستني قبولك',accepted:'البوليصة جاهزة',picked:'مع المندوب'};
+    bot(chat,os.length?os.map(o=>`#${o.id} · ${o.items.filter(i=>i.sid==='s1').map(i=>P(i.pid).name.split(' — ')[0]).join('، ')} · ${lbl[o.status]}`).join('\n'):'مفيش طلبات مفتوحة دلوقتي.');}
+  if(a==='add'){me(chat,'➕ منتج جديد');S.flow={};bot(chat,'يلا 👌 ابعتي من 1 لـ 5 صور للمنتج على خلفية فاتحة.',{btns:[['📷 إرسال 3 صور (ديمو)','add:photos']],one:true});}
+  if(a==='stats'){me(chat,'📊 أرقامي');const n=S.orders.filter(o=>o.items.some(i=>i.sid==='s1')&&o.date>=dayStr(6)).length;
+    bot(chat,`📊 آخر 7 أيام\n👀 مشاهدات منتجاتك: ${AR(SL('s1').views)}\n🛒 طلبات: ${n}\n⏱ متوسط التسليم للمندوب: ${SL('s1').ship} ساعة\n⭐ تقييمك: ${SL('s1').rating}\n🏆 ترتيبك: التانية من ${S.sellers.filter(s=>s.status!=='pending').length} بائعات\nنصيحة: العباية البيج مقاس 2 فاضل منها 2 بس، زوّدي المخزون.`);}
+  if(a==='money'){me(chat,'💰 فلوسي');const c=sellerCycle('s1');
+    bot(chat,`💰 رصيدك\nمستحق الخميس 12 نوفمبر: ${egp(c.payable)}\nمحجوز كضمان (12٪ لمدة 30 يوم): ${egp(c.reserveAll)}\nآخر تحويل: 4,215 ج — 5 نوفمبر`);}
+  render();scrollChat();
+}
+function scrollChat(){const b=document.getElementById('tgbody');if(b)b.scrollTop=b.scrollHeight;const w=document.querySelector('.wa .chat-body');if(w)w.scrollTop=w.scrollHeight}
+
+/* ---------------- admin ---------------- */
+const STATUS={awaiting:['Awaiting WhatsApp confirm','warn'],confirmed:['Waiting for seller','info'],accepted:['Waybill ready','info'],picked:['With courier','info'],delivered:['Delivered','ok'],refused:['Refused at door','bad'],cancelled:['Cancelled','mute']};
+const SSTAT={active:['Active','ok'],warning:['Needs attention','warn'],pending:['Applied','info'],suspended:['Suspended','bad']};
+const pill=(t,c)=>`<span class="pill ${c}">${t}</span>`;
+function alerts(){
+  const a=[];
+  S.products.forEach(p=>{const low=Object.entries(p.stock).filter(([k,v])=>v<=3);if(p.status==='live'&&low.length)a.push(['var(--warn)',`Low stock: ${p.en}`,`${low.map(([k,v])=>`${k==='one'?'one size':'size '+k}: ${v} left`).join(', ')} · ${SL(p.sid).en}`,'Products','products'])});
+  S.sellers.filter(s=>s.ship>48).forEach(s=>a.push(['var(--bad)',`${s.en} hands orders to the courier in ${s.ship}h on average`,`SLA is 48h · rejection rate ${s.reject}%`,'Seller','seller:'+s.id]));
+  S.products.filter(p=>p.status==='live'&&daysSince(p.priceOk)>CFG.priceCheckDays).forEach(p=>a.push(['var(--warn)',`Price not confirmed for ${daysSince(p.priceOk)} days: ${p.en}`,'Auto-hides at 30 days','Products','products']));
+  S.reports.filter(r=>r.status==='open').forEach(r=>a.push(['var(--bad)',`Leakage report on ${SL(r.sid).en}`,`Order #${r.order} · reported ${enDate(r.date)}`,'Investigate','leakage']));
+  const aw=S.orders.filter(o=>o.status==='awaiting').length; if(aw)a.push(['var(--info)',`${aw} orders waiting for WhatsApp confirmation`,'Auto-cancel after 24h without confirmation','Orders','orders']);
+  const q=S.products.filter(p=>p.status==='review').length+S.sellers.filter(s=>s.status==='pending').length; if(q)a.push(['var(--info)',`${q} items in the review queue`,'New products and seller applications','Review','review']);
+  return a;
+}
+function chart(){
+  const days=[...Array(14)].map((_,i)=>dayStr(13-i));
+  const vals=days.map(d=>S.orders.filter(o=>o.date===d&&live(o)).reduce((a,o)=>a+sub(o)-o.discount,0));
+  const max=Math.max(...vals,1), top=Math.ceil(max/1000)*1000, W=640,H=190,L=44,B=26,T=10,bw=(W-L-10)/14;
+  const y=v=>T+(H-T-B)*(1-v/top);
+  const ticks=[0,top/2,top];
+  return `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Daily sales value, last 14 days">${ticks.map(t=>`<line x1="${L}" x2="${W-6}" y1="${y(t)}" y2="${y(t)}" stroke="var(--line)" stroke-width="1"/><text x="${L-6}" y="${y(t)+4}" text-anchor="end" font-size="10" fill="var(--muted)" font-family="IBM Plex Mono, monospace">${t>=1000?(t/1000)+'k':t}</text>`).join('')}
+  ${vals.map((v,i)=>`<rect x="${L+i*bw+3}" y="${y(v)}" width="${bw-6}" height="${Math.max(0,H-B-y(v))}" rx="3" fill="${i===13?'var(--gold)':'var(--emerald)'}"><title>${enDate(days[i])}: EGP ${AR(v)}</title></rect>${i%2===1||i===13?`<text x="${L+i*bw+bw/2}" y="${H-8}" text-anchor="middle" font-size="10" fill="var(--muted)">${enDate(days[i])}</text>`:''}`).join('')}</svg>`;
+}
+function aOverview(){
+  const os=S.orders, del=os.filter(o=>o.status==='delivered'), ref=os.filter(o=>o.status==='refused');
+  const gmv=os.filter(live).reduce((a,o)=>a+sub(o)-o.discount,0);
+  const commission=del.reduce((a,o)=>a+comm(o),0);
+  const net=del.reduce((a,o)=>a+platNet(o),0)-ref.length*CFG.returnFee;
+  const succ=del.length/Math.max(1,del.length+ref.length);
+  const aov=gmv/Math.max(1,os.filter(live).length);
+  const seller=S.sellers.filter(s=>s.status!=='pending').map(s=>({s,v:os.filter(live).reduce((a,o)=>a+o.items.filter(i=>i.sid===s.id).reduce((b,i)=>b+i.price*i.qty,0),0)})).sort((a,b)=>b.v-a.v);
+  const al=alerts();
+  return `<div><h2>Overview</h2><p class="sub">Umrah niche · last 14 days (29 Oct – 11 Nov 2026) · demo data</p></div>
+  <div class="kpis">
+   <div class="kpi"><small>Sales value (GMV)</small><b>${EGP(gmv)}</b><span>${os.filter(live).length} orders, not counting refusals</span></div>
+   <div class="kpi"><small>Commission earned</small><b>${EGP(commission)}</b><span>on delivered orders only</span></div>
+   <div class="kpi"><small>Net to platform</small><b>${EGP(net)}</b><span>after kit discounts, cashback, refusal fees</span></div>
+   <div class="kpi"><small>Delivery success</small><b>${pct(succ)}</b><span>${del.length} delivered · ${ref.length} refused</span></div>
+   <div class="kpi"><small>Average order</small><b>${EGP(aov)}</b><span>kits pull this up</span></div>
+  </div>
+  <div class="cols">
+   <div class="panel"><h3>Daily sales value <span class="legend">EGP · today in gold</span></h3><div class="chart">${chart()}</div></div>
+   <div class="panel"><h3>Needs attention <span class="pill ${al.length?'warn':'ok'}">${al.length}</span></h3><div class="alerts">${al.map(x=>`<div class="alert" style="--c:${x[0]}"><div><b>${x[1]}</b><small>${x[2]}</small></div><button class="mini" data-act="ago" data-v="${x[4]}">${x[3]}</button></div>`).join('')||'<p class="sub">All clear.</p>'}</div></div>
+  </div>
+  <div class="panel"><h3>Sellers by sales value</h3><div class="tbl"><table class="t"><tr><th>Seller</th><th>Area</th><th class="r">Sales</th><th class="r">Hand-over time</th><th class="r">Rejections</th><th class="r">Rating</th><th>Status</th></tr>
+   ${seller.map(({s,v})=>`<tr class="click" data-act="seller" data-id="${s.id}"><td><b>${s.en}</b> <span class="ar sub">${s.name}</span></td><td class="ar">${s.area}</td><td class="r num">${EGP(v)}</td><td class="r num" style="color:${s.ship>48?'var(--bad)':'inherit'}">${s.ship}h</td><td class="r num">${s.reject}%</td><td class="r num">${s.rating||'—'}</td><td>${pill(...SSTAT[s.status])}</td></tr>`).join('')}</table></div></div>`;
+}
+function aOrders(){
+  const f=S.ofilter, F={all:()=>true,action:o=>['awaiting','confirmed'].includes(o.status),transit:o=>['accepted','picked'].includes(o.status),delivered:o=>o.status==='delivered',refused:o=>['refused','cancelled'].includes(o.status)};
+  const os=S.orders.filter(F[f]);
+  const act=o=>{
+    if(o.status==='picked') return `<div class="acts"><button class="mini pri" data-act="bosta" data-v="delivered" data-id="${o.id}">Bosta: delivered</button><button class="mini danger" data-act="bosta" data-v="refused" data-id="${o.id}">Refused</button></div>`;
+    if(o.status==='confirmed') return `<button class="mini" data-act="bosta" data-v="accepted" data-id="${o.id}">Seller accepted (simulate)</button>`;
+    if(o.status==='accepted') return `<button class="mini" data-act="bosta" data-v="picked" data-id="${o.id}">Picked up (simulate)</button>`;
+    if(o.status==='awaiting') return `<button class="mini" data-act="bosta" data-v="cancelled" data-id="${o.id}">Cancel</button>`;
+    return '';
+  };
+  return `<div><h2>Orders</h2><p class="sub">Every order runs through your Bosta account, so cash on delivery reaches you before sellers are paid.</p></div>
+  <div class="filters">${[['all','All'],['action','Needs action'],['transit','In transit'],['delivered','Delivered'],['refused','Refused / cancelled']].map(x=>`<button aria-pressed="${f===x[0]}" data-act="ofilter" data-v="${x[0]}">${x[1]} · ${S.orders.filter(F[x[0]]).length}</button>`).join('')}</div>
+  <div class="panel"><div class="tbl"><table class="t"><tr><th>Order</th><th>Date</th><th>Customer</th><th>Items</th><th>Sellers</th><th class="r">Customer pays</th><th class="r">Commission</th><th>Type</th><th>Status</th><th></th></tr>
+  ${os.map(o=>`<tr style="${o.demo?'background:var(--emerald-soft)':''}"><td class="num"><b>#${o.id}</b>${o.demo?' <span class="pill info">you</span>':''}</td><td>${enDate(o.date)}</td><td><span class="ar">${o.cust.split(' ')[0]}</span> · <span class="ar sub">${o.city}</span><br><span class="num sub" style="font-size:11px">${o.phone}</span></td><td>${o.kit?'<b>Umrah kit</b>':`<span class="ar">${P(o.items[0].pid).name}</span>`}${o.items.length===1&&o.items[0].qty>1?' × '+o.items[0].qty:''}</td><td>${[...new Set(o.items.map(i=>SL(i.sid).en))].join(', ')}</td><td class="r num">${EGP(custPays(o))}</td><td class="r num">${EGP(comm(o))}<br><span class="sub" style="font-size:11px">${pct(CFG.rates[o.type])}</span></td><td>${o.type}</td><td>${pill(...STATUS[o.status])}</td><td>${act(o)}</td></tr>`).join('')}</table></div></div>`;
+}
+function aSellers(){
+  const pend=S.sellers.filter(s=>s.status==='pending');
+  return `<div><h2>Sellers</h2><p class="sub">Click a seller to open their profile.</p></div>
+  ${pend.length?`<div class="panel"><h3>Applications <span class="pill info">${pend.length}</span></h3><div class="tbl"><table class="t"><tr><th>Store</th><th>Instagram</th><th>Area</th><th>Sells</th><th>Capacity</th><th>Applied</th><th></th></tr>${pend.map(s=>`<tr><td class="ar"><b>${s.name}</b></td><td class="num">${s.ig}</td><td class="ar">${s.area}</td><td class="ar">${s.cats}</td><td>${s.capacity}</td><td>${enDate(s.joined)}</td><td><button class="mini" data-act="ago" data-v="review">Review</button></td></tr>`).join('')}</table></div></div>`:''}
+  <div class="panel"><div class="tbl"><table class="t"><tr><th>Seller</th><th>Area</th><th class="r">Products</th><th class="r">Hand-over</th><th class="r">Rejections</th><th class="r">Rating</th><th class="r">Due Thursday</th><th class="r">Reserve held</th><th>Status</th></tr>
+  ${S.sellers.filter(s=>s.status!=='pending').map(s=>{const c=sellerCycle(s.id);return `<tr class="click" data-act="seller" data-id="${s.id}"><td><b>${s.en}</b><br><span class="ar sub">${s.name}</span></td><td class="ar">${s.area}</td><td class="r num">${S.products.filter(p=>p.sid===s.id).length}</td><td class="r num" style="color:${s.ship>48?'var(--bad)':'inherit'}">${s.ship}h</td><td class="r num">${s.reject}%</td><td class="r num">${s.rating}</td><td class="r num">${EGP(c.payable)}</td><td class="r num">${EGP(c.reserveAll)}</td><td>${pill(...SSTAT[s.status])}</td></tr>`}).join('')}</table></div></div>`;
+}
+function aProducts(){
+  return `<div><h2>Products & stock</h2><p class="sub">Stock is updated by sellers from Telegram. Items at 3 or fewer are highlighted. Prices must be confirmed every ${CFG.priceCheckDays} days.</p></div>
+  <div class="panel"><div class="tbl"><table class="t"><tr><th>Product</th><th>Seller</th><th class="r">Price</th><th>Stock by size</th><th class="r">Views</th><th>Price confirmed</th><th>Status</th><th></th></tr>
+  ${S.products.map(p=>{const d=daysSince(p.priceOk);return `<tr><td><div style="display:flex;gap:8px;align-items:center"><div class="pimg" style="width:36px;flex:0 0 36px;border-radius:7px">${garment(p.kind,p.color)}</div><div><b>${p.en}</b><br><span class="ar sub">${p.name}</span></div></div></td><td>${SL(p.sid).en}</td><td class="r num">${EGP(p.price)}</td><td><div class="stockchips">${Object.entries(p.stock).map(([k,v])=>`<span class="sc ${v<=3?'low':''}">${k==='one'?'one':k}: ${v}</span>`).join('')}</div></td><td class="r num">${AR(p.views)}</td><td>${d>CFG.priceCheckDays?pill(d+' days ago','warn'):`<span class="sub">${d===0?'today':d+'d ago'}</span>`}</td><td>${pill(...{live:['Live','ok'],review:['In review','info'],hidden:['Hidden','mute']}[p.status])}</td><td>${p.status==='live'?`<button class="mini" data-act="phide" data-id="${p.id}">Hide</button>`:p.status==='hidden'?`<button class="mini" data-act="pshow" data-id="${p.id}">Show</button>`:`<button class="mini" data-act="ago" data-v="review">Review</button>`}</td></tr>`}).join('')}</table></div></div>`;
+}
+function aReview(){
+  const ps=S.products.filter(p=>p.status==='review'), ss=S.sellers.filter(s=>s.status==='pending');
+  return `<div><h2>Review queue</h2><p class="sub">Nothing goes live without your approval: new products from the Telegram bot, and new sellers.</p></div>
+  <div class="panel"><h3>New products <span class="pill info">${ps.length}</span></h3><div style="display:grid;gap:10px">${ps.map(p=>`<div class="qcard"><div class="pimg">${garment(p.kind,p.color)}</div><div style="min-width:0"><b>${p.en}</b> · <span class="sub">${SL(p.sid).en}</span><div class="ar" style="margin-top:4px">${p.name} — ${p.lead}</div><div class="stockchips" style="margin-top:6px"><span class="sc">${EGP(p.price)}</span>${Object.entries(p.stock).map(([k,v])=>`<span class="sc">${k}: ${v}</span>`).join('')}</div><div class="check"><label><input type="checkbox" checked> Photos are real and clear</label><label><input type="checkbox" checked> Price matches seller's Instagram</label><label><input type="checkbox" ${p.kind==='abaya'?'':'checked'}> Size chart in cm present</label></div></div><div class="acts" style="flex-direction:column"><button class="mini pri" data-act="papprove" data-id="${p.id}">Approve & publish</button><button class="mini danger" data-act="preject" data-id="${p.id}">Send back</button></div></div>`).join('')||'<p class="sub">No products waiting.</p>'}</div></div>
+  <div class="panel"><h3>Seller applications <span class="pill info">${ss.length}</span></h3><div style="display:grid;gap:10px">${ss.map(s=>`<div class="qcard"><div class="pimg">${garment('khimar','#A39AA7')}</div><div style="min-width:0"><b class="ar">${s.name}</b> · <span class="num">${s.ig}</span><div class="sub ar">${s.area} · ${s.cats} · ${s.capacity}</div><div class="check"><label><input type="checkbox" checked> Instagram reviewed: real followers, real reviews</label><label><input type="checkbox"> Test order placed and received</label><label><input type="checkbox" checked> Agreement accepted in Telegram</label></div></div><div class="acts" style="flex-direction:column"><button class="mini pri" data-act="sapprove" data-id="${s.id}">Approve seller</button><button class="mini danger" data-act="sreject" data-id="${s.id}">Decline</button></div></div>`).join('')||'<p class="sub">No applications waiting.</p>'}</div></div>`;
+}
+function aPayouts(){
+  const rows=S.sellers.filter(s=>s.status!=='pending').map(s=>({s,c:sellerCycle(s.id)}));
+  const tot=rows.reduce((a,r)=>({p:a.p+r.c.payable,c:a.c+r.c.commission,res:a.res+r.c.reserveAll}),{p:0,c:0,res:0});
+  const cash=S.orders.filter(o=>o.status==='delivered'&&o.delivered>=LAST_PAYOUT).reduce((a,o)=>a+custPays(o),0);
+  return `<div><h2>Payouts & reserve</h2><p class="sub">Cycle: orders delivered 5–11 Nov · paid Thursday 12 Nov via InstaPay · ${pct(CFG.reserve)} held for 30 days</p></div>
+  <div class="kpis"><div class="kpi"><small>Cash collected by Bosta</small><b>${EGP(cash)}</b><span>this cycle, including shipping</span></div><div class="kpi"><small>Due to sellers Thursday</small><b>${EGP(tot.p)}</b><span>after commission and reserve</span></div><div class="kpi"><small>Your commission</small><b>${EGP(tot.c)}</b><span>this cycle</span></div><div class="kpi"><small>Reserve held</small><b>${EGP(tot.res)}</b><span>leverage against leakage</span></div></div>
+  <div class="panel"><div class="tbl"><table class="t"><tr><th>Seller</th><th>InstaPay</th><th class="r">Delivered sales</th><th class="r">Commission</th><th class="r">Net</th><th class="r">Reserve (${pct(CFG.reserve)})</th><th class="r">Payable</th><th></th></tr>
+  ${rows.map(({s,c})=>`<tr><td><b>${s.en}</b></td><td class="num">${s.pay}</td><td class="r num">${EGP(c.sales)}</td><td class="r num">− ${EGP(c.commission)}</td><td class="r num">${EGP(c.net)}</td><td class="r num">− ${EGP(c.reserve)}</td><td class="r num"><b>${EGP(c.payable)}</b></td><td>${S.paid[s.id]?pill('Paid','ok'):s.status==='suspended'?pill('On hold','bad'):`<button class="mini pri" data-act="paid" data-id="${s.id}" ${c.payable>0?'':'disabled'}>Mark paid</button>`}</td></tr>`).join('')}</table></div></div>`;
+}
+function aLeak(){
+  return `<div><h2>Leakage protection</h2><p class="sub">Six layers, because you can't hide the customer's phone from the person who ships the package.</p></div>
+  <div class="kpis"><div class="kpi"><small>Post-delivery surveys sent</small><b>${S.survey.sent}</b><span>"Did anyone contact you off-platform?"</span></div><div class="kpi"><small>Answered yes</small><b>${S.survey.yes}</b><span>each one opens a report</span></div><div class="kpi"><small>Mystery orders this month</small><b>3</b><span>placed from new numbers</span></div><div class="kpi"><small>Repeat commission</small><b>${pct(CFG.rates.repeat)}</b><span>vs ${pct(CFG.rates.new)} new, so poaching saves little</span></div></div>
+  <div class="panel"><h3>Reports</h3><div class="tbl"><table class="t"><tr><th>ID</th><th>Date</th><th>Seller</th><th>Order</th><th>What the customer said</th><th>Status</th><th></th></tr>
+  ${S.reports.map(r=>`<tr><td class="num">${r.id}</td><td>${enDate(r.date)}</td><td>${SL(r.sid).en}</td><td class="num">#${r.order}</td><td class="ar" style="max-width:320px">${r.text}</td><td>${pill(...{open:['Open','warn'],confirmed:['Violation confirmed','bad'],dismissed:['Dismissed','mute']}[r.status])}</td><td>${r.status==='open'?`<div class="acts"><button class="mini danger" data-act="rconfirm" data-id="${r.id}">Confirm: forfeit reserve & suspend</button><button class="mini" data-act="rdismiss" data-id="${r.id}">Dismiss</button></div>`:''}</td></tr>`).join('')}</table></div></div>
+  <div class="panel"><h3>Active layers</h3><div class="tbl"><table class="t" style="min-width:520px"><tr><th>Layer</th><th>How it works here</th></tr>
+  <tr><td><b>1. Money</b></td><td>Your Bosta account. Cash on delivery comes to you, and sellers are paid weekly.</td></tr>
+  <tr><td><b>2. Reserve</b></td><td>${pct(CFG.reserve)} of each seller's net, held 30 days. Forfeited on a proven violation.</td></tr>
+  <tr><td><b>3. Commission tiers</b></td><td>${pct(CFG.rates.new)} new · ${pct(CFG.rates.repeat)} repeat · ${pct(CFG.rates.referral)} seller's own code</td></tr>
+  <tr><td><b>4. Wallet</b></td><td>${pct(CFG.cashback)} cashback with an expiry, usable only on the site</td></tr>
+  <tr><td><b>5. Hero bundles</b></td><td>Multi-seller Umrah kit. No single seller can offer it.</td></tr>
+  <tr><td><b>6. Detection</b></td><td>Package insert card, post-delivery survey, mystery orders. The phone number never appears in seller chats.</td></tr></table></div></div>`;
+}
+const UXSTD=[['Navigation & search',8,8],['Home page',6,6],['Product page',11,11],['Cart & checkout',8,8],['After the order',7,7],['Trust & footer',3,3],['Seller bot',6,5],['Admin',3,3],['Analytics events',3,0],['Accessibility & performance',4,3],['SEO / GEO',4,0],['Push notifications',8,0,1],['Promotions & discounts',9,0,1]];
+function aSettings(){
+  const umrah=S.niche==='umrah';
+  const attrs=umrah?{req:['fabric','color','sizes','size_chart_cm','length_cm','opacity'],opt:['season','care','origin']}:{req:['origin','roast_level','roast_date','process','weight_g','grind_options'],opt:['tasting_notes','altitude','brew_methods']};
+  const yaml=`niche: ${umrah?'umrah':'coffee'}
+brand:
+  name: ${umrah?'Sakina / سكينة':'Bunn / بُن'}
+  domain: ${umrah?'sakina.eg':'bunn.eg'}
+  palette: ${umrah?'{ base: "#F5EFE6", primary: "#1F5C4A", accent: "#C9A96E" }':'{ base: "#F6EFE4", primary: "#B4552D", accent: "#1E1A17" }'}
+attributes:
+  required: [${attrs.req.join(', ')}]
+  optional: [${attrs.opt.join(', ')}]
+commission: { new: ${CFG.rates.new}, repeat: ${CFG.rates.repeat}, seller_referral: ${CFG.rates.referral} }
+reserve: { percent: ${CFG.reserve}, days: 30 }
+risk:
+  deposit_required_above_egp: ${CFG.depositAbove}
+  require_whatsapp_confirm: true
+  open_before_pay: true
+wallet: { cashback: ${CFG.cashback}, expires_days: 30 }
+hero_bundles: [${umrah?'umrah_kit_women, umrah_kit_men, umrah_gift_box':'discovery_box, monthly_subscription'}]
+partners: [${umrah?'umrah_travel_agencies, hajj_umrah_groups':'offices, coworking_spaces, cafes'}]
+reorder_trigger: ${umrah?'trip_return_date + 3d':'bag_weight_g / daily_use → 2 days before empty'}`;
+  const inp=(k,label,val,step)=>`<label>${label}<input id="cfg-${k}" type="number" step="${step}" value="${val}" data-cfg="${k}"></label>`;
+  return `<div><h2>Niche settings</h2><p class="sub">One engine, many niches. A new niche is this file plus content and sellers. Edit the numbers: commission, payouts and the overview update live.</p></div>
+  <div class="nichecards">
+   <button class="nc" aria-pressed="${umrah}" data-act="niche" data-v="umrah"><div style="display:flex;justify-content:space-between"><b class="ar" style="font-family:var(--f-display);font-size:18px">سكينة · Umrah & modest wear</b>${pill('Live','ok')}</div><div class="sw3"><span style="background:#F5EFE6"></span><span style="background:#1F5C4A"></span><span style="background:#C9A96E"></span></div><span class="sub">${S.sellers.filter(s=>s.status!=='pending').length} sellers · ${S.products.length} products · peak: Ramadan (from ~8 Feb 2027)</span></button>
+   <button class="nc" aria-pressed="${!umrah}" data-act="niche" data-v="coffee"><div style="display:flex;justify-content:space-between"><b class="ar" style="font-family:var(--f-display);font-size:18px">بُن · Specialty coffee</b>${pill('Draft','mute')}</div><div class="sw3"><span style="background:#F6EFE4"></span><span style="background:#B4552D"></span><span style="background:#1E1A17"></span></div><span class="sub">Opens only after Umrah passes the KPI gates for 2 months in a row</span></button>
+  </div>
+  <div class="panel"><h3>Money rules</h3><div class="form">
+   ${inp('new','Commission: new customer (%)',CFG.rates.new*100,1)}
+   ${inp('repeat','Commission: repeat customer (%)',CFG.rates.repeat*100,1)}
+   ${inp('referral',"Commission: seller's own code (%)",CFG.rates.referral*100,1)}
+   ${inp('reserve','Seller reserve (%)',CFG.reserve*100,1)}
+   ${inp('cashback','Customer cashback (%)',CFG.cashback*100,0.5)}
+   ${inp('depositAbove','Deposit required above (EGP)',CFG.depositAbove,50)}
+   ${inp('kitDiscount','Kit discount (EGP)',CFG.kitDiscount,10)}
+  </div></div>
+  <div class="cols"><div class="panel"><h3>Required product attributes</h3><p class="sub" style="margin-top:0">The Telegram bot won't publish a product without the required ones. Each one becomes a schema.org property on the product page.</p><div class="attrs">${attrs.req.map(a=>`<span class="req">${a}</span>`).join('')}${attrs.opt.map(a=>`<span>${a}</span>`).join('')}</div>
+   <h3 style="margin-top:16px">Launch gates</h3><div class="tbl"><table class="t" style="min-width:300px">${[['0 · Score','Passes the niche scorecard',1],['1 · Legal','Agency agreement + tax treatment approved',1],['2 · Sellers','10+ sellers, each passed a test order',umrah?0:0],['3 · Hero','Multi-seller hero bundle with profitable math',umrah?1:0],['4 · Content','Knowledge hub and product schema ready',umrah?1:0],['5 · Launch','Partners + small ads live',0],['6 · Scale','KPIs pass 2 months in a row',0]].map(g=>`<tr><td><b>${g[0]}</b></td><td>${g[1]}</td><td>${g[2]?pill('Done','ok'):pill('Open','mute')}</td></tr>`).join('')}</table></div></div>
+  <div class="panel"><h3>niche.config <span class="legend">generated</span></h3><pre style="background:var(--surface-2);border:1px solid var(--line);border-radius:10px;padding:12px;font-family:var(--f-mono);font-size:11.5px;overflow:auto;margin:0">${yaml}</pre></div></div>
+  <div class="panel"><h3>Niche UX standard <span class="legend">same checklist for every niche · full list in NICHE-UX-STANDARD.md</span></h3>
+   <div style="display:grid;gap:8px">${UXSTD.map(r=>{const done=umrah?r[2]:0;const later=r[3];return `<div style="display:grid;grid-template-columns:minmax(140px,220px) 1fr auto;gap:10px;align-items:center;font-size:12.5px"><span>${r[0]}</span>${later?`<span class="sub">Planned for after the first KPI gates</span>`:`<div style="background:var(--surface-2);border-radius:6px;height:10px;overflow:hidden"><div style="height:100%;width:${done/r[1]*100}%;background:${done===r[1]?'var(--ok)':'var(--emerald)'}"></div></div>`}<span>${later?pill('Later','mute'):done===r[1]?pill(`${done}/${r[1]}`,'ok'):pill(`${done}/${r[1]}`,done?'warn':'mute')}</span></div>`}).join('')}</div></div>`;
+}
+const FUNNEL=[['Visits','12,400',12400],['Viewed a product','6,150',6150],['Added to cart / Buy now','1,180',1180],['Started checkout','760',760],['Placed order','520',520],['Confirmed on WhatsApp','462',462],['Delivered','401',401]];
+const HESITATE=[
+  ['Product → cart','"Will it fit me?"','Size finder + reviews with height + free exchange at the door','Size-finder users add to cart 2.1× more'],
+  ['Product → cart','"What will I really pay?"','Shipping fee and delivery date on the product page, before the cart','Removes the surprise that kills carts later'],
+  ['Cart → checkout','"Do I have to make an account?"','No account. Phone number is the account. Buy now skips the cart','One screen instead of 3–4'],
+  ['Checkout → order','Long Egyptian address forms','Governorate + area + street + optional landmark. Saved for next time','Fewer field errors and wrong addresses'],
+  ['Checkout → order','"A deposit? Is this a scam?"','Deposit only above 1,200 EGP, only the shipping fee, refunded if anything goes wrong','Explained in plain words at the moment it appears'],
+  ['Order → confirmed','Forgot to confirm','WhatsApp reminder after 30 min, auto-cancel after 24h','Confirmation rate is the main KPI'],
+  ['Delivered → reorder','"Exchanging is a hassle"','One tap: courier swaps the old size for the new one in one visit','Exchange done well wins a repeat customer']
+];
+const EVENTS=['view_item','size_finder_used','size_recommended','add_to_cart','buy_now','begin_checkout','field_error (field name)','gov_changed','add_payment_info','purchase','wa_confirm','order_cancelled','delivered','exchange_requested','survey_answer','reorder_clicked','purchase (repeat)'];
+function aInsights(){
+  const max=FUNNEL[0][2];
+  return `<div><h2>Customer insights</h2><p class="sub">Where customers hesitate, and what the journey does about it. <b>Demo numbers.</b> The real ones come from the events listed at the bottom, sent from the site to analytics and to Meta's Conversions API.</p></div>
+  <div class="kpis"><div class="kpi"><small>Visit → delivered</small><b>${pct(401/12400)}</b><span>target: grow each step, not just traffic</span></div><div class="kpi"><small>Checkout → order</small><b>${pct(520/760)}</b><span>one-screen checkout</span></div><div class="kpi"><small>WhatsApp confirm rate</small><b>${pct(462/520)}</b><span>target above 85%</span></div><div class="kpi"><small>Size exchanges</small><b>6.2%</b><span>14% for buyers who skipped the size finder</span></div></div>
+  <div class="cols"><div class="panel"><h3>Order funnel · last 30 days</h3><div style="display:grid;gap:8px">${FUNNEL.map((f,i)=>{const prev=i?FUNNEL[i-1][2]:f[2];const drop=i?1-f[2]/prev:0;return `<div style="display:grid;grid-template-columns:minmax(120px,170px) 1fr auto;gap:10px;align-items:center;font-size:12.5px"><span>${f[0]}</span><div style="background:var(--surface-2);border-radius:6px;height:22px;overflow:hidden"><div style="height:100%;width:${Math.max(2,f[2]/max*100)}%;background:${i===FUNNEL.length-1?'var(--gold)':'var(--emerald)'};border-radius:6px"></div></div><span class="num">${f[1]}${i?` <span style="color:${drop>.4?'var(--bad)':'var(--muted)'}">−${Math.round(drop*100)}%</span>`:''}</span></div>`}).join('')}</div></div>
+  <div class="panel"><h3>Abandoned checkouts <span class="pill warn">3</span></h3><p class="sub" style="margin-top:0">Customers who typed their number but didn't finish. One reminder only, and only if they opted in.</p>
+  ${[['ريم','01•••••4410','شنطة العمرة','12 min'],['دينا','01•••••7782','عباية ندى سوداء','1 h'],['أمل','01•••••0193','نقاب بالخمار','3 h']].map(a=>`<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--line);font-size:12.5px"><div><b class="ar">${a[0]}</b> <span class="num sub">${a[1]}</span><br><span class="ar sub">${a[2]}</span> · <span class="sub">${a[3]} ago</span></div>${S.nudged&&S.nudged[a[1]]?pill('Reminder sent','ok'):`<button class="mini" data-act="nudge" data-v="${a[1]}">Send WhatsApp reminder</button>`}</div>`).join('')}</div></div>
+  <div class="panel"><h3>Hesitation points and the fix in the journey</h3><div class="tbl"><table class="t"><tr><th>Step</th><th>What the customer thinks</th><th>What the journey does</th><th>Why it matters</th></tr>${HESITATE.map(h=>`<tr><td><b>${h[0]}</b></td><td>${h[1]}</td><td>${h[2]}</td><td class="sub">${h[3]}</td></tr>`).join('')}</table></div></div>
+  <div class="panel"><h3>Events to track from day one</h3><div class="attrs">${EVENTS.map(e=>`<span>${e}</span>`).join('')}</div><p class="sub" style="margin-bottom:0">Every event carries the niche, the product, the step and the governorate, so the same dashboard works for every niche.</p></div>`;
+}
+function drawer(){
+  const s=SL(S.drawer); if(!s) return '';
+  const c=sellerCycle(s.id), ps=S.products.filter(p=>p.sid===s.id), os=S.orders.filter(o=>o.items.some(i=>i.sid===s.id));
+  return `<div class="drawer-bg" data-act="closedrawer"><div class="drawer" role="dialog" aria-label="Seller profile" data-stop="1">
+  <div style="display:flex;justify-content:space-between;align-items:start;gap:10px"><div><h2>${s.en}</h2><div class="ar sub">${s.name}</div></div><button class="mini" data-act="closedrawer">Close</button></div>
+  <div>${pill(...SSTAT[s.status])}</div>
+  <dl class="dl"><dt>Area / pickup</dt><dd class="ar">${s.area}</dd><dt>Instagram</dt><dd class="num">${s.ig}</dd><dt>InstaPay</dt><dd class="num">${s.pay}</dd><dt>Joined</dt><dd>${enDate(s.joined)}</dd><dt>Orders (14d)</dt><dd class="num">${os.length}</dd><dt>Product views</dt><dd class="num">${AR(s.views)}</dd></dl>
+  <div class="kpis"><div class="kpi"><small>Hand-over</small><b style="color:${s.ship>48?'var(--bad)':'inherit'}">${s.ship}h</b><span>SLA 48h</span></div><div class="kpi"><small>Rejections</small><b>${s.reject}%</b></div><div class="kpi"><small>Rating</small><b>${s.rating||'—'}</b></div></div>
+  <div class="kpis"><div class="kpi"><small>Due Thursday</small><b>${EGP(c.payable)}</b></div><div class="kpi"><small>Reserve held</small><b>${EGP(c.reserveAll)}</b></div></div>
+  <div><p class="h4">Products</p>${ps.map(p=>`<div style="display:flex;justify-content:space-between;gap:10px;padding:6px 0;border-bottom:1px solid var(--line);font-size:12.5px"><span>${p.en}</span><span class="stockchips">${Object.entries(p.stock).map(([k,v])=>`<span class="sc ${v<=3?'low':''}">${k}: ${v}</span>`).join('')}</span></div>`).join('')||'<p class="sub">No products yet.</p>'}</div>
+  <div class="acts">${s.status==='suspended'?`<button class="mini pri" data-act="sactivate" data-id="${s.id}">Reactivate</button>`:s.status==='pending'?`<button class="mini pri" data-act="sapprove" data-id="${s.id}">Approve</button>`:`<button class="mini danger" data-act="ssuspend" data-id="${s.id}">Suspend seller</button>`}<button class="mini" data-act="noop">Message on Telegram</button></div>
+  </div></div>`;
+}
+function renderAdmin(){
+  const q=S.products.filter(p=>p.status==='review').length+S.sellers.filter(s=>s.status==='pending').length;
+  const nav=[['overview','Overview'],['orders','Orders',S.orders.filter(o=>['awaiting','confirmed'].includes(o.status)).length],['sellers','Sellers'],['products','Products & stock'],['review','Review queue',q],['payouts','Payouts & reserve'],['insights','Customer insights'],['leakage','Leakage',S.reports.filter(r=>r.status==='open').length],['settings','Niche settings']];
+  const v={overview:aOverview,orders:aOrders,sellers:aSellers,products:aProducts,review:aReview,payouts:aPayouts,insights:aInsights,leakage:aLeak,settings:aSettings}[S.aview]();
+  return `<div class="admin"><nav class="side" aria-label="Admin sections"><div class="niche"><b>سكينة</b><small>Admin · Umrah niche</small></div>${nav.map(n=>`<button data-act="anav" data-v="${n[0]}" aria-current="${S.aview===n[0]}">${n[1]}${n[2]?`<span class="badge">${n[2]}</span>`:''}</button>`).join('')}</nav><div class="main">${v}</div></div>`;
+}
+
+/* ---------------- guide / toast / render ---------------- */
+const GUIDE=[
+  ['Open the Umrah kit and add it to the cart','cart','customer',()=>{S.view='customer';S.cview='kit'}],
+  ['Check out and confirm on WhatsApp','wa','customer',()=>{S.view='customer';S.cview=S.cart.length?'checkout':'kit'}],
+  ['Seller accepts in Telegram and hands it to the courier','handed','seller',()=>{S.view='seller';S.tgChat='sara'}],
+  ['Mark it delivered in Admin and see the money','delivered','admin',()=>{S.view='admin';S.aview='orders';S.ofilter='transit'}],
+  ['Reorder in one tap from WhatsApp','reordered','customer',()=>{S.view='customer';S.cview='account'}],
+  ['Seller adds a product, you approve it','productApproved','seller',()=>{S.view='seller';S.tgChat='sara'}],
+  ['A new seller applies, you approve them','applicantApproved','seller',()=>{S.view='seller';S.tgChat='app'}]
+];
+function renderGuide(){
+  const next=GUIDE.findIndex(g=>!S.done[g[1]]);
+  document.getElementById('guide').innerHTML=GUIDE.map((g,i)=>`<button class="step ${S.done[g[1]]?'done':i===next?'next':''}" data-act="guide" data-i="${i}"><i>${S.done[g[1]]?'✓':i+1}</i><span>${g[0]}</span></button>`).join('');
+  const sb=S.tg.sara.filter(m=>m.btns&&!m.used&&m.btns[0][1].startsWith('accept')).length;
+  const q=S.products.filter(p=>p.status==='review').length+S.sellers.filter(s=>s.status==='pending').length;
+  document.getElementById('viewseg').innerHTML=[['customer','Customer site',0],['seller','Seller · Telegram',sb],['admin','Admin panel',q]].map(v=>`<button aria-pressed="${S.view===v[0]}" data-act="view" data-v="${v[0]}">${v[1]}${v[2]?`<span class="badge">${v[2]}</span>`:''}</button>`).join('');
+}
+let toastFn=null;
+function toast(text,label,fn){S.toast={text,label};toastFn=fn}
+function renderOverlay(){
+  document.getElementById('overlay').innerHTML=(S.view==='admin'&&S.drawer?drawer():'')+(S.toast?`<div class="toast" role="status"><span>${S.toast.text}</span>${S.toast.label?`<button data-act="toastgo">${S.toast.label}</button>`:''}<button class="x" data-act="toastx" aria-label="Dismiss">✕</button></div>`:'');
+}
+let keepScroll=true;
+function render(){
+  const sc=document.querySelector('.c-scroll'); const top=sc&&keepScroll?sc.scrollTop:0;
+  const stage=document.getElementById('stage');
+  stage.innerHTML=S.view==='customer'?renderCustomer():S.view==='seller'?renderSeller():renderAdmin();
+  renderGuide(); renderOverlay();
+  const sc2=document.querySelector('.c-scroll'); if(sc2) sc2.scrollTop=top;
+  keepScroll=true;
+  if(S.view==='customer'&&S.cview==='search'&&S.focusQ){const q=document.getElementById('q');if(q){q.focus();q.setSelectionRange(q.value.length,q.value.length)}S.focusQ=false}
+  if(S.view==='seller'||S.cview==='wa') scrollChat();
+}
+function cnav(v){S.cview=v;keepScroll=false}
+function sfApply(){if(S.sfH!=null&&S.sfW!=null)S.selSize=String(Math.min(4,SF_H[S.sfH][1]+SF_W[S.sfW][1]))}
+
+/* ---------------- actions ---------------- */
+const ACT={
+  view:d=>{S.view=d.v;S.drawer=null},
+  guide:d=>{GUIDE[+d.i][3]();keepScroll=false},
+  cnav:d=>{if(d.v==='checkout')S.repeatCheckout=false;cnav(d.v)},
+  cprod:d=>{S.cparam=d.id;S.selSize=null;S.sf=false;S.loading=true;cnav('product');setTimeout(()=>{S.loading=false;render()},380)},
+  size:d=>{S.selSize=d.k},
+  kitsize:d=>{S.kitSize=d.k},
+  addcart:()=>{S.cart.push({type:'single',pid:S.cparam,size:S.selSize,qty:1});S.done.cart=true;toast('Added to cart.','Open cart',()=>{cnav('cart')})},
+  addkit:()=>{S.cart.push({type:'kit',size:S.kitSize});S.done.cart=true;cnav('cart')},
+  rmcart:d=>{S.cart.splice(+d.ix,1)},
+  wallet:()=>{S.walletUse=!S.walletUse},
+  pay:d=>{S.pay=d.v},
+  place:()=>{
+    const ph=document.getElementById('f-phone'); if(ph){S.cust.phone=ph.value.trim(); if(!/^01[0125]\d{8}$/.test(S.cust.phone)){S.perr=true;return} } S.perr=false;
+    const t=cartTotals(); const items=[];
+    S.cart.forEach(c=>{if(c.type==='kit')kitParts(c.size).forEach(x=>items.push({...x,sid:P(x.pid).sid,price:P(x.pid).price}));else items.push({pid:c.pid,sid:P(c.pid).sid,size:c.size,qty:c.qty,price:P(c.pid).price})});
+    const g=id=>document.getElementById(id); if(g('f-name'))S.cust.name=g('f-name').value||S.cust.name;
+    const o={id:S.nextId++,date:TODAY,cust:S.cust.name,phone:S.cust.phone,city:S.cust.city,items,kit:S.cart.some(c=>c.type==='kit'),discount:t.disc,wallet:t.w,ship:CFG.ship,type:S.repeatCheckout?'repeat':'new',status:'awaiting',demo:true,deposit:t.deposit,delivered:null};
+    items.forEach(i=>{const p=P(i.pid);if(p.stock[i.size]!=null)p.stock[i.size]=Math.max(0,p.stock[i.size]-i.qty)});
+    S.orders.unshift(o); S.known=true; S.wallet-=t.w; S.cart=[]; S.lastOrderId=o.id;
+    if(S.repeatCheckout){o.status='confirmed';S.done.reordered=true;S.repeatCheckout=false;cnav('track');
+      toast(`Repeat order #${o.id} skipped the confirmation step because this customer is trusted. Commission is ${pct(CFG.rates.repeat)}.`,'See it in Admin',()=>{S.view='admin';S.aview='orders';S.ofilter='all'});}
+    else {S.waMode='confirm';cnav('wa')}
+  },
+  waconfirm:()=>{const o=S.orders.find(x=>x.id===S.lastOrderId);o.status='confirmed';S.done.wa=true;orderMsg(o);
+    toast(o.items.some(i=>i.sid==='s1')?`Order #${o.id} just reached Sara's Telegram.`:`Order #${o.id} confirmed and sent to the sellers.`,"Open Sara's Telegram",()=>{S.view='seller';S.tgChat='sara'})},
+  opentrack:d=>{S.lastOrderId=+d.id;cnav('track')},
+  openreorder:()=>{S.waMode='reorder';cnav('wa')},
+  reorder:()=>{S.cart=[{type:'single',pid:'p5',size:'one',qty:2}];S.repeatCheckout=true;cnav('checkout')},
+  survey:d=>{const o=S.orders.find(x=>x.id===S.lastOrderId);S.surveyed[o.id]=true;S.survey.sent++;if(d.v==='yes'){S.survey.yes++;S.reports.unshift({id:'R-'+(8+S.reports.length),date:TODAY,order:o.id,sid:o.items[0].sid,text:'العميلة قالت إن حد كلمها بعرض بره الموقع (من الاستبيان).',status:'open'});toast('Report opened in Admin → Leakage.','Open',()=>{S.view='admin';S.aview='leakage'})}},
+  tg:(d)=>{tgAction(d.a,d.chat,d.m);return 'done'},
+  kb:d=>{kbAction(d.a,d.chat);return 'done'},
+  tgchat:d=>{S.tgChat=d.v},
+  anav:d=>{S.aview=d.v},
+  ago:d=>{if(d.v.startsWith('seller:'))S.drawer=d.v.split(':')[1];else S.aview=d.v},
+  ofilter:d=>{S.ofilter=d.v},
+  bosta:d=>{const o=S.orders.find(x=>x.id==d.id);o.status=d.v;
+    if(d.v==='delivered'){o.delivered=TODAY;if(o.demo){S.wallet+=Math.round(sub(o)*CFG.cashback);S.done.delivered=true}
+      if(o.items.some(i=>i.sid==='s1'))bot('sara',`✅ الطلب #${o.id} اتسلم للعميلة.\nنصيبك هيتحول الخميس 12 نوفمبر مع باقي الدورة.`);
+      toast(`#${o.id} delivered. Cashback credited and the seller's Thursday payout updated.`,'Open payouts',()=>{S.aview='payouts'})}
+    if(d.v==='refused'){toast(`#${o.id} refused. The return fee counts against net revenue. Repeat refusals get the number blocked across all niches.`)}},
+  seller:d=>{S.drawer=d.id},
+  closedrawer:(d,el,e)=>{if(e.target.closest('[data-stop]')&&!el.matches('.mini'))return 'skip';S.drawer=null},
+  ssuspend:d=>{SL(d.id).status='suspended'},
+  sactivate:d=>{SL(d.id).status='active'},
+  phide:d=>{P(d.id).status='hidden'},
+  pshow:d=>{P(d.id).status='live'},
+  papprove:d=>{const p=P(d.id);p.status='live';if(p.sid==='s1'){bot('sara',`🎉 "${p.name}" اتنشر على سكينة!\nsakina.eg/abayas/linen-olive\nهنبعتلك المشاهدات أول بأول.`);S.done.productApproved=true;toast('Published. Sara got a message in Telegram.',"Open Sara's Telegram",()=>{S.view='seller';S.tgChat='sara'})}},
+  preject:d=>{const p=P(d.id);p.status='hidden';if(p.sid==='s1')bot('sara',`"${p.name}" محتاج تعديل قبل النشر: ضيفي جدول المقاسات بالسنتيمتر.`)},
+  sapprove:d=>{const s=SL(d.id);s.status='active';s.rating=5;s.ship=24;S.drawer=null;
+    if(d.id==='s6'){S.done.applicantApproved=true;bot('app','🎉 مبروك! اتقبلتي في سكينة.\nدلوقتي تقدري تضيفي منتجاتك من القايمة تحت.\nأول تحويل ليكي هيكون الخميس اللي بعد أول طلب يتسلم.');toast('Approved. The new seller now has the full menu in Telegram.','Open their chat',()=>{S.view='seller';S.tgChat='app'})}},
+  sreject:d=>{S.sellers=S.sellers.filter(s=>s.id!==d.id);if(d.id==='s6')bot('app','شكراً لاهتمامك 🤍 للأسف مش هنقدر نكمل دلوقتي. تقدري تقدمي تاني بعد 60 يوم.')},
+  paid:d=>{S.paid[d.id]=true;const c=sellerCycle(d.id);if(d.id==='s1')bot('sara',`💰 اتحولك ${egp(c.payable)} على إنستاباي (010••••4471)\nمحجوز كضمان: ${egp(c.reserveAll)}\nشكراً يا سارة 🤍`);toast(`${SL(d.id).en} marked paid${d.id==='s1'?'. A Telegram message was sent.':'.'}`)},
+  rconfirm:d=>{const r=S.reports.find(x=>x.id===d.id);r.status='confirmed';SL(r.sid).status='suspended';toast(`${SL(r.sid).en} suspended. Reserve of ${EGP(sellerCycle(r.sid).reserveAll)} forfeited, and products hidden from the site.`)},
+  rdismiss:d=>{S.reports.find(x=>x.id===d.id).status='dismissed'},
+  niche:d=>{S.niche=d.v},
+  toastgo:()=>{const f=toastFn;S.toast=null;toastFn=null;if(f){f();keepScroll=false}},
+  toastx:()=>{S.toast=null},
+  sfopen:()=>{S.sf=true},
+  fav:d=>{S.fav[d.id]=!S.fav[d.id];if(S.fav[d.id])toast('Saved to favorites. In the later phase this list powers price-drop and back-in-stock alerts.')},
+  jump:d=>{const el=document.getElementById(d.v);if(el)el.scrollIntoView({behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth',block:'start'});return 'done'},
+  sort:d=>{S.sort=d.v},
+  pricef:d=>{S.price=S.price===d.v?'all':d.v},
+  login:()=>{S.known=true;toast('Signed in with a WhatsApp code (demo). The wallet and saved details now appear.')},
+  offline:()=>{S.offline=!S.offline},
+  theme:()=>{const r=document.documentElement;const dark=r.dataset.theme?r.dataset.theme==='dark':matchMedia('(prefers-color-scheme: dark)').matches;r.dataset.theme=dark?'light':'dark'},
+  opensearch:()=>{S.q='';S.cat=null;S.focusQ=true;cnav('search')},
+  cat:d=>{S.cat=(S.cview==='search'&&S.cat===d.v)?null:d.v;if(S.cview!=='search')S.q='';cnav('search')},
+  sq:d=>{S.q=d.v;cnav('search')},
+  clearq:()=>{S.q='';S.focusQ=true},
+  qty:d=>{const c=S.cart[+d.ix];c.qty=Math.max(1,Math.min(5,c.qty+ +d.d))},
+  sfh:d=>{S.sfH=+d.i;sfApply()},
+  sfw:d=>{S.sfW=+d.i;sfApply()},
+  govcycle:()=>{const i=GOVS.indexOf(S.cust.city);S.cust.city=GOVS[(i+1)%GOVS.length]},
+  buynow:()=>{S.cart.push({type:'single',pid:S.cparam,size:S.selSize,qty:1});S.done.cart=true;S.repeatCheckout=false;cnav('checkout')},
+  askwa:()=>{toast('In the real version this opens a WhatsApp chat with the Sakina team, not the seller, with the product link attached.')},
+  exopen:()=>{S.exch[S.lastOrderId]='pick'},
+  exsize:d=>{const o=S.orders.find(x=>x.id===S.lastOrderId);const ab=o.items.find(i=>P(i.pid).kind==='abaya');S.exch[o.id]=d.k;
+    if(ab.sid==='s1')bot('sara',`🔁 طلب استبدال #${o.id}\nمقاس ${d.k} بدل ${ab.size} (${P(ab.pid).name})\nالمندوب هيسلم المقاس الجديد وياخد القديم في نفس الزيارة. جهزي مقاس ${d.k} للاستلام بكرة.`,{btns:[['✅ جاهز','avail:'+ab.pid],['❌ المقاس خلص','pricesupd']]});
+    toast('Exchange booked. The seller got a Telegram message to prepare the new size.',"Open Sara's Telegram",()=>{S.view='seller';S.tgChat='sara'})},
+  ccancel:()=>{const o=S.orders.find(x=>x.id===S.lastOrderId);o.status='cancelled';toast('Order cancelled. No charge, and the seller is told automatically.')},
+  nudge:d=>{S.nudged[d.v]=true;toast('One WhatsApp reminder sent with a link back to the filled-in checkout.')},
+  noop:()=>{}
+};
+document.addEventListener('click',e=>{
+  const el=e.target.closest('[data-act]'); if(!el||el.disabled) return;
+  if(el.classList.contains('drawer-bg')&&e.target!==el) { const inner=e.target.closest('[data-act]'); if(inner===el) return; }
+  const fn=ACT[el.dataset.act]; if(!fn) return;
+  const r=fn(el.dataset,el,e); if(r==='skip') return;
+  if(!['toastgo','toastx','tg','kb','addcart','waconfirm','bosta','papprove','sapprove','paid','rconfirm','survey','place','askwa','exsize','ccancel','nudge','fav','login'].includes(el.dataset.act)&&S.toast&&el.dataset.act!=='noop'){S.toast=null}
+  if(r!=='done') render();
+});
+document.addEventListener('input',e=>{if(e.target.id!=='q')return;S.q=e.target.value;const r=document.getElementById('sres');if(r)r.innerHTML=searchResults();const x=document.querySelector('.sbox [data-act="clearq"]');if(x)x.hidden=!S.q});
+document.addEventListener('keydown',e=>{if((e.key==='Enter'||e.key===' ')&&e.target.matches('.radio')){e.preventDefault();e.target.click()} if(e.key==='Escape'&&S.drawer){S.drawer=null;render()}});
+document.addEventListener('change',e=>{
+  if(e.target.id==='f-city'){S.cust.city=e.target.value;render();return}
+  const k=e.target.dataset.cfg; if(!k) return; const v=parseFloat(e.target.value); if(isNaN(v)) return;
+  if(['new','repeat','referral'].includes(k))CFG.rates[k]=v/100; else if(['reserve','cashback'].includes(k))CFG[k]=v/100; else CFG[k]=v;
+  toast('Settings saved. Every number in the engine now uses the new value.'); render();
+});
+window.addEventListener('offline',()=>{S.offline=true;render()});window.addEventListener('online',()=>{S.offline=false;render()});
+render();
+</script>

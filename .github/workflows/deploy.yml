@@ -1,0 +1,65 @@
+# On every push to main: run the tests, build the site, and publish the
+# ready-to-run server to the `deploy` branch. cPanel pulls that branch, so the
+# hosting server never has to build anything (shared hosting often lacks the memory).
+name: Test, build and publish
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: publish-deploy-branch
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+      - run: npm test
+      - run: npm run check:niches
+      - run: npm run build --workspace @niche-engine/web
+        env:
+          NEXT_TELEMETRY_DISABLED: '1'
+
+      - name: Assemble the server bundle
+        run: |
+          rm -rf bundle && mkdir bundle
+          cp -R apps/web/.next/standalone/. bundle/
+          mkdir -p bundle/apps/web/.next
+          cp -R apps/web/.next/static bundle/apps/web/.next/static
+          cp -R niches bundle/niches
+          cp deploy/cpanel/.cpanel.yml bundle/.cpanel.yml
+          cp deploy/cpanel/README.md bundle/README.md
+          echo "$GITHUB_SHA" > bundle/REVISION
+
+      - name: Publish to the deploy branch
+        env:
+          TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+        run: |
+          URL="https://x-access-token:${TOKEN}@github.com/${REPO}.git"
+          if git ls-remote --exit-code --heads "$URL" deploy >/dev/null; then
+            git clone --quiet --depth 1 --branch deploy "$URL" out
+          else
+            mkdir out && git -C out init --quiet -b deploy && git -C out remote add origin "$URL"
+          fi
+          rsync -a --delete --exclude .git bundle/ out/
+          cd out
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          if git diff --cached --quiet; then echo "No changes to publish"; exit 0; fi
+          git commit --quiet -m "Build ${GITHUB_SHA::7}: ${{ github.event.head_commit.message || 'manual run' }}"
+          git push --quiet origin deploy

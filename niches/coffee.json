@@ -1,0 +1,55 @@
+{
+  "id": "coffee",
+  "status": "draft",
+  "brand": {
+    "nameAr": "بُن",
+    "nameEn": "Bunn",
+    "domain": "bunn.eg",
+    "palette": { "base": "#F6EFE4", "primary": "#B4552D", "accent": "#1E1A17" }
+  },
+  "categories": [
+    { "id": "beans", "labelAr": "بن محمص" },
+    { "id": "ground", "labelAr": "بن مطحون" },
+    { "id": "capsules", "labelAr": "كبسولات" },
+    { "id": "tools", "labelAr": "أدوات التحضير" }
+  ],
+  "attributes": {
+    "required": ["origin", "roast_level", "roast_date", "process", "weight_g", "grind_options"],
+    "optional": ["tasting_notes", "altitude_m", "brew_methods", "variety"]
+  },
+  "commission": { "new": 0.15, "repeat": 0.06, "referral": 0.02 },
+  "reserve": { "percent": 0.10, "days": 30 },
+  "shippingEgp": 60,
+  "risk": { "depositAboveEgp": 1500, "depositEgp": 60, "requireWhatsappConfirm": false, "openBeforePay": true },
+  "wallet": { "cashback": 0.04, "expiresDays": 45 },
+  "priceCheckDays": 14,
+  "searchSynonyms": {
+    "قهوه": "بن",
+    "اسبرسو": "اسبريسو",
+    "espresso": "اسبريسو",
+    "filter": "فلتر",
+    "turkish": "تركي",
+    "ethiopia": "اثيوبي",
+    "ethiopian": "اثيوبي",
+    "colombia": "كولومبي",
+    "kenya": "كيني",
+    "brazil": "برازيلي"
+  },
+  "bundles": [
+    {
+      "id": "discovery_box",
+      "nameAr": "صندوق الاكتشاف: 3 محامص في صندوق واحد",
+      "parts": [
+        { "product": "ethiopia-yirgacheffe-250g", "qty": 1, "variant": null },
+        { "product": "colombia-huila-250g", "qty": 1, "variant": null },
+        { "product": "kenya-aa-250g", "qty": 1, "variant": null }
+      ],
+      "discountEgp": 75
+    }
+  ],
+  "promos": [
+    { "code": "BUNN10", "kind": "percent", "value": 0.10, "fundedBy": "platform", "firstOrderOnly": true, "minOrderEgp": 0 }
+  ],
+  "partners": ["offices", "coworking_spaces", "cafes"],
+  "reorderTrigger": "2 days before the bag runs out: weight_g / (cups_per_day * 15 g)"
+}

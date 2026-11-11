@@ -1,3 +1,4 @@
+:root { --f-display: 'El Messiri'; --f-body: 'IBM Plex Sans Arabic'; }
 /* Storefront styles. Each niche sets --primary / --base / --accent from its settings file. */
 :root {
   --primary: #1F5C4A;

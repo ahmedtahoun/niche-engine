@@ -23,7 +23,7 @@ Set these in the host's dashboard (not in a file in the repo).
 | `ADMIN_PASSWORD` | Yes | 12+ characters. Password for `/admin` |
 | `SUPABASE_URL` | Yes | From step 1 |
 | `SUPABASE_SERVICE_ROLE_KEY` | Yes | From step 1 |
-| `NICHE_DOMAINS` | Yes | Which domain shows which niche, e.g. `sakinaeg.com=umrah,www.sakinaeg.com=umrah,bunneg.com=coffee,www.bunneg.com=coffee` |
+| `NICHE_DOMAINS` | Yes | Which domain shows which niche, e.g. `sakinaeg.com=umrah,www.sakinaeg.com=umrah` |
 | `TELEGRAM_BOT_TOKEN` | For sellers | From BotFather |
 | `TELEGRAM_WEBHOOK_SECRET` | With the token | Random string you choose |
 | `BOSTA_API_KEY` | For shipping | From the Bosta business dashboard |
@@ -44,7 +44,7 @@ Render, Fly.io or a VPS work the same way: build the `Dockerfile`, expose port `
 
 ## 4. Domains
 
-1. In the host, add each domain (e.g. `sakinaeg.com`, `www.sakinaeg.com`, `bunneg.com`). The host gives you the DNS records.
+1. In the host, add each domain (e.g. `sakinaeg.com`, `www.sakinaeg.com`). The host gives you the DNS records.
 2. Add those records at your domain registrar. HTTPS certificates are issued automatically.
 3. Make sure every domain is listed in `NICHE_DOMAINS`.
 

@@ -44,7 +44,7 @@ Storefront (open http://localhost:3100/umrah or /coffee):
 npm run dev --workspace @niche-engine/web
 ```
 
-In production each niche gets its own domain via `NICHE_DOMAINS` (e.g. `sakinaeg.com=umrah,bunneg.com=coffee`).
+In production each niche gets its own domain via `NICHE_DOMAINS` (e.g. `sakinaeg.com=umrah,www.sakinaeg.com=umrah`; a later niche adds its own domain the same way).
 
 Seller bot without Telegram: open http://localhost:3100/dev/bot. When the token is ready, set `TELEGRAM_BOT_TOKEN` and `TELEGRAM_WEBHOOK_SECRET`, then register the webhook:
 

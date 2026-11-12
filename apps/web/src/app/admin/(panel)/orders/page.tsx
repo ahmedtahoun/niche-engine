@@ -1,84 +1,93 @@
 import Link from 'next/link';
 import { blockedList } from '@/lib/blocklist';
-import { catalog } from '@/lib/catalog';
 import type { Order } from '@/lib/orders';
+import { customerKey } from '@/lib/session';
 import { store } from '@/lib/store';
-import { clearAttention, moveOrder, unblockPhone } from '../../actions';
-import { ago, EGP, NicheTabs, Pill, pickNiche, STATUS } from '../shared';
+import { unblockPhone } from '../../actions';
+import { ago, EGP, NicheTabs, Pill, pct, pickNiche, STATUS } from '../shared';
+import { OrderActions } from './OrderActions';
 
 export const metadata = { title: 'Orders' };
 
-const FILTERS: [string, string, (o: Order) => boolean][] = [
+const TABS: [string, string, (o: Order) => boolean][] = [
   ['all', 'All', () => true],
   ['action', 'Needs action', (o) => ['awaiting_confirm', 'confirmed'].includes(o.status) || Boolean(o.needsAttention)],
-  ['attention', 'Seller rejected', (o) => Boolean(o.needsAttention)],
-  ['transit', 'In transit', (o) => ['accepted', 'picked'].includes(o.status)],
+  ['ship', 'To ship', (o) => o.status === 'accepted'],
+  ['courier', 'With courier', (o) => o.status === 'picked'],
   ['delivered', 'Delivered', (o) => o.status === 'delivered'],
-  ['refused', 'Refused / cancelled', (o) => ['refused', 'cancelled'].includes(o.status)],
+  ['problems', 'Refused · cancelled', (o) => ['refused', 'cancelled'].includes(o.status)],
 ];
-const PART: Record<string, [string, string]> = { pending: ['waiting', 'warn'], accepted: ['accepted', 'info'], rejected: ['not available', 'bad'], handed: ['handed over', 'ok'] };
+const BOUGHT = new Set(['confirmed', 'accepted', 'picked', 'delivered']);
 
-function Actions({ o }: { o: Order }) {
-  const b = (move: Parameters<typeof moveOrder>[1], label: string, cls = 'mini') => (
-    <form action={moveOrder.bind(null, o.id, move)}><button className={cls}>{label}</button></form>
-  );
-  return (
-    <div className="acts">
-      {o.status === 'accepted' && b('picked', 'Bosta: picked up')}
-      {o.status === 'picked' && b('delivered', 'Bosta: delivered', 'mini pri')}
-      {o.status === 'picked' && b('refused', 'Refused', 'mini danger')}
-      {['awaiting_confirm', 'confirmed'].includes(o.status) && b('cancelled', 'Cancel', 'mini danger')}
-      {o.needsAttention && <form action={clearAttention.bind(null, o.id)}><button className="mini">Resolved</button></form>}
-    </div>
-  );
-}
-
-export default async function Orders({ searchParams }: { searchParams: Promise<{ niche?: string; filter?: string }> }) {
+export default async function Orders({ searchParams }: { searchParams: Promise<{ niche?: string; tab?: string; q?: string }> }) {
   const sp = await searchParams;
   const niche = pickNiche(sp);
-  const filter = FILTERS.find((f) => f[0] === sp.filter) ?? FILTERS[0];
-  const [cat, base, blocked] = await Promise.all([catalog(), store().listOrders({ niche: niche ?? undefined, limit: 2000 }), blockedList()]);
-  const rows = base.filter(filter[2]);
-  const name = (sid: string) => cat.sellerById(sid)?.name ?? sid;
+  const tab = TABS.find((f) => f[0] === sp.tab) ?? TABS[0];
+  const q = (sp.q ?? '').trim();
+  const [base, blocked] = await Promise.all([store().listOrders({ niche: niche ?? undefined, limit: 3000 }), blockedList()]);
+  const needle = q.replace(/^#/, '').toLowerCase();
+  const digits = needle.replace(/\D/g, '');
+  const match = (o: Order) => !needle || String(o.id) === needle || (digits.length >= 4 && o.customer.phone.includes(digits)) || o.customer.name.toLowerCase().includes(needle);
+  const rows = base.filter((o) => tab[2](o) && match(o));
+  const href = (o: { tab?: string }) => `/admin/orders?${new URLSearchParams({ ...(niche ? { niche } : {}), ...((o.tab ?? tab[0]) !== 'all' ? { tab: o.tab ?? tab[0] } : {}), ...(q ? { q } : {}) })}`;
+
+  const now = Date.now();
+  const since = (d: number) => base.filter((o) => now - Date.parse(o.createdAt) < d * 864e5);
+  const today = base.filter((o) => new Date(o.createdAt).toDateString() === new Date(now).toDateString());
+  const week = since(7).filter((o) => BOUGHT.has(o.status));
+  const month = since(30);
+  const done = month.filter((o) => o.status === 'delivered').length, refused = month.filter((o) => o.status === 'refused').length;
+  const action = base.filter(TABS[1][2]).length;
+
   return (
     <>
       <div className="adm-top">
-        <div><h1>Orders</h1><p className="sub">Every shipment runs through your Bosta account. Until the Bosta webhook is connected, update delivery here.</p></div>
-        <NicheTabs base="/admin/orders" current={niche} extra={filter[0] !== 'all' ? `filter=${filter[0]}` : ''} />
+        <div><h1>Orders</h1><p className="sub">Click an order for items, customer, address and delivery. Bosta updates move orders automatically once connected.</p></div>
+        <NicheTabs base="/admin/orders" current={niche} />
       </div>
-      <nav className="adm-tabs" aria-label="Filter">
-        {FILTERS.map(([k, label, fn]) => (
-          <Link key={k} href={`/admin/orders?${new URLSearchParams({ ...(niche ? { niche } : {}), ...(k !== 'all' ? { filter: k } : {}) })}`} aria-current={filter[0] === k ? 'true' : undefined}>{label} · {base.filter(fn).length}</Link>
-        ))}
-      </nav>
-      <section className="panel">
-        <div className="tbl"><table className="t">
-          <thead><tr><th>Order</th><th>Placed</th><th>Customer</th><th>Sellers</th><th className="r">Customer pays</th><th>Type</th><th>Status</th><th></th></tr></thead>
+      <div className="kpis">
+        <div className="kpi"><small>Today</small><b>{today.length} orders</b><span>{EGP(today.filter((o) => BOUGHT.has(o.status)).reduce((n, o) => n + o.quote.total, 0))}</span></div>
+        <div className="kpi"><small>Last 7 days</small><b>{EGP(week.reduce((n, o) => n + o.quote.total, 0))}</b><span>{week.length} orders · avg {week.length ? EGP(week.reduce((n, o) => n + o.quote.total, 0) / week.length) : '—'}</span></div>
+        <div className="kpi"><small>Needs action</small><b style={{ color: action ? 'var(--a-warn)' : undefined }}>{action}</b><span>to confirm, or a seller said not available</span></div>
+        <div className="kpi"><small>Delivery rate · 30 days</small><b>{done + refused ? pct(done / (done + refused)) : '—'}</b><span>{done} delivered · {refused} refused</span></div>
+      </div>
+      <section className="panel flush">
+        <div className="tools">
+          <nav className="seg" aria-label="Status">
+            {TABS.map(([k, label, fn]) => <Link key={k} href={href({ tab: k })} aria-current={tab[0] === k ? 'true' : undefined}>{label} <span className="n">{base.filter(fn).length}</span></Link>)}
+          </nav>
+          <form className="search" action="/admin/orders">
+            {niche && <input type="hidden" name="niche" value={niche} />}
+            {tab[0] !== 'all' && <input type="hidden" name="tab" value={tab[0]} />}
+            <input name="q" defaultValue={q} placeholder="Order #, phone or name…" aria-label="Search orders" />
+          </form>
+        </div>
+        <div className="tbl"><table className="t plist">
+          <thead><tr><th>Order</th><th>Customer</th><th>Items</th><th className="r">Total</th><th>Status</th><th></th></tr></thead>
           <tbody>
-            {rows.map((o) => (
-              <tr key={o.id} style={o.needsAttention ? { background: 'var(--a-bad-soft)' } : undefined}>
-                <td><b>#{o.id}</b><br /><span className="sub">{o.niche}</span></td>
-                <td className="sub">{ago(o.createdAt)}</td>
-                <td><span className="ar">{o.customer.name}</span><br /><span className="sub">{o.customer.phone} · <span className="ar">{o.customer.governorate}</span></span></td>
-                <td>{Object.entries(o.sellerState).map(([sid, part]) => (
-                  <div key={sid} style={{ display: 'flex', gap: 6, alignItems: 'center', marginBottom: 2 }}><span className="ar">{name(sid)}</span><Pill kind={PART[part][1]}>{PART[part][0]}</Pill>{o.shipments?.[sid] && <span className="sub">{o.shipments[sid].tracking} · COD {EGP(o.shipments[sid].cod)} · {o.shipments[sid].status}</span>}</div>
-                ))}</td>
-                <td className="r">{EGP(o.quote.total)}{o.promoCode ? <><br /><span className="sub">{o.promoCode}</span></> : null}</td>
-                <td>{o.type}</td>
-                <td><Pill kind={STATUS[o.status][1]}>{STATUS[o.status][0]}</Pill></td>
-                <td><Actions o={o} /></td>
-              </tr>
-            ))}
-            {!rows.length && <tr><td colSpan={8} className="empty">No orders here.</td></tr>}
+            {rows.map((o) => {
+              const units = o.items.reduce((n, i) => n + i.qty, 0);
+              return (
+                <tr key={o.id} className={`row-link${o.needsAttention ? ' attn' : ''}`}>
+                  <td><Link href={`/admin/orders/${o.id}`} className="stretch-link"><b>#{o.id}</b></Link><small className="sub2">{ago(o.createdAt)}</small></td>
+                  <td><Link href={`/admin/customers/${customerKey(o.customer.phone)}`} className="above ar"><b>{o.customer.name}</b></Link><small className="sub2"><span dir="ltr">{o.customer.phone}</span> · <span className="ar">{o.customer.governorate}</span>{o.type === 'repeat' ? ' · repeat' : ''}</small></td>
+                  <td><span className="ar">{o.quote.lines[0]?.title}</span><small className="sub2">{units} {units === 1 ? 'item' : 'items'}{o.quote.lines.length > 1 ? ` · +${o.quote.lines.length - 1} more` : ''}</small></td>
+                  <td className="r"><b>{EGP(o.quote.total)}</b><small className="sub2">{o.payment === 'cod' ? 'cash on delivery' : 'InstaPay'}{o.promoCode ? ` · ${o.promoCode}` : ''}</small></td>
+                  <td><Pill kind={STATUS[o.status][1]}>{STATUS[o.status][0]}</Pill>{o.needsAttention && <small className="sub2 bad-t">{o.needsAttention}</small>}</td>
+                  <td className="r"><div className="above"><OrderActions o={o} compact /></div></td>
+                </tr>
+              );
+            })}
           </tbody>
         </table></div>
+        {!rows.length && <p className="empty" style={{ padding: 16 }}>{q ? `No orders match “${q}”.` : 'No orders here.'}</p>}
       </section>
       {blocked.length > 0 && (
         <section className="panel">
           <h2>Blocked phone numbers <span className="sub">shared across all niches</span></h2>
           <div className="tbl"><table className="t" style={{ minWidth: 380 }}>
             <tbody>{blocked.map((b) => (
-              <tr key={b.phone}><td>{b.phone}</td><td>{b.refusals} refused deliveries</td><td><form action={unblockPhone.bind(null, b.phone)}><button className="mini">Unblock</button></form></td></tr>
+              <tr key={b.phone}><td dir="ltr">{b.phone}</td><td>{b.refusals} refused deliveries</td><td><form action={unblockPhone.bind(null, b.phone)}><button className="mini">Unblock</button></form></td></tr>
             ))}</tbody>
           </table></div>
         </section>

@@ -9,6 +9,7 @@ export function Nav({ counts }: { counts: { orders: number; review: number } }) 
   const items: [string, string, number?][] = [
     ['/admin', 'Overview'],
     ['/admin/orders', 'Orders', counts.orders],
+    ['/admin/customers', 'Customers'],
     ['/admin/sellers', 'Sellers'],
     ['/admin/products', 'Products', counts.review],
     ['/admin/payouts', 'Payouts'],
@@ -17,7 +18,7 @@ export function Nav({ counts }: { counts: { orders: number; review: number } }) 
   return (
     <nav style={{ display: 'contents' }} aria-label="Admin sections">
       {items.map(([href, label, n]) => (
-        <Link key={href} href={href + q} aria-current={path === href ? 'page' : undefined}>
+        <Link key={href} href={href + q} aria-current={path === href || (href !== '/admin' && path.startsWith(`${href}/`)) ? 'page' : undefined}>
           {label}{n ? <span className="adm-badge">{n}</span> : null}
         </Link>
       ))}

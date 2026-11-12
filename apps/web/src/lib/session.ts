@@ -41,3 +41,6 @@ export function readGuestOrder(id: number, token: string | undefined): boolean {
   const want = signGuestOrder(id);
   return token.length === want.length && timingSafeEqual(Buffer.from(token), Buffer.from(want));
 }
+
+/** Stable, private id for a customer in admin addresses (keeps phone numbers out of URLs and logs). */
+export const customerKey = (phone: string) => mac(`customer.${phone}`).slice(0, 16);

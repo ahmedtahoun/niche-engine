@@ -252,3 +252,6 @@ a.above { text-decoration: none; }
 .mini-list li { display: flex; justify-content: space-between; gap: 8px; }
 .foot-note { color: var(--a-muted); font-size: 12px; margin: 0; }
 .thumb.round { border-radius: 50%; display: grid; place-items: center; font-weight: 700; color: var(--a-accent); background: var(--a-accent-soft); border: 0; font-size: 16px; }
+
+.next-step { margin-top: 14px; padding-top: 12px; border-top: 1px dashed var(--a-line, #e5e2da); display: grid; gap: 8px; }
+.next-step .acts.col { flex-direction: row; flex-wrap: wrap; justify-content: flex-start; }

@@ -18,6 +18,12 @@ const STEPS: [string, string[]][] = [
   ['With courier', ['picked', 'delivered', 'refused']],
   ['Delivered', ['delivered']],
 ];
+const NEXT: Record<string, string> = {
+  awaiting_confirm: 'Next: confirm the order with the customer.',
+  confirmed: 'Next: confirm it once the seller has the order ready (or they accept in Telegram).',
+  accepted: 'Next: mark it when the courier picks it up, or delivered if you sent it yourself.',
+  picked: 'Next: delivered, or refused at the door (stock comes back).',
+};
 const PART: Record<string, [string, string]> = { pending: ['waiting', 'warn'], accepted: ['accepted', 'info'], rejected: ['not available', 'bad'], handed: ['handed to courier', 'ok'] };
 
 export default async function OrderPage({ params }: { params: Promise<{ id: string }> }) {
@@ -53,6 +59,12 @@ export default async function OrderPage({ params }: { params: Promise<{ id: stri
             <h2>Progress</h2>
             {['cancelled', 'refused'].includes(o.status) && <p className="bad-t" style={{ margin: '0 0 8px' }}>{o.status === 'cancelled' ? 'Cancelled' : 'Refused at the door'}</p>}
             <ol className="steps-adm">{STEPS.map(([label, on]) => <li key={label} className={on.includes(o.status) ? 'on' : ''}>{label}</li>)}</ol>
+            {!['delivered', 'refused', 'cancelled'].includes(o.status) && (
+              <div className="next-step">
+                <span className="sub">{NEXT[o.status]}</span>
+                <OrderActions o={o} />
+              </div>
+            )}
           </section>
 
           <section className="panel">

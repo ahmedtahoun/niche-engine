@@ -12,9 +12,10 @@ import { unblock } from '@/lib/blocklist';
 import { catalog, deleteProduct, deleteSeller, saveProduct, saveSeller } from '@/lib/catalog';
 import { store } from '@/lib/store';
 import { RIBBONS, type CartLine, type Product } from '@/lib/types';
-import { moveOrderTo } from '@/lib/fulfillment';
+import { moveOrderTo, queueShipment } from '@/lib/fulfillment';
+import { bostaEnabled } from '@/lib/bosta';
 import { getNiche } from '@/lib/niches';
-import { draftOrder, mutateOrder, ORDER_SOURCES, orderById, ordersFor, type OrderSource, type OrderStatus } from '@/lib/orders';
+import { applySellerPart, draftOrder, mutateOrder, ORDER_SOURCES, orderById, ordersFor, type OrderSource, type OrderStatus } from '@/lib/orders';
 import { GOVERNORATES } from '@/lib/eta';
 import { takeStock } from '@/lib/stock';
 import { markPaid, paidThisCycle, sellerCycle } from '@/lib/payouts';
@@ -45,10 +46,32 @@ export async function logout() {
 // ---------- orders (manual Bosta updates; the Bosta webhook does the same automatically) ----------
 const MOVES: Record<string, { from: OrderStatus[]; to: OrderStatus }> = {
   picked: { from: ['accepted'], to: 'picked' },
-  delivered: { from: ['picked'], to: 'delivered' },
+  // Delivered straight from "accepted" too, for orders sent with your own courier.
+  delivered: { from: ['accepted', 'picked'], to: 'delivered' },
   refused: { from: ['picked'], to: 'refused' },
-  cancelled: { from: ['awaiting_confirm', 'confirmed'], to: 'cancelled' },
+  cancelled: { from: ['awaiting_confirm', 'confirmed', 'accepted'], to: 'cancelled' },
 };
+
+/**
+ * Confirms an order for its sellers from the admin (while you run a seller's orders yourself):
+ * every seller still deciding is marked accepted, the order moves to "ready to ship", and with
+ * Bosta connected the waybills are created as if the seller pressed accept in Telegram.
+ */
+export async function confirmForSellers(id: number) {
+  await guard();
+  const before = await orderById(id);
+  if (!before) return;
+  if (before.status === 'awaiting_confirm') {
+    const moved = await moveOrderTo(id, 'confirmed', ['awaiting_confirm']);
+    if (moved) await deliver(notifyOrder(moved.order, await catalog()));
+  }
+  const pending = Object.entries((await orderById(id))?.sellerState ?? {}).filter(([, part]) => part === 'pending').map(([sid]) => sid);
+  for (const sid of pending) {
+    const saved = await mutateOrder(id, (x) => applySellerPart(x, sid, 'accepted'));
+    if (saved && bostaEnabled()) queueShipment(id, sid);
+  }
+  done();
+}
 
 export async function moveOrder(id: number, move: keyof typeof MOVES) {
   await guard();

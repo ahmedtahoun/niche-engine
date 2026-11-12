@@ -12,7 +12,7 @@ export const ago = (iso: string) => {
 export const STATUS: Record<OrderStatus, [string, string]> = {
   awaiting_confirm: ['Awaiting WhatsApp confirm', 'warn'],
   confirmed: ['Waiting for sellers', 'info'],
-  accepted: ['Waybills ready', 'info'],
+  accepted: ['Ready to ship', 'info'],
   picked: ['With courier', 'info'],
   delivered: ['Delivered', 'ok'],
   refused: ['Refused at door', 'bad'],

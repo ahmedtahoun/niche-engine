@@ -122,7 +122,7 @@ export function AddToCart({ niche, slug, price, variants, finder, axes = [], cho
                   const v = variants.find((y) => y.opts?.[a.id] === x && axes.every((b) => b.id === a.id || y.opts?.[b.id] === ax.sel[b.id]));
                   return (
                     <button key={x} type="button" className="sz" aria-pressed={ax.sel[a.id] === x} disabled={!ax.ok(a.id, x)} onClick={() => ax.setSel({ ...ax.sel, [a.id]: x })}>
-                      {axisValue(a, x)}<small>{!ax.ok(a.id, x) ? t('soldOut') : v?.price ? s.egp(v.price) : t('available')}</small>
+                      {axisValue(a, x)}<small>{!ax.ok(a.id, x) ? t('soldOut') : v?.price ? <>{s.egp(v.price)}{v.compareAt && v.compareAt > v.price ? <s className="was">{s.egp(v.compareAt)}</s> : null}</> : t('available')}</small>
                     </button>
                   );
                 })}

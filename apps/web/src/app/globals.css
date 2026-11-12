@@ -360,3 +360,14 @@ details p { margin: 6px 0 0; color: var(--muted); }
 .wa-confirm { display: grid; gap: 2px; padding: 12px 14px; border-radius: 14px; background: #E7F8EE; border: 1.5px solid #25D366; color: #0B5A2B; }
 .wa-confirm b { font-size: 15px; }
 .buy-again { min-height: 38px; padding: 6px 12px; font-size: 13px; white-space: nowrap; }
+
+/* Ribbons and sale prices */
+.ribbon { position: absolute; top: 8px; inset-inline-end: 8px; font-size: 11px; font-weight: 800; padding: 3px 9px; border-radius: 999px; color: #fff; background: var(--primary); box-shadow: 0 2px 6px rgba(0,0,0,.15); }
+.ribbon.r-new { background: #2C7A4D; }
+.ribbon.r-bestseller { background: var(--primary); }
+.ribbon.r-limited { background: #7A4B12; }
+.ribbon.r-sale { background: #C0392B; }
+.ribbon.inline { position: static; width: fit-content; box-shadow: none; }
+.was { color: var(--muted); font-weight: 500; font-size: .8em; margin-inline-start: 6px; }
+.off { display: inline-block; margin-inline-start: 6px; font-size: .62em; font-weight: 800; color: #fff; background: #C0392B; border-radius: 6px; padding: 2px 6px; vertical-align: middle; }
+.sz small .was { margin-inline-start: 4px; font-size: .95em; }

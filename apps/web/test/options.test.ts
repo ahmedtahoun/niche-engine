@@ -88,6 +88,8 @@ test('Cairo Roast: the Bonds seed SQL loads into real Postgres, re-runs keep sto
   await db.exec(`update products set variants = jsonb_set(variants, '{0,stock}', '7') where id = 'bonds-chrome'`);
   // A price changed in the admin survives a re-run of the seed.
   await db.exec(`update products set variants = jsonb_set(variants, '{1,price}', '880'), price = 225 where id = 'bonds-amber'`);
+  // So do a "before" price and a ribbon.
+  await db.exec(`update products set variants = jsonb_set(variants, '{0,compareAt}', '300'), profile = profile || '{"ribbon":"new"}' where id = 'bonds-chrome'`);
   await db.exec(seed);
   const products = (await db.query<Record<string, unknown>>('select * from products order by id')).rows.map((r) => rowToProduct(r as never));
   const sellers = (await db.query<Record<string, unknown>>('select * from sellers')).rows.map((r) => rowToSeller(r as never));
@@ -108,6 +110,9 @@ test('Cairo Roast: the Bonds seed SQL loads into real Postgres, re-runs keep sto
   assert.deepEqual(products.find((p) => p.id === 'bonds-ethiopia-guji')!.variants.map((v) => v.price), [500, 2000]);
   assert.equal(products.find((p) => p.id === 'bonds-amber')!.images?.[0], '/products/coffee/amber.webp');
   assert.deepEqual(products.find((p) => p.id === 'bonds-amber')!.variants.map((v) => v.price), [245, 880], 'the admin price is kept');
+  assert.equal(chrome.variants[0].compareAt, 300, 'the before price is kept');
+  assert.equal(chrome.ribbon, 'new', 'the ribbon is kept');
+  assert.deepEqual(chrome.profile?.notes?.length, 3, 'the taste profile is still refreshed');
 });
 
 test('wholesale coffee: Bonds is paid exactly the agreed cost, Cairo Roast keeps the margin, and the cost never reaches the browser', async () => {

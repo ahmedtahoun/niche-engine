@@ -41,11 +41,16 @@ export interface Variant {
   size?: string;
   /** Price of this option when it differs from the product price (e.g. 1 kg vs 250 g). */
   price?: number;
+  /** "Before" price shown struck through when this option is on sale (higher than the price). */
+  compareAt?: number;
   /** Option values by the niche's option axes, e.g. { roast: "وسط", weight: "250 جم" }. */
   opts?: Record<string, string>;
   /** Label shown on the English site (the Arabic label stays the cart and order key). */
   labelEn?: string;
 }
+
+export const RIBBONS = ['new', 'bestseller', 'limited'] as const;
+export type Ribbon = (typeof RIBBONS)[number];
 
 export interface Product {
   id: string;
@@ -61,6 +66,8 @@ export interface Product {
   attributes: Record<string, string>;
   variants: Variant[];
   status?: 'live' | 'review' | 'hidden';
+  /** Ribbon on cards and the product page (a sale ribbon shows by itself when an option has a "before" price). */
+  ribbon?: Ribbon;
   priceConfirmedAt?: string;
   views: number;
   reviews: { name: string; tags: string[]; text: string }[];

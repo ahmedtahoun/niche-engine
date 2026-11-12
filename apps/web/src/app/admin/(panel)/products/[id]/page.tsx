@@ -6,7 +6,7 @@ import { coverDays, DAYS, productStats, soldMargin } from '@/lib/product-stats';
 import { store } from '@/lib/store';
 import { deleteProductAction, saveProductForm } from '../../../actions';
 import { EGP, Pill, STATUS, pct } from '../../shared';
-import { DeleteButton, SkuCells } from '../SkuCells';
+import { DeleteButton, PricingTable } from '../SkuCells';
 
 export const metadata = { title: 'Edit product' };
 
@@ -27,7 +27,8 @@ export default async function ProductEditor({ params }: { params: Promise<{ id: 
   const storeUrl = cfg?.brand.domain ? `https://${cfg.brand.domain}/p/${p.slug}` : `/${p.niche}/p/${p.slug}`;
 
   return (
-    <form action={saveProductForm.bind(null, p.id)} className="editor">
+    // Keyed by the saved data: after Save the editor redraws from what was stored (React would otherwise reset fields to the old values).
+    <form key={JSON.stringify([p.nameAr, p.leadAr, p.en?.name, p.en?.lead, p.status, p.ribbon, p.variants, p.cost])} action={saveProductForm.bind(null, p.id)} className="editor">
       <div className="ed-bar">
         <Link href="/admin/products" className="back" aria-label="Back to products">←</Link>
         <div className="ed-title">
@@ -51,17 +52,8 @@ export default async function ProductEditor({ params }: { params: Promise<{ id: 
 
           <section className="panel">
             <h2>Pricing & inventory</h2>
-            <div className="tbl"><table className="t sku">
-              <thead><tr><th>Size</th><th>Selling price</th><th>Buying price</th><th className="r">Profit / bag</th><th className="r">Margin</th><th>Stock</th><th className="r">Sold · 30d</th></tr></thead>
-              <tbody>{p.variants.map((v) => (
-                <tr key={v.label}>
-                  <td className="ar"><b>{v.label}</b></td>
-                  <SkuCells label={v.label} stock={v.stock} price={v.price ?? p.price} cost={p.cost?.[v.label]} low={5} />
-                  <td className="r">{st.byVariant[v.label]?.recent.units ?? 0}</td>
-                </tr>
-              ))}</tbody>
-            </table></div>
-            <p className="hint">Margin turns amber under 18% and red under 12%. Buying prices are private: shoppers never see them.</p>
+            <PricingTable low={5} rows={p.variants.map((v) => ({ label: v.label, price: v.price ?? p.price, ...(v.compareAt ? { compareAt: v.compareAt } : {}), ...(p.cost?.[v.label] !== undefined ? { cost: p.cost[v.label] } : {}), stock: v.stock, sold30: st.byVariant[v.label]?.recent.units ?? 0 }))} />
+            <p className="hint">Type the buying price for the biggest size: the smaller sizes follow by weight until you change them. A “before” price shows the old price struck through with the discount. Buying prices are private.</p>
           </section>
 
           <section className="panel">
@@ -112,6 +104,16 @@ export default async function ProductEditor({ params }: { params: Promise<{ id: 
               <option value="live">Active · on sale in the store</option>
               <option value="hidden">Hidden · not in the store</option>
             </select>
+          </section>
+          <section className="panel">
+            <h2>Ribbon</h2>
+            <select name="ribbon" defaultValue={p.ribbon ?? ''} className="sel">
+              <option value="">None</option>
+              <option value="new">✨ New · جديد</option>
+              <option value="bestseller">🔥 Best seller · الأكتر طلباً</option>
+              <option value="limited">⏳ Limited · كمية محدودة</option>
+            </select>
+            <p className="hint">A sale ribbon (−20%) shows by itself when a size has a “before” price.</p>
           </section>
           <section className="panel">
             <h2>Photos</h2>

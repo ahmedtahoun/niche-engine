@@ -180,3 +180,8 @@ a.above { text-decoration: none; }
 .wa-btn { display: block; text-align: center; background: #25D366; color: #fff !important; border-radius: 9px; padding: 9px; font-weight: 700; text-decoration: none; margin-top: 10px; }
 .wa-btn.inline { display: inline-block; margin: 0; padding: 9px 16px; }
 .addr { margin: 0; line-height: 1.6; }
+
+.money.auto { background: var(--a-bg); }
+.money.auto input.cell { background: var(--a-bg); color: var(--a-muted); }
+.linkish { background: none; border: 0; padding: 2px 0 0; color: var(--a-accent); font: inherit; font-size: 12px; font-weight: 600; cursor: pointer; display: block; }
+.ok-t { color: var(--a-ok); font-weight: 600; }

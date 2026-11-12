@@ -3,7 +3,7 @@ import { notFound } from 'next/navigation';
 import { AddToCart } from '@/components/AddToCart';
 import { Art, PickSeal } from '@/components/Art';
 import { TasteProfile } from '@/components/Taste';
-import { bestPer100g, catalog, choicesFor, freshnessOf, priceRange } from '@/lib/catalog';
+import { bestPer100g, catalog, choicesFor, freshnessOf, priceRange, saleOf } from '@/lib/catalog';
 import { etaDate } from '@/lib/eta';
 import { speaker } from '@/lib/lang';
 import { getNiche } from '@/lib/niches';
@@ -34,6 +34,7 @@ export default async function ProductPage({ params }: P) {
   const finder = p.category === 'abaya' ? 'size' : null;
   const choices = choicesFor(cfg, p);
   const range = priceRange(p);
+  const sale = saleOf(p);
   const per100 = bestPer100g(p);
   const fresh = freshnessOf(cfg, p);
   const name = s.product(p);
@@ -102,6 +103,7 @@ export default async function ProductPage({ params }: P) {
       </div>
       {(p.images?.length ?? 0) > 1 && <span className="small muted gallery-hint" style={{ textAlign: 'center' }}>{s.t('swipe', { n: p.images!.length })}</span>}
       <div style={{ display: 'grid', gap: 8 }}>
+        {p.ribbon && <span className={`ribbon inline r-${p.ribbon}`}>{s.t(`ribbon.${p.ribbon}` as 'ribbon.new')}</span>}
         <h1 className="title">{name}</h1>
         <a className="roaster-chip" href="#sec-roaster">
           {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -109,7 +111,7 @@ export default async function ProductPage({ params }: P) {
           <span>{s.t('by', { name: '' })}<b>{s.seller(seller)}</b></span>
           <span className="muted small">· {seller.rating ? `⭐ ${seller.rating}` : s.t('partnerOf', { brand: s.brand(cfg) })}</span>
         </a>
-        <div className="pprice num" style={{ fontSize: 21 }}>{range.min !== range.max ? s.t('from', { price: s.egp(range.min) }) : s.egp(range.min)}</div>
+        <div className="pprice num" style={{ fontSize: 21 }}>{range.min !== range.max ? s.t('from', { price: s.egp(range.min) }) : s.egp(range.min)}{sale.compareMin && <s className="was">{s.egp(sale.compareMin)}</s>}{sale.off > 0 && <span className="off">{s.t('off', { n: sale.off })}</span>}</div>
         {per100 && <div className="per100 num">{s.t('per100', { x: s.egp(per100) })}</div>}
         {freshText && <div className="small" style={{ color: 'var(--ok)', fontWeight: 700 }}>{freshText}</div>}
       </div>

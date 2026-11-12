@@ -56,6 +56,15 @@ export function priceRange(p: Product): { min: number; max: number } {
   return { min: Math.min(...all), max: Math.max(...all) };
 }
 
+/** Sale display: the cheapest option's "before" price (for "from 225 ~~300~~") and the biggest discount in %. */
+export function saleOf(p: Product): { compareMin?: number; off: number } {
+  const priced = p.variants.map((v) => ({ price: v.price ?? p.price, before: v.compareAt }));
+  const min = Math.min(...priced.map((x) => x.price));
+  const cheapest = priced.find((x) => x.price === min && x.before && x.before > x.price);
+  const off = Math.max(0, ...priced.filter((x) => x.before && x.before > x.price).map((x) => Math.round((1 - x.price / x.before!) * 100)));
+  return { ...(cheapest ? { compareMin: cheapest.before } : {}), off };
+}
+
 /** Per-order choices (e.g. the grind) that apply to this product. */
 export const choicesFor = (cfg: NicheConfig, p: Product): Choice[] => (cfg.choices ?? []).filter((c) => c.categories.includes(p.category));
 

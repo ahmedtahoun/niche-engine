@@ -41,7 +41,8 @@ on conflict (id) do nothing;
 
 ${insert('sellers', seller, ['store_name', 'name_en', 'about', 'instagram', 'logo_url', 'area', 'governorate'])}
 
-${products.map((r) => insert('products', r, ['name_ar', 'lead_ar', 'category', 'art', 'color', 'attributes', 'faq', 'en', 'profile', 'images', 'status'])).join('\n\n')}
+${products.map((r) => insert('products', r, ['name_ar', 'lead_ar', 'category', 'art', 'color', 'attributes', 'faq', 'en', 'profile', 'images', 'status']).replace('profile = excluded.profile', "profile = coalesce(excluded.profile, '{}'::jsonb) || jsonb_strip_nulls(jsonb_build_object('ribbon', products.profile->'ribbon'))")).join('\n\n')}
+-- (A ribbon set in the admin is kept inside "profile" on a re-run.)
 
 -- Prices and stock are managed in the admin (Products) once a coffee exists: a re-run never
 -- changes them. It only fills a price where a weight has none, and refreshes option names:

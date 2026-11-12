@@ -1,4 +1,5 @@
 // Database rows ⇄ app objects (pure; tested).
+import { RIBBONS } from '../types.ts';
 import type { Account } from '../customers.ts';
 import type { Order } from '../orders.ts';
 import type { Product, Seller } from '../types.ts';
@@ -15,8 +16,15 @@ export const rowToSeller = (r: SellerRow): Seller => ({ id: r.id, niche: r.niche
 
 export interface ProductRow { id: string; niche_id: string; seller_id: string; slug: string; category: string; art: string; color: string; name_ar: string; lead_ar: string; price: number; attributes: Record<string, string>; variants: Product['variants']; status: string; price_confirmed_at: string; views: number; reviews: Product['reviews']; faq: Product['faq']; images?: string[]; en?: Product['en'] | null; profile?: Product['profile'] | null; cost?: Product['cost'] | null }
 /** `images` is only written when there are photos, so stock and price updates keep working before migration 0003. */
-export const productToRow = (p: Product): ProductRow => ({ id: p.id, niche_id: p.niche, seller_id: p.sellerId, slug: p.slug, category: p.category, art: p.art, color: p.color, name_ar: p.nameAr, lead_ar: p.leadAr, price: p.price, attributes: p.attributes, variants: p.variants, status: p.status ?? 'live', price_confirmed_at: p.priceConfirmedAt ?? new Date().toISOString(), views: p.views, reviews: p.reviews, faq: p.faq, ...(p.images?.length ? { images: p.images } : {}), ...(p.en ? { en: p.en } : {}), ...(p.profile ? { profile: p.profile } : {}), ...(p.cost ? { cost: p.cost } : {}) });
-export const rowToProduct = (r: ProductRow): Product => ({ id: r.id, niche: r.niche_id, sellerId: r.seller_id, slug: r.slug, category: r.category, art: r.art as Product['art'], color: r.color, nameAr: r.name_ar, leadAr: r.lead_ar, price: Number(r.price), attributes: r.attributes, variants: r.variants, status: r.status as Product['status'], priceConfirmedAt: r.price_confirmed_at, views: r.views, reviews: r.reviews, faq: r.faq, ...(r.images?.length ? { images: r.images } : {}), ...(r.en ? { en: r.en } : {}), ...(r.profile ? { profile: r.profile } : {}), ...(r.cost ? { cost: r.cost } : {}) });
+export const productToRow = (p: Product): ProductRow => ({ id: p.id, niche_id: p.niche, seller_id: p.sellerId, slug: p.slug, category: p.category, art: p.art, color: p.color, name_ar: p.nameAr, lead_ar: p.leadAr, price: p.price, attributes: p.attributes, variants: p.variants, status: p.status ?? 'live', price_confirmed_at: p.priceConfirmedAt ?? new Date().toISOString(), views: p.views, reviews: p.reviews, faq: p.faq, ...(p.images?.length ? { images: p.images } : {}), ...(p.en ? { en: p.en } : {}), ...(p.profile || p.ribbon ? { profile: { ...(p.profile ?? {}), ...(p.ribbon ? { ribbon: p.ribbon } : {}) } as Product['profile'] } : {}), ...(p.cost ? { cost: p.cost } : {}) });
+export const rowToProduct = (r: ProductRow): Product => ({ id: r.id, niche: r.niche_id, sellerId: r.seller_id, slug: r.slug, category: r.category, art: r.art as Product['art'], color: r.color, nameAr: r.name_ar, leadAr: r.lead_ar, price: Number(r.price), attributes: r.attributes, variants: r.variants, status: r.status as Product['status'], priceConfirmedAt: r.price_confirmed_at, views: r.views, reviews: r.reviews, faq: r.faq, ...(r.images?.length ? { images: r.images } : {}), ...(r.en ? { en: r.en } : {}), ...profileOf(r.profile), ...(r.cost ? { cost: r.cost } : {}) });
+
+/** The ribbon is kept inside the profile column (no extra column needed). */
+function profileOf(raw: ProductRow['profile']): Pick<Product, 'profile' | 'ribbon'> {
+  if (!raw) return {};
+  const { ribbon, ...rest } = raw as NonNullable<Product['profile']> & { ribbon?: Product['ribbon'] };
+  return { ...(Object.keys(rest).length ? { profile: rest as Product['profile'] } : {}), ...(ribbon && RIBBONS.includes(ribbon) ? { ribbon } : {}) };
+}
 
 export interface OrderRow {
   id: number; niche_id: string; customer_phone: string; customer: Order['customer']; status: Order['status']; type: Order['type']; payment: Order['payment'];

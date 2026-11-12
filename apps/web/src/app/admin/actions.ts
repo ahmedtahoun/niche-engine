@@ -9,7 +9,7 @@ import { checkPassword, COOKIE, isAdmin } from '@/lib/admin-auth';
 import { unblock } from '@/lib/blocklist';
 import { catalog, deleteProduct, saveProduct, saveSeller } from '@/lib/catalog';
 import { store } from '@/lib/store';
-import type { Product } from '@/lib/types';
+import { RIBBONS, type Product } from '@/lib/types';
 import { moveOrderTo } from '@/lib/fulfillment';
 import { getNiche } from '@/lib/niches';
 import { mutateOrder, orderById, type OrderStatus } from '@/lib/orders';
@@ -135,6 +135,12 @@ function applySkus(p: Product, form: FormData) {
     if (stock !== null && Number.isInteger(stock) && stock >= 0 && stock <= 100000) v.stock = stock;
     const price = num(form.get(`price:${v.label}`));
     if (price !== null && Number.isInteger(price) && price > 0 && price <= 1_000_000 && price !== (v.price ?? p.price)) { v.price = price; priced = true; }
+    if (form.has(`before:${v.label}`)) {
+      const before = num(form.get(`before:${v.label}`));
+      const now = v.price ?? p.price;
+      if (before !== null && Number.isInteger(before) && before > now && before <= 1_000_000) v.compareAt = before;
+      else delete v.compareAt;
+    }
     if (form.has(`cost:${v.label}`)) {
       const cost = num(form.get(`cost:${v.label}`));
       if (cost === null) { if (p.cost) delete p.cost[v.label]; }
@@ -173,6 +179,11 @@ export async function saveProductForm(id: string, form: FormData) {
   }
   const status = form.get('status');
   if (status === 'live' || status === 'hidden') p.status = status;
+  if (form.has('ribbon')) {
+    const r = String(form.get('ribbon'));
+    if ((RIBBONS as readonly string[]).includes(r)) p.ribbon = r as Product['ribbon'];
+    else delete p.ribbon;
+  }
   applySkus(p, form);
   await saveProduct(p);
   done();

@@ -350,3 +350,12 @@ details p { margin: 6px 0 0; color: var(--muted); }
 .journey .je img { width: 100%; height: 100%; object-fit: contain; }
 .journey li > span:last-child { display: grid; gap: 1px; }
 .journey li b { font-size: 14px; }
+
+/* WhatsApp: floating button (above the tab bar) and the order-page confirm card */
+.wa-fab { position: fixed; z-index: 6; bottom: 78px; inset-inline-start: 14px; width: 52px; height: 52px; border-radius: 50%; background: #25D366; color: #fff; display: grid; place-items: center; box-shadow: 0 6px 18px rgba(0,0,0,.22); }
+.wa-fab svg { width: 28px; height: 28px; }
+@media (min-width: 900px) { .wa-fab { bottom: 24px; inset-inline-start: 24px; } }
+.page.product ~ .wa-fab { bottom: 150px; }
+@media (min-width: 900px) { .page.product ~ .wa-fab { bottom: 24px; } }
+.wa-confirm { display: grid; gap: 2px; padding: 12px 14px; border-radius: 14px; background: #E7F8EE; border: 1.5px solid #25D366; color: #0B5A2B; }
+.wa-confirm b { font-size: 15px; }

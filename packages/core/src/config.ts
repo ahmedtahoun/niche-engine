@@ -95,6 +95,8 @@ export interface NicheConfig {
     ogImage?: string;
     /** One-paragraph description for search engines and AI answers. */
     description?: Bilingual;
+    /** Customer-service WhatsApp / phone, Egyptian format (e.g. 01109200150). Shown in the footer, the WhatsApp button and order pages. */
+    whatsapp?: string;
     /** Round stamp on product photos, e.g. "Cairo Roast pick" (drawn with the logo). */
     pickSeal?: Bilingual;
   };

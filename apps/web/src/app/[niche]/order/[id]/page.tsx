@@ -5,6 +5,7 @@ import { OrderActions } from '@/components/OrderActions';
 import { etaDate } from '@/lib/eta';
 import { speaker } from '@/lib/lang';
 import { getNiche } from '@/lib/niches';
+import { waLink } from '@/lib/site';
 import { getOrder } from '@/lib/orders';
 import { publicQuote } from '@/lib/catalog';
 import Link from 'next/link';
@@ -49,6 +50,12 @@ export default async function OrderPage({ params }: { params: Promise<{ niche: s
             <div key={step} className={r >= i + 1 ? 'on' : ''}><i>{r >= i + 1 ? '✓' : i + 1}</i><b>{t(`step.${step}`)}</b></div>
           ))}
         </div>
+      )}
+      {cfg.brand.whatsapp && o.status !== 'cancelled' && r < 4 && (
+        <a className="wa-confirm" href={waLink(cfg.brand.whatsapp, t('wa.confirmText', { brand: s.brand(cfg), id: o.id }))} rel="noopener" target="_blank">
+          <b>💬 {t('wa.confirm')}</b>
+          <span className="small">{t('wa.confirmSub')}</span>
+        </a>
       )}
       <OrderActions niche={niche} id={o.id} status={o.status} />
       <div style={{ display: 'grid', gap: 8 }}>

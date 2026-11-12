@@ -5,8 +5,8 @@
 // seeds/costs.local.json (git-ignored) and reaches Supabase through supabase/seed/coffee-costs.local.sql.
 // Bonds is then paid exactly the cost on each delivered item; Cairo Roast keeps the difference.
 // Tasting notes, region, variety and process: printed on Bonds' bag labels (photos in
-// public/products/coffee); Limu from Bonds' own listing. Colombia Castillo and El Salvador
-// have no notes yet: ask Bonds, then fill them in here.
+// public/products/coffee); Limu from Bonds' own listing; Colombia from its bag label (photo
+// 2026-11-12). El Salvador's notes aren't readable on the photo yet: ask Bonds, then fill them in.
 // Used by the dev demo store and by scripts/seed-sql.ts, which writes the SQL
 // that loads the same rows into Supabase. Stock is a starting figure: update it in /admin.
 import type { Product, Seller, Variant } from '../types.ts';
@@ -46,13 +46,18 @@ const FAQ_EN: [string, string][] = [
 
 type En = { name: string; lead: string; attributes: Record<string, string> };
 // Profile values come only from what Bonds states (body and acidity for the blends; notes for all). No roast level: Bonds doesn't publish it.
-const coffee = (o: Pick<Product, 'slug' | 'category' | 'color' | 'nameAr' | 'leadAr' | 'attributes' | 'profile'> & { kg: number; photo?: string; en: En }): Product => ({
+const photosOf = (o: { photo?: string; photos?: string[] }) => {
+  const names = o.photos ?? (o.photo ? [o.photo] : []);
+  return names.length ? { images: names.map((x) => `/products/coffee/${x}.webp`) } : {};
+};
+
+const coffee = (o: Pick<Product, 'slug' | 'category' | 'color' | 'nameAr' | 'leadAr' | 'attributes' | 'profile'> & { kg: number; photo?: string; photos?: string[]; en: En }): Product => ({
   id: o.slug, niche: 'coffee', slug: o.slug, sellerId: BONDS.id, category: o.category, art: 'coffee', color: o.color,
   nameAr: o.nameAr, leadAr: o.leadAr, price: Math.round(o.kg / 4), attributes: { ...o.attributes, 'الشكل': 'حبوب أو مطحونة على طلبك' },
   variants: weights(o.kg), status: 'live', views: 0, reviews: [], faq: FAQ,
   en: { name: o.en.name, lead: o.en.lead, attributes: { ...o.en.attributes, Form: 'Whole beans or ground to order' }, faq: FAQ_EN },
   ...(o.profile ? { profile: o.profile } : {}),
-  ...(o.photo ? { images: [`/products/coffee/${o.photo}.webp`] } : {}),
+  ...photosOf(o),
 });
 
 export const BONDS_PRODUCTS: Product[] = [
@@ -71,14 +76,14 @@ export const BONDS_PRODUCTS: Product[] = [
     en: { name: 'Amber Blend', lead: 'A low-acidity blend with a rich body: dark chocolate, molasses and roasted hazelnut.', attributes: { 'Tasting notes': 'Dark chocolate, molasses, roasted hazelnut', Body: 'Rich', Acidity: 'Low', Type: 'Blend' } },
   }),
   coffee({
-    slug: 'bonds-ethiopia-guji', category: 'single-origin', color: '#4F5A36', nameAr: 'إثيوبيا جوجي', kg: 2000, photo: 'ethiopia-guji',
+    slug: 'bonds-ethiopia-guji', category: 'single-origin', color: '#4F5A36', nameAr: 'إثيوبيا جوجي', kg: 2000, photos: ['ethiopia-guji', 'ethiopia-guji-roasting'],
     profile: { notes: ['توت', 'زهور', 'مشمش', 'زهر البرتقال'], notesEn: ['Berries', 'Floral', 'Apricot', 'Orange blossom'], family: 'fruity', scales: { body: 3, acidity: 3 } },
     leadAr: 'قهوة أحادية المصدر من جوجي هامبيلا في إثيوبيا، معالجة طبيعية: توت، زهور، مشمش وزهر البرتقال، بحموضة ناعمة وقوام رقيق ومدوّر.',
     attributes: { 'النكهات': 'توت، زهور، مشمش، زهر البرتقال', 'المنشأ': 'إثيوبيا · جوجي هامبيلا', 'السلالة': 'هيرلوم', 'المعالجة': 'طبيعية', 'الارتفاع': '1400–1800 متر', 'الحموضة': 'ناعمة', 'القوام': 'رقيق ومدوّر', 'النوع': 'أحادية المصدر' },
     en: { name: 'Ethiopia Guji', lead: 'Single-origin coffee from Guji Hambela, Ethiopia, natural process: berries, florals, apricot and orange blossom, with smooth acidity and a delicate, round body.', attributes: { 'Tasting notes': 'Berries, floral, apricot, orange blossom', Origin: 'Ethiopia · Guji Hambela', Variety: 'Heirloom', Process: 'Natural', Altitude: '1,400–1,800 m', Acidity: 'Smooth', Body: 'Delicate and round', Type: 'Single origin' } },
   }),
   coffee({
-    slug: 'bonds-ethiopia-limu', category: 'single-origin', color: '#9A5B34', nameAr: 'إثيوبيا ليمو', kg: 1200,
+    slug: 'bonds-ethiopia-limu', category: 'single-origin', color: '#9A5B34', nameAr: 'إثيوبيا ليمو', kg: 1200, photos: ['ethiopia-limu', 'bonds-shelf'],
     profile: { notes: ['شوكولاتة داكنة', 'شاي أسود', 'برتقال'], notesEn: ['Dark chocolate', 'Black tea', 'Orange'], family: 'fruity' },
     leadAr: 'قهوة أحادية المصدر من ليمو في إثيوبيا، معالجة طبيعية: شوكولاتة داكنة، شاي أسود، سكر بني ولمسة برتقال.',
     attributes: { 'النكهات': 'شوكولاتة داكنة، مكسرات محمصة، شاي أسود، سكر بني، برتقال', 'المنشأ': 'إثيوبيا · ليمو', 'السلالة': 'هيرلوم', 'المعالجة': 'طبيعية', 'النوع': 'أحادية المصدر' },
@@ -92,16 +97,17 @@ export const BONDS_PRODUCTS: Product[] = [
     en: { name: 'Brazil Red Catuai', lead: 'Single-origin coffee from Mogiana, Brazil, Red Catuai variety, natural process: roasted hazelnut, sugar cane and walnut, with low acidity and a creamy body.', attributes: { 'Tasting notes': 'Roasted hazelnut, sugar cane, walnut', Origin: 'Brazil · Mogiana', Variety: 'Red Catuai', Process: 'Natural', Acidity: 'Low', Body: 'Creamy', Type: 'Single origin' } },
   }),
   coffee({
-    slug: 'bonds-colombia-castillo', category: 'single-origin', color: '#6B4A33', nameAr: 'كولومبيا كاستيو', kg: 1500,
-    leadAr: 'قهوة أحادية المصدر من كولومبيا، سلالة كاستيو، من تحميص بوندز.',
-    attributes: { 'المنشأ': 'كولومبيا', 'السلالة': 'كاستيو', 'النوع': 'أحادية المصدر' },
-    en: { name: 'Colombia Castillo', lead: 'Single-origin coffee from Colombia, Castillo variety, roasted by Bonds.', attributes: { Origin: 'Colombia', Variety: 'Castillo', Type: 'Single origin' } },
+    slug: 'bonds-colombia-castillo', category: 'single-origin', color: '#6B4A33', nameAr: 'كولومبيا كاستيو', kg: 1500, photos: ['colombia-castillo', 'bonds-shelf'],
+    profile: { notes: ['فواكه استوائية', 'كراميل باللبن', 'يوسفي', 'خشب البلوط'], notesEn: ['Tropical fruit', 'Milk caramel', 'Tangerine', 'Oak'], family: 'fruity' },
+    leadAr: 'قهوة أحادية المصدر من فالي ديل كاوكا في كولومبيا، سلالة كاستيو: فواكه استوائية، كراميل باللبن، يوسفي ولمسة خشب البلوط.',
+    attributes: { 'النكهات': 'فواكه استوائية، كراميل باللبن، يوسفي، خشب البلوط', 'المنشأ': 'كولومبيا · فالي ديل كاوكا', 'السلالة': 'كاستيو', 'النوع': 'أحادية المصدر' },
+    en: { name: 'Colombia Castillo', lead: 'Single-origin coffee from Valle del Cauca, Colombia, Castillo variety: tropical fruit, milk caramel, tangerine and a touch of oak.', attributes: { 'Tasting notes': 'Tropical fruit, milk caramel, tangerine, oak', Origin: 'Colombia · Valle del Cauca', Variety: 'Castillo', Type: 'Single origin' } },
   }),
   coffee({
-    slug: 'bonds-el-salvador', category: 'single-origin', color: '#5E3B25', nameAr: 'السلفادور', kg: 1800,
-    leadAr: 'قهوة أحادية المصدر من السلفادور، من تحميص بوندز.',
-    attributes: { 'المنشأ': 'السلفادور', 'النوع': 'أحادية المصدر' },
-    en: { name: 'El Salvador', lead: 'Single-origin coffee from El Salvador, roasted by Bonds.', attributes: { Origin: 'El Salvador', Type: 'Single origin' } },
+    slug: 'bonds-el-salvador', category: 'single-origin', color: '#5E3B25', nameAr: 'السلفادور سان أجوستين', kg: 1800, photo: 'el-salvador',
+    leadAr: 'قهوة أحادية المصدر من سان أجوستين في السلفادور، من تحميص بوندز.',
+    attributes: { 'المنشأ': 'السلفادور · سان أجوستين', 'النوع': 'أحادية المصدر' },
+    en: { name: 'El Salvador San Agustín', lead: 'Single-origin coffee from San Agustín, El Salvador, roasted by Bonds.', attributes: { Origin: 'El Salvador · San Agustín', Type: 'Single origin' } },
   }),
 ];
 

@@ -10,7 +10,7 @@ import { guidesFor, readMinutes } from '@/lib/guides';
 import { speaker } from '@/lib/lang';
 import { getNiche } from '@/lib/niches';
 import { CARD_SIZES, responsive } from '@/lib/img';
-import { jsonLd, origin, pageMeta, siteUrl } from '@/lib/site';
+import { intlPhone, jsonLd, origin, pageMeta, siteUrl } from '@/lib/site';
 
 type P = { params: Promise<{ niche: string }> };
 
@@ -41,7 +41,7 @@ export default async function Home({ params }: P) {
   const fill = (x: string) => x.replace('{shipping}', String(cfg.shippingEgp)).replace('{depositAbove}', String(cfg.risk.depositAboveEgp)).replace('{deposit}', String(cfg.risk.depositEgp));
   const faq = (cfg.homeFaq ?? []).map((f) => ({ q: text(f.q), a: fill(text(f.a)) }));
   const structured = [
-    { '@context': 'https://schema.org', '@type': 'OnlineStore', name: cfg.brand.nameEn, alternateName: cfg.brand.nameAr, url: siteUrl(cfg), description: cfg.brand.description?.en, ...(cfg.brand.logo ? { logo: `${origin(cfg)}${cfg.brand.icon ?? cfg.brand.logo}` } : {}), areaServed: 'EG', currenciesAccepted: 'EGP', paymentAccepted: 'Cash on delivery, InstaPay' },
+    { '@context': 'https://schema.org', '@type': 'OnlineStore', name: cfg.brand.nameEn, alternateName: cfg.brand.nameAr, url: siteUrl(cfg), description: cfg.brand.description?.en, ...(cfg.brand.logo ? { logo: `${origin(cfg)}${cfg.brand.icon ?? cfg.brand.logo}` } : {}), areaServed: 'EG', currenciesAccepted: 'EGP', paymentAccepted: 'Cash on delivery, InstaPay', ...(cfg.brand.whatsapp ? { telephone: intlPhone(cfg.brand.whatsapp), contactPoint: { '@type': 'ContactPoint', contactType: 'customer service', telephone: intlPhone(cfg.brand.whatsapp), availableLanguage: ['ar', 'en'] } } : {}) },
     { '@context': 'https://schema.org', '@type': 'WebSite', name: cfg.brand.nameEn, url: siteUrl(cfg), inLanguage: ['ar', 'en'], potentialAction: { '@type': 'SearchAction', target: `${siteUrl(cfg, '/search')}?q={q}`, 'query-input': 'required name=q' } },
     ...(faq.length ? [{ '@context': 'https://schema.org', '@type': 'FAQPage', inLanguage: s.lang, mainEntity: faq.map((f) => ({ '@type': 'Question', name: f.q, acceptedAnswer: { '@type': 'Answer', text: f.a } })) }] : []),
   ];

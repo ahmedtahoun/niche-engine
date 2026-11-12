@@ -46,3 +46,12 @@ export function pageMeta(cfg: NicheConfig, lang: Lang, path: string, o: { title?
 
 /** A <script type="application/ld+json"> body, safe to inline. */
 export const jsonLd = (data: unknown) => ({ __html: JSON.stringify(data).replace(/</g, '\\u003c') });
+
+/** wa.me link for an Egyptian number (01xxxxxxxxx → 201xxxxxxxxx), with an optional message. */
+export function waLink(phone: string, text?: string) {
+  const digits = phone.replace(/\D/g, '').replace(/^0/, '20');
+  return `https://wa.me/${digits}${text ? `?text=${encodeURIComponent(text)}` : ''}`;
+}
+
+/** International form for search engines (+20 110 920 0150). */
+export const intlPhone = (phone: string) => `+${phone.replace(/\D/g, '').replace(/^0/, '20')}`;

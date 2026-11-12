@@ -16,6 +16,9 @@ export interface Shipment {
   cod: number;
 }
 
+export const ORDER_SOURCES = ['web', 'whatsapp', 'phone', 'instagram', 'facebook', 'other'] as const;
+export type OrderSource = (typeof ORDER_SOURCES)[number];
+
 export interface Order {
   id: number;
   niche: string;
@@ -32,6 +35,8 @@ export interface Order {
   sellerState: Record<string, SellerPart>;
   shipments?: Record<string, Shipment>;
   promoCode?: string;
+  /** Where the order came from (website by default; the admin adds WhatsApp, phone… orders). */
+  source?: OrderSource;
   needsAttention?: string;
   /** Changes on every save; an update based on an older version is refused. */
   version: number;

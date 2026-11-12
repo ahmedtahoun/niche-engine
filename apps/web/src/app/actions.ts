@@ -5,6 +5,7 @@ import { catalog, publicQuote } from '@/lib/catalog';
 import { getNiche } from '@/lib/niches';
 import { applyStatus, draftOrder, findDuplicate, getOrder, mutateOrder, ordersFor } from '@/lib/orders';
 import { accountByPhone, createAccount, MIN_PASSWORD, saveAddress, signIn } from '@/lib/customers';
+import { takeStock } from '@/lib/stock';
 import { currentCustomer, endSession, isGuestOrder, rememberGuestOrder, startSession } from '@/lib/current-customer';
 import { moveOrderTo } from '@/lib/fulfillment';
 import { walletOf } from '@/lib/wallet';
@@ -108,7 +109,7 @@ export async function placeOrder(niche: string, cart: CartLine[], form: Checkout
     const [wallet, previous] = await Promise.all([me ? walletOf(me.phone, niche) : null, ordersFor(phone!, niche)]);
     const walletBalance = wallet?.balance ?? 0;
     const q = cat.quote(cfg, cart, { promoCode: form.promoCode || undefined, isFirstOrder: previous.length === 0, walletBalance, useWallet: Boolean(me && form.useWallet && walletBalance > 0), lang: s.lang });
-    if (q.problems.some((p) => p.startsWith('item_unavailable') || p.startsWith('bundle_unavailable') || p.startsWith('choice_missing'))) {
+    if (q.problems.some((p) => p.startsWith('item_unavailable') || p.startsWith('bundle_unavailable') || p.startsWith('choice_missing') || p.startsWith('low_stock'))) {
       return { ok: false, errors: { cart: s.t('err.unavailable') } };
     }
     const order = await store().createOrder(draftOrder({
@@ -123,6 +124,7 @@ export async function placeOrder(niche: string, cart: CartLine[], form: Checkout
     }), q.wallet > 0 && wallet ? { amount: q.wallet, walletVersion: wallet.version } : null);
     if (order === 'wallet_conflict') continue;
     // With WhatsApp confirmation off, the order goes straight to the sellers.
+    await takeStock(order);
     if (order.status === 'confirmed') await deliver(notifyOrder(order, cat));
     if (guest) await rememberGuestOrder(order.id);
     return { ok: true, id: order.id };

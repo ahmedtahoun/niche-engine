@@ -18,6 +18,7 @@ const TABS: [string, string, (o: Order) => boolean][] = [
   ['problems', 'Refused · cancelled', (o) => ['refused', 'cancelled'].includes(o.status)],
 ];
 const BOUGHT = new Set(['confirmed', 'accepted', 'picked', 'delivered']);
+const SOURCE: Record<string, string> = { whatsapp: 'WhatsApp', phone: 'Phone', instagram: 'Instagram', facebook: 'Facebook', other: 'Manual' };
 
 export default async function Orders({ searchParams }: { searchParams: Promise<{ niche?: string; tab?: string; q?: string }> }) {
   const sp = await searchParams;
@@ -43,7 +44,10 @@ export default async function Orders({ searchParams }: { searchParams: Promise<{
     <>
       <div className="adm-top">
         <div><h1>Orders</h1><p className="sub">Click an order for items, customer, address and delivery. Bosta updates move orders automatically once connected.</p></div>
-        <NicheTabs base="/admin/orders" current={niche} />
+        <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+          <NicheTabs base="/admin/orders" current={niche} />
+          <Link href="/admin/orders/new" className="btn-save" style={{ textDecoration: 'none' }}>＋ New order</Link>
+        </div>
       </div>
       <div className="kpis">
         <div className="kpi"><small>Today</small><b>{today.length} orders</b><span>{EGP(today.filter((o) => BOUGHT.has(o.status)).reduce((n, o) => n + o.quote.total, 0))}</span></div>
@@ -70,7 +74,7 @@ export default async function Orders({ searchParams }: { searchParams: Promise<{
               return (
                 <tr key={o.id} className={`row-link${o.needsAttention ? ' attn' : ''}`}>
                   <td><Link href={`/admin/orders/${o.id}`} className="stretch-link"><b>#{o.id}</b></Link><small className="sub2">{ago(o.createdAt)}</small></td>
-                  <td><Link href={`/admin/customers/${customerKey(o.customer.phone)}`} className="above ar"><b>{o.customer.name}</b></Link><small className="sub2"><span dir="ltr">{o.customer.phone}</span> · <span className="ar">{o.customer.governorate}</span>{o.type === 'repeat' ? ' · repeat' : ''}</small></td>
+                  <td><Link href={`/admin/customers/${customerKey(o.customer.phone)}`} className="above ar"><b>{o.customer.name}</b></Link><small className="sub2"><span dir="ltr">{o.customer.phone}</span> · <span className="ar">{o.customer.governorate}</span>{o.type === 'repeat' ? ' · repeat' : ''}{o.source && o.source !== 'web' ? <span className="src"> · {SOURCE[o.source]}</span> : null}</small></td>
                   <td><span className="ar">{o.quote.lines[0]?.title}</span><small className="sub2">{units} {units === 1 ? 'item' : 'items'}{o.quote.lines.length > 1 ? ` · +${o.quote.lines.length - 1} more` : ''}</small></td>
                   <td className="r"><b>{EGP(o.quote.total)}</b><small className="sub2">{o.payment === 'cod' ? 'cash on delivery' : 'InstaPay'}{o.promoCode ? ` · ${o.promoCode}` : ''}</small></td>
                   <td><Pill kind={STATUS[o.status][1]}>{STATUS[o.status][0]}</Pill>{o.needsAttention && <small className="sub2 bad-t">{o.needsAttention}</small>}</td>

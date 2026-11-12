@@ -33,14 +33,15 @@ export interface OrderRow {
 }
 /** The columns an update writes (id and created_at never change). */
 export const orderToRow = (o: Order): Omit<OrderRow, 'id' | 'created_at'> => ({
-  niche_id: o.niche, customer_phone: o.customer.phone, customer: o.customer, status: o.status, type: o.type, payment: o.payment,
+  // The order source is kept inside the customer column (no extra column needed).
+  niche_id: o.niche, customer_phone: o.customer.phone, customer: o.source && o.source !== 'web' ? { ...o.customer, source: o.source } as Order['customer'] : o.customer, status: o.status, type: o.type, payment: o.payment,
   promo_code: o.promoCode ?? null, total: o.quote.total, quote: o.quote, cart: o.cart, seller_state: o.sellerState, seller_ids: Object.keys(o.sellerState),
   shipments: o.shipments ?? {}, tracking_numbers: Object.values(o.shipments ?? {}).map((s) => s.tracking), needs_attention: o.needsAttention ?? null,
   delivered_at: o.deliveredAt ?? null, version: o.version,
 });
 export const rowToOrder = (r: OrderRow): Order => ({
   id: Number(r.id), niche: r.niche_id, status: r.status, type: r.type, payment: r.payment, createdAt: new Date(r.created_at).toISOString(), cart: r.cart, quote: r.quote,
-  items: r.quote.items, sellerState: r.seller_state, customer: r.customer, version: Number(r.version),
+  items: r.quote.items, sellerState: r.seller_state, ...customerOf(r.customer), version: Number(r.version),
   ...(r.shipments && Object.keys(r.shipments).length ? { shipments: r.shipments } : {}),
   ...(r.promo_code ? { promoCode: r.promo_code } : {}), ...(r.needs_attention ? { needsAttention: r.needs_attention } : {}), ...(r.delivered_at ? { deliveredAt: new Date(r.delivered_at).toISOString() } : {}),
 });
@@ -57,3 +58,8 @@ export const accountPatchToRow = (p: Partial<Account>) => ({
 
 export interface WalletRow { id: string; phone: string; niche_id: string; amount: number; kind: WalletEntry['kind']; order_id: number | null; note: string | null; expires_at: string | null; created_at: string }
 export const rowToWallet = (r: WalletRow): WalletEntry => ({ id: r.id, phone: r.phone, niche: r.niche_id, amount: Number(r.amount), kind: r.kind, createdAt: new Date(r.created_at).toISOString(), ...(r.order_id ? { orderId: Number(r.order_id) } : {}), ...(r.note ? { note: r.note } : {}), ...(r.expires_at ? { expiresAt: new Date(r.expires_at).toISOString() } : {}) });
+
+function customerOf(raw: OrderRow['customer']): Pick<Order, 'customer' | 'source'> {
+  const { source, ...customer } = raw as Order['customer'] & { source?: Order['source'] };
+  return { customer, ...(source ? { source } : {}) };
+}

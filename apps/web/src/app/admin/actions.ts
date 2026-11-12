@@ -1,18 +1,21 @@
 'use server';
 
+import { normalizeEgyptPhone } from '@niche-engine/core';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { revalidatePath } from 'next/cache';
-import { adminChats, approveProduct, approveSeller } from '@/bot/engine';
+import { adminChats, approveProduct, approveSeller, notifyOrder } from '@/bot/engine';
 import { deliver } from '@/bot/transport';
 import { checkPassword, COOKIE, isAdmin } from '@/lib/admin-auth';
 import { unblock } from '@/lib/blocklist';
 import { catalog, deleteProduct, saveProduct, saveSeller } from '@/lib/catalog';
 import { store } from '@/lib/store';
-import { RIBBONS, type Product } from '@/lib/types';
+import { RIBBONS, type CartLine, type Product } from '@/lib/types';
 import { moveOrderTo } from '@/lib/fulfillment';
 import { getNiche } from '@/lib/niches';
-import { mutateOrder, orderById, type OrderStatus } from '@/lib/orders';
+import { draftOrder, mutateOrder, ORDER_SOURCES, orderById, ordersFor, type OrderSource, type OrderStatus } from '@/lib/orders';
+import { GOVERNORATES } from '@/lib/eta';
+import { takeStock } from '@/lib/stock';
 import { markPaid, paidThisCycle, sellerCycle } from '@/lib/payouts';
 import { allow, clientIp } from '@/lib/rate-limit';
 import { connectWebhook } from '@/lib/telegram-setup';
@@ -208,6 +211,63 @@ export async function deleteProductAction(id: string) {
   }
   done();
   redirect(`/admin/products?${new URLSearchParams({ done: result, name: p.nameAr })}`);
+}
+
+// ---------- manual orders (WhatsApp, phone…) ----------
+export interface ManualOrderInput {
+  niche: string;
+  source: OrderSource;
+  customer: { phone: string; name: string; governorate: string; area: string; address: string; landmark: string };
+  lines: CartLine[];
+  payment: 'cod' | 'instapay';
+  freeShipping: boolean;
+  /** Extra discount in EGP, taken off the order (not off the seller's share). */
+  discount: number;
+}
+export type ManualOrderResult = { ok: true; id: number } | { ok: false; error: string };
+
+/**
+ * Creates an order taken outside the website. Priced like checkout from today's prices,
+ * refused if a size lacks stock; takes the stock, tells the sellers and lands in the customer's history.
+ */
+export async function createManualOrder(input: ManualOrderInput): Promise<ManualOrderResult> {
+  await guard();
+  const cfg = getNiche(input.niche);
+  if (!cfg) return { ok: false, error: 'Pick a store.' };
+  const phone = normalizeEgyptPhone(input.customer.phone);
+  if (!phone) return { ok: false, error: 'Enter a valid Egyptian mobile number (01…).' };
+  const c = input.customer;
+  if (c.name.trim().length < 2) return { ok: false, error: 'Enter the customer\'s name.' };
+  if (!GOVERNORATES.includes(c.governorate)) return { ok: false, error: 'Pick the governorate.' };
+  if (c.area.trim().length < 2 || c.address.trim().length < 5) return { ok: false, error: 'Enter the area and the street address.' };
+  const lines = (input.lines ?? []).filter((l) => l.qty > 0).map((l) => ({ ...l, qty: Math.min(50, Math.floor(l.qty)) }));
+  if (!lines.length) return { ok: false, error: 'Add at least one item.' };
+  if (!ORDER_SOURCES.includes(input.source)) return { ok: false, error: 'Pick where the order came from.' };
+
+  const cat = await catalog();
+  const previous = await ordersFor(phone, input.niche);
+  const q = cat.quote(cfg, lines, { isFirstOrder: previous.length === 0, walletBalance: 0, useWallet: false, lang: 'ar' });
+  const problem = q.problems.find((p) => /^(item_unavailable|bundle_unavailable|choice_missing|low_stock)/.test(p));
+  if (problem) {
+    const [kind, slug, variant] = problem.split(':');
+    const name = cat.productBySlug(input.niche, slug)?.nameAr ?? slug;
+    return { ok: false, error: kind === 'low_stock' ? `Not enough stock: ${name} ${variant ?? ''}. Update the stock in Products first.` : kind === 'choice_missing' ? `Pick the grind for ${name}.` : `${name} is not on sale.` };
+  }
+  if (input.freeShipping) { q.total -= q.shipping; q.shipping = 0; }
+  const discount = Math.max(0, Math.min(Math.floor(input.discount || 0), q.total));
+  if (discount) { q.promoDiscount += discount; q.total -= discount; }
+  q.depositRequired = false;
+
+  const details = { name: c.name.trim().slice(0, 80), governorate: c.governorate, area: c.area.trim().slice(0, 80), address: c.address.trim().slice(0, 200), landmark: (c.landmark ?? '').trim().slice(0, 120) };
+  const order = await store().createOrder(draftOrder({
+    niche: input.niche, status: 'confirmed', type: previous.length ? 'repeat' : 'new', payment: input.payment === 'instapay' ? 'instapay' : 'cod',
+    customer: { ...details, phone }, cart: lines, quote: q, source: input.source,
+  }), null);
+  if (order === 'wallet_conflict') return { ok: false, error: 'Please try again.' };
+  await takeStock(order);
+  await deliver(notifyOrder(order, cat));
+  done();
+  return { ok: true, id: order.id };
 }
 
 // ---------- payouts ----------

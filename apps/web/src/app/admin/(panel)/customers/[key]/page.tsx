@@ -32,6 +32,7 @@ export default async function CustomerPage({ params }: { params: Promise<{ key: 
           <h1 className="ar">{c.name}</h1>
           <span className="sub"><span dir="ltr">{c.phone}</span> · <span className="ar">{c.governorate}</span> · {account ? 'has an account' : 'guest'} · customer since {new Date(c.firstAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}</span>
         </div>
+        <Link className="mini" href={`/admin/orders/new?niche=${niche}&customer=${c.key}`} style={{ textDecoration: 'none', padding: '9px 14px' }}>＋ New order</Link>
         <a className="wa-btn inline" href={waLink(c.phone, greeting)} target="_blank" rel="noreferrer">💬 WhatsApp</a>
       </div>
 

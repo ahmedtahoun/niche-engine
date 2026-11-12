@@ -185,3 +185,20 @@ a.above { text-decoration: none; }
 .money.auto input.cell { background: var(--a-bg); color: var(--a-muted); }
 .linkish { background: none; border: 0; padding: 2px 0 0; color: var(--a-accent); font: inherit; font-size: 12px; font-weight: 600; cursor: pointer; display: block; }
 .ok-t { color: var(--a-ok); font-weight: 600; }
+
+/* New order */
+.picker { display: grid; gap: 10px; }
+.search-big { font: inherit; font-size: 15px; padding: 12px 14px; border: 1.5px solid var(--a-line); border-radius: 10px; width: 100%; }
+.search-big:focus { outline: 2px solid var(--a-accent); border-color: transparent; }
+.results { list-style: none; margin: 0; padding: 0; border: 1px solid var(--a-line); border-radius: 10px; overflow: hidden; }
+.results li + li { border-top: 1px solid var(--a-line); }
+.results button { width: 100%; display: grid; grid-template-columns: 1.4fr 1fr 1.4fr auto; gap: 10px; align-items: center; text-align: left; background: #fff; border: 0; padding: 10px 12px; font: inherit; cursor: pointer; }
+.results button:hover { background: var(--a-accent-soft); }
+.picked { display: flex; gap: 8px; align-items: baseline; margin-bottom: 10px; }
+.picked .linkish { display: inline; margin-left: auto; }
+.sel.sm { padding: 6px 8px; font-size: 13px; width: auto; }
+.sel.need { border-color: var(--a-warn); background: var(--a-warn-soft); }
+.check { display: flex; gap: 8px; align-items: center; font-weight: 600; font-size: 13px; margin-top: 10px; }
+.block-btn { width: 100%; padding: 12px; }
+.btn-save:disabled { opacity: .55; cursor: not-allowed; }
+.src { color: var(--a-accent); font-weight: 600; }

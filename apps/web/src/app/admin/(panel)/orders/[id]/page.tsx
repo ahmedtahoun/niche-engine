@@ -105,6 +105,7 @@ export default async function OrderPage({ params }: { params: Promise<{ id: stri
             <dl className="facts-dl">
               <div><dt>Method</dt><dd>{o.payment === 'cod' ? 'Cash on delivery' : 'InstaPay'}</dd></div>
               <div><dt>Customer</dt><dd>{o.type === 'repeat' ? 'Repeat' : 'New'}</dd></div>
+              <div><dt>Came from</dt><dd>{({ whatsapp: 'WhatsApp', phone: 'Phone call', instagram: 'Instagram', facebook: 'Facebook', other: 'Manual' } as Record<string, string>)[o.source ?? ''] ?? 'Website'}</dd></div>
               {o.promoCode && <div><dt>Promo</dt><dd>{o.promoCode}</dd></div>}
             </dl>
           </section>

@@ -3,6 +3,7 @@
 // Pattern: change the order with mutateOrder() (safe against concurrent changes),
 // then do the side effects (wallet, refusals, messages) once the change is saved.
 // Side effects are safe to repeat: the database keeps one cashback/refund/refusal per order.
+import { returnStock } from './stock.ts';
 import type { Outgoing } from '../bot/types.ts';
 import { deliver } from '../bot/transport.ts';
 import { recordRefusal } from './blocklist.ts';
@@ -97,7 +98,7 @@ export async function afterMove(o: Order, to: OrderStatus, cat?: Catalog): Promi
   const cfg = getNiche(o.niche)!;
   if (to === 'refused') await recordRefusal(o.customer.phone, o.id);
   if (to === 'delivered') await grantCashback(o);
-  if (to === 'refused' || to === 'cancelled') await refundSpend(o);
+  if (to === 'refused' || to === 'cancelled') { await refundSpend(o); await returnStock(o); }
   const c = cat ?? (await catalog());
   const out: Outgoing[] = [];
   for (const sid of Object.keys(o.sellerState)) {

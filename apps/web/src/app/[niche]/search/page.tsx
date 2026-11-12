@@ -29,12 +29,12 @@ export default async function SearchPage({ params, searchParams }: { params: Pro
     const u = new URLSearchParams();
     const next = { q, cat, family: family?.id, sort: sort === 'best' ? undefined : sort, price: price === 'all' ? undefined : price, ...patch };
     for (const [k, v] of Object.entries(next)) if (v) u.set(k, v);
-    return `/${cfg.id}/search?${u}`;
+    return s.href(`/search?${u}`);
   };
 
   return (
     <main className="page">
-      <form className="sbox" role="search" action={`/${cfg.id}/search`}>
+      <form className="sbox" role="search" action={s.href(`/search`)}>
         {cat && <input type="hidden" name="cat" value={cat} />}
         <input name="q" type="search" defaultValue={q} placeholder={t('searchPh')} aria-label={t('nav.search')} autoFocus={!q && !cat} />
         <button className="btn primary" type="submit">{t('nav.search')}</button>

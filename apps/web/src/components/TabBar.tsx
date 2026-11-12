@@ -6,16 +6,17 @@ import { useCart } from './cart-store';
 import { useSpeak } from './I18n';
 
 export function TabBar({ niche }: { niche: string }) {
-  const path = usePathname();
+  // The address may or may not start with the store id (localhost/coffee/search, cairoroast.com/search).
+  const raw = usePathname() ?? '/';
+  const path = raw === `/${niche}` ? '/' : raw.startsWith(`/${niche}/`) ? raw.slice(niche.length + 1) : raw;
   const s = useSpeak();
   const [lines] = useCart(niche);
   const count = lines.reduce((a, l) => a + l.qty, 0);
-  const base = `/${niche}`;
   const tabs = [
-    { href: base, label: s.t('nav.home'), icon: Icon.home, match: (p: string) => p === base || p === `${base}/` },
-    { href: `${base}/search`, label: s.t('nav.search'), icon: Icon.search, match: (p: string) => p.startsWith(`${base}/search`) },
-    { href: `${base}/cart`, label: count ? s.t('nav.cartN', { n: count }) : s.t('nav.cart'), icon: Icon.cart, match: (p: string) => p.startsWith(`${base}/cart`) || p.startsWith(`${base}/checkout`) },
-    { href: `${base}/account`, label: s.t('nav.account'), icon: Icon.user, match: (p: string) => p.startsWith(`${base}/account`) || p.startsWith(`${base}/order`) },
+    { href: s.href(), label: s.t('nav.home'), icon: Icon.home, match: (p: string) => p === '/' },
+    { href: s.href('/search'), label: s.t('nav.search'), icon: Icon.search, match: (p: string) => p.startsWith('/search') },
+    { href: s.href('/cart'), label: count ? s.t('nav.cartN', { n: count }) : s.t('nav.cart'), icon: Icon.cart, match: (p: string) => p.startsWith('/cart') || p.startsWith('/checkout') },
+    { href: s.href('/account'), label: s.t('nav.account'), icon: Icon.user, match: (p: string) => p.startsWith('/account') || p.startsWith('/order') },
   ];
   return (
     <nav className="tabbar" aria-label={s.t('nav.label')}>

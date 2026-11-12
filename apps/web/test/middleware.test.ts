@@ -13,7 +13,8 @@ test('sakinaeg.com/coffee and cairoroast.com/umrah are not found; each domain se
   assert.deepEqual(go('www.cairoroast.com', '/umrah'), { kind: 'rewrite', path: '/coffee/not-found', dropQuery: true });
   assert.deepEqual(go('cairoroast.com', '/'), { kind: 'rewrite', path: '/coffee' });
   assert.deepEqual(go('cairoroast.com', '/p/bonds-amber'), { kind: 'rewrite', path: '/coffee/p/bonds-amber' });
-  assert.deepEqual(go('cairoroast.com', '/coffee/p/bonds-amber'), { kind: 'next' }, 'the store’s own links keep working');
+  assert.deepEqual(go('cairoroast.com', '/coffee/p/bonds-amber'), { kind: 'redirect', path: '/p/bonds-amber' }, 'one address per page');
+  assert.deepEqual(go('cairoroast.com', '/coffee'), { kind: 'redirect', path: '/' });
   assert.deepEqual(go('sakinaeg.com', '/'), { kind: 'rewrite', path: '/umrah' });
 });
 

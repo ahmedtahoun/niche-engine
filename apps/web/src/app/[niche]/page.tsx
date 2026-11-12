@@ -6,7 +6,7 @@ import { BundleArt, TrustIcon } from '@/components/Art';
 import { Footer } from '@/components/Footer';
 import { ProductCard } from '@/components/ProductCard';
 import { catalog } from '@/lib/catalog';
-import { guidesFor } from '@/lib/guides';
+import { guidesFor, readMinutes } from '@/lib/guides';
 import { speaker } from '@/lib/lang';
 import { getNiche } from '@/lib/niches';
 import { CARD_SIZES, responsive } from '@/lib/img';
@@ -31,16 +31,19 @@ export default async function Home({ params }: P) {
   const products = cat.search(cfg, { sort: 'best' });
   const text = (b?: { ar: string; en?: string }) => (b ? (s.en && b.en) || b.ar : '');
   const sellers = [...new Map(products.map((p) => [p.sellerId, cat.sellerOf(p)])).values()].filter((x) => x.about);
-  const guides = guidesFor(cfg.id);
+  const guides = [...guidesFor(cfg.id)].sort((a, b) => b.updated.localeCompare(a.updated)); // newest first
   const families = (cfg.tasteFamilies ?? []).filter((f) => products.some((p) => p.profile?.family === f.id));
   // Filter chips on the home page: taste families first, then categories (only when a niche has taste families).
   const filters = families.length ? [
     ...families.map((f) => ({ id: f.id, emoji: f.emoji, label: (s.en && f.labelEn) || f.labelAr, hint: (s.en && f.hintEn) || f.hintAr, count: products.filter((p) => p.profile?.family === f.id).length })),
     ...cfg.categories.map((c) => ({ id: c.id, emoji: undefined, label: s.category(c), hint: undefined, count: products.filter((p) => p.category === c.id).length })).filter((c) => c.count > 0),
   ] : [];
+  const fill = (x: string) => x.replace('{shipping}', String(cfg.shippingEgp)).replace('{depositAbove}', String(cfg.risk.depositAboveEgp)).replace('{deposit}', String(cfg.risk.depositEgp));
+  const faq = (cfg.homeFaq ?? []).map((f) => ({ q: text(f.q), a: fill(text(f.a)) }));
   const structured = [
     { '@context': 'https://schema.org', '@type': 'OnlineStore', name: cfg.brand.nameEn, alternateName: cfg.brand.nameAr, url: siteUrl(cfg), description: cfg.brand.description?.en, ...(cfg.brand.logo ? { logo: `${origin(cfg)}${cfg.brand.icon ?? cfg.brand.logo}` } : {}), areaServed: 'EG', currenciesAccepted: 'EGP', paymentAccepted: 'Cash on delivery, InstaPay' },
     { '@context': 'https://schema.org', '@type': 'WebSite', name: cfg.brand.nameEn, url: siteUrl(cfg), inLanguage: ['ar', 'en'], potentialAction: { '@type': 'SearchAction', target: `${siteUrl(cfg, '/search')}?q={q}`, 'query-input': 'required name=q' } },
+    ...(faq.length ? [{ '@context': 'https://schema.org', '@type': 'FAQPage', inLanguage: s.lang, mainEntity: faq.map((f) => ({ '@type': 'Question', name: f.q, acceptedAnswer: { '@type': 'Answer', text: f.a } })) }] : []),
   ];
   return (
     <main className="page">
@@ -52,7 +55,7 @@ export default async function Home({ params }: P) {
             <p>{text(cfg.hero.subtitle)}</p>
             <div className="ph-cta">
               <a className="btn" href="#coffees">{text(cfg.hero.cta)}</a>
-              {hero && <Link className="btn ghost-light" href={`/${cfg.id}/b/${hero.bundle.id}`}>🎁 {s.bundle(hero.bundle).split(':')[0]}</Link>}
+              {hero && <Link className="btn ghost-light" href={s.href(`/b/${hero.bundle.id}`)}>🎁 {s.bundle(hero.bundle).split(':')[0]}</Link>}
             </div>
             {cfg.hero.badges?.length ? <div className="ph-badges">{cfg.hero.badges.map((b) => <span key={b.ar}>{text(b)}</span>)}</div> : null}
           </div>
@@ -75,7 +78,7 @@ export default async function Home({ params }: P) {
             <h2>{s.bundle(hero.bundle)}</h2>
             <p>{hero.parts.map((p) => s.product(p.product).split(' — ')[0]).join(' + ')}</p>
             <div className="price num"><b>{s.egp(hero.price)}</b><s>{s.egp(hero.fullPrice)}</s></div>
-            <Link className="btn" href={`/${cfg.id}/b/${hero.bundle.id}`} style={{ marginTop: 8 }}>{s.t('home.details')}</Link>
+            <Link className="btn" href={s.href(`/b/${hero.bundle.id}`)} style={{ marginTop: 8 }}>{s.t('home.details')}</Link>
           </div>
         </section>
       )}
@@ -112,7 +115,7 @@ export default async function Home({ params }: P) {
       ) : products.length ? (
         <>
           <nav className="chips" aria-label={s.t('categories')}>
-            {cfg.categories.map((c) => <Link key={c.id} className="chip" href={`/${cfg.id}/search?cat=${c.id}`}>{s.category(c)}</Link>)}
+            {cfg.categories.map((c) => <Link key={c.id} className="chip" href={s.href(`/search?cat=${c.id}`)}>{s.category(c)}</Link>)}
           </nav>
           <h2 className="sec" id="coffees">{text(cfg.homeSection)}</h2>
           <div className="grid">{products.map((p) => <ProductCard key={p.id} p={p} seller={cat.sellerOf(p)} s={s} />)}</div>
@@ -127,7 +130,7 @@ export default async function Home({ params }: P) {
         </section>
       )}
       {hero && cfg.hero && (
-        <Link className="box-card" href={`/${cfg.id}/b/${hero.bundle.id}`}>
+        <Link className="box-card" href={s.href(`/b/${hero.bundle.id}`)}>
           <div className="art"><BundleArt parts={hero.parts.map((p) => p.product)} /></div>
           <div>
             <span className="small">{text(cfg.homeEyebrow)}</span>
@@ -148,20 +151,36 @@ export default async function Home({ params }: P) {
           </div>
         </section>
       ))}
+      {faq.length > 0 && (
+        <section className="home-faq" aria-labelledby="faq-h">
+          <h2 className="sec" id="faq-h">{s.t('faq')}</h2>
+          {faq.map((f, i) => <details key={f.q} open={i === 0}><summary>{f.q}</summary><p>{f.a}</p></details>)}
+        </section>
+      )}
       {guides.length > 0 && (
-        <section style={{ display: 'grid', gap: 4 }}>
-          <h2 className="sec">{s.t('guides')}</h2>
-          <span className="muted small">{s.t('guidesSub')}</span>
-          <div className="guides">
-            {guides.slice(0, 3).map((g) => (
-              <Link key={g.slug} className="guide-link" href={`/${cfg.id}/guide/${g.slug}`}><b>{s.en ? g.title.en : g.title.ar}</b><span className="muted small">{s.en ? g.description.en : g.description.ar}</span></Link>
-            ))}
-            <Link className="small" style={{ color: 'var(--primary)', fontWeight: 700, paddingTop: 8 }} href={`/${cfg.id}/guide`}>{s.t('allGuides')}</Link>
+        <section style={{ display: 'grid', gap: 10 }} aria-labelledby="guides-h">
+          <div>
+            <h2 className="sec" id="guides-h">{s.t('guides')}</h2>
+            <span className="muted small">{s.t('guidesSub')}</span>
           </div>
+          <div className="guide-cards">
+            {guides.slice(0, 4).map((g) => {
+              const n = readMinutes(g, s.lang);
+              return (
+                <Link key={g.slug} className="guide-card" href={s.href(`/guide/${g.slug}`)}>
+                  <span className="ge" aria-hidden="true">{g.emoji ?? '📖'}</span>
+                  <b>{s.en ? g.title.en : g.title.ar}</b>
+                  <span className="muted small">{s.en ? g.description.en : g.description.ar}</span>
+                  <span className="small rt">{n === 1 ? s.t('readMin1') : s.t('readMin', { n })}</span>
+                </Link>
+              );
+            })}
+          </div>
+          {guides.length > 4 && <Link className="small" style={{ color: 'var(--primary)', fontWeight: 700 }} href={s.href('/guide')}>{s.t('allGuides')} ({guides.length}) {s.en ? '→' : '←'}</Link>}
         </section>
       )}
       {cfg.acceptsSellers !== false && cfg.tasteFamilies && (
-        <Link className="cta-band" href={`/${cfg.id}/sell`}>
+        <Link className="cta-band" href={s.href(`/sell`)}>
           <b>{s.t('sellWithUs')}</b>
           <span className="small">{s.t('sellWithUsSub')}</span>
           <span className="small" style={{ fontWeight: 700 }}>{s.t('learnMore')} {s.en ? '→' : '←'}</span>

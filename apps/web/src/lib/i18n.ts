@@ -240,6 +240,8 @@ const D = {
   inShort: { ar: 'باختصار', en: 'In short' },
   relatedCoffees: { ar: 'قهوات تناسبك', en: 'Coffees that fit' },
   allGuides: { ar: 'كل الأدلة', en: 'All guides' },
+  readMin: { ar: '⏱ {n} دقايق قراءة', en: '⏱ {n} min read' },
+  readMin1: { ar: '⏱ دقيقة قراءة', en: '⏱ 1 min read' },
   sellWithUs: { ar: 'عندك محمصة؟ اعرض قهوتك هنا', en: 'Own a roastery? Sell your coffee here' },
   sellWithUsSub: { ar: 'إحنا بنجيب العملاء والتوصيل والتحصيل، وإنت بتحمص.', en: 'We bring the customers, delivery and cash collection; you roast.' },
   learnMore: { ar: 'اعرف أكتر', en: 'Learn more' },
@@ -312,7 +314,8 @@ const GOV_EN: Record<string, string> = {
 };
 
 /** Everything a page needs to speak one language. */
-export function speak(lang: Lang, voice: Voice = 'm') {
+/** base: '' on the store's own domain, '/coffee' on localhost; href() builds the store's links with it. */
+export function speak(lang: Lang, voice: Voice = 'm', base = '') {
   const en = lang === 'en';
   const t = (key: Key, vars?: Vars) => {
     const e = D[key] as Entry;
@@ -326,6 +329,7 @@ export function speak(lang: Lang, voice: Voice = 'm') {
   const weekday = (d: Date | string) => new Intl.DateTimeFormat(en ? 'en-GB' : 'ar-EG', { weekday: 'long', timeZone: 'Africa/Cairo' }).format(new Date(d));
   return {
     lang, en, t, egp, date, weekday,
+    base, href: (path = '/') => (path === '/' ? base || '/' : `${base}${path}`),
     dir: (en ? 'ltr' : 'rtl') as 'ltr' | 'rtl',
     gov: (g: string) => (en ? GOV_EN[g] ?? g : g),
     // content: English when the record has it, Arabic otherwise

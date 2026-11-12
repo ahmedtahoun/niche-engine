@@ -26,7 +26,7 @@ export default async function GuidesPage({ params }: P) {
       <p className="muted" style={{ margin: 0 }}>{s.t('guidesSub')}</p>
       <div className="guides">
         {guides.map((g) => (
-          <Link key={g.slug} className="guide-link" href={`/${cfg.id}/guide/${g.slug}`}>
+          <Link key={g.slug} className="guide-link" href={s.href(`/guide/${g.slug}`)}>
             <b>{s.en ? g.title.en : g.title.ar}</b>
             <span className="muted small">{s.en ? g.short.en : g.short.ar}</span>
           </Link>

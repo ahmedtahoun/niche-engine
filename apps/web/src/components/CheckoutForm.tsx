@@ -15,14 +15,15 @@ export function CheckoutForm({ niche, governorates, initialPromo, openBeforePay,
   niche: string; governorates: string[]; initialPromo: string; openBeforePay: boolean; depositAbove: number; deposit: number; eta: Record<string, string>; me: Me | null; wallet: WalletView | null;
 }) {
   const router = useRouter();
-  const { t, egp, gov, date } = useSpeak();
+  const s = useSpeak();
+  const { t, egp, gov, date } = s;
   const [form, setForm] = useState<Form>({ phone: me?.phone ?? '', name: me?.name ?? '', governorate: me?.governorate || governorates[0], area: me?.area ?? '', address: me?.address ?? '', landmark: me?.landmark ?? '', payment: 'cod', promoCode: initialPromo, password: '', useWallet: Boolean(wallet && wallet.balance > 0) });
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [pending, start] = useTransition();
   const { lines, ready, q } = useQuote(niche, form.promoCode, form.useWallet);
   const set = (k: keyof Form) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => setForm({ ...form, [k]: e.target.value });
 
-  if (ready && !lines.length) return <div className="box" style={{ textAlign: 'center' }}><b>{t('cartEmpty')}</b><Link className="btn primary" href={`/${niche}`}>{t('startShopping')}</Link></div>;
+  if (ready && !lines.length) return <div className="box" style={{ textAlign: 'center' }}><b>{t('cartEmpty')}</b><Link className="btn primary" href={s.href()}>{t('startShopping')}</Link></div>;
 
   const submit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -30,7 +31,7 @@ export function CheckoutForm({ niche, governorates, initialPromo, openBeforePay,
       const r = await placeOrder(niche, lines, form);
       if (r.ok) {
         writeCart(niche, []);
-        router.push(`/${niche}/order/${r.id}`);
+        router.push(s.href(`/order/${r.id}`));
       } else setErrors(r.errors as Record<string, string>);
     });
   };

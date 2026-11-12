@@ -101,7 +101,7 @@ export function AddToCart({ niche, slug, price, variants, finder, axes = [], cho
   const add = (go: boolean) => {
     if (!variant) return;
     addLine(niche, { kind: 'item', slug, variant, qty: 1, ...(choices.length ? { choice: Object.fromEntries(choices.map((c) => [c.id, picked[c.id]])) } : {}) });
-    if (go) router.push(`/${niche}/checkout`);
+    if (go) router.push(s.href(`/checkout`));
     else setAdded(true);
   };
   const left = (v?: Variant) => (!v || !v.stock ? t('soldOut') : v.stock <= 3 ? t('left', { n: v.stock }) : t('available'));
@@ -173,7 +173,7 @@ export function AddToCart({ niche, slug, price, variants, finder, axes = [], cho
         {choices.length > 0 && <ChoicePicker niche={niche} choices={choices} picked={picked} setPicked={setPicked} />}
       </section>
       <div className="sticky">
-        {added && <div className="note ok" role="status">{t('added')} <a href={`/${niche}/cart`} style={{ fontWeight: 700 }}>{t('openCart')}</a></div>}
+        {added && <div className="note ok" role="status">{t('added')} <a href={s.href(`/cart`)} style={{ fontWeight: 700 }}>{t('openCart')}</a></div>}
         <div style={{ display: 'flex', gap: 8 }}>
           <button type="button" className="btn ghost" disabled={!variant} onClick={() => add(false)}>{t('toCart')}</button>
           <button type="button" className="btn primary" style={{ flex: 1 }} disabled={!variant} onClick={() => add(true)}>
@@ -204,7 +204,7 @@ export function AddBundle({ niche, id, variants, label, choices = [] }: { niche:
       )}
       {choices.length > 0 && <section style={{ display: 'grid', gap: 12 }}><ChoicePicker niche={niche} choices={choices} picked={picked} setPicked={setPicked} /></section>}
       <div className="sticky">
-        <button type="button" className="btn primary block" disabled={!variant || Boolean(choiceMissing)} onClick={() => { addLine(niche, { kind: 'bundle', id, variant: variant === '-' ? '' : variant, qty: 1, ...(choices.length ? { choice: Object.fromEntries(choices.map((c) => [c.id, picked[c.id]])) } : {}) }); router.push(`/${niche}/cart`); }}>
+        <button type="button" className="btn primary block" disabled={!variant || Boolean(choiceMissing)} onClick={() => { addLine(niche, { kind: 'bundle', id, variant: variant === '-' ? '' : variant, qty: 1, ...(choices.length ? { choice: Object.fromEntries(choices.map((c) => [c.id, picked[c.id]])) } : {}) }); router.push(s.href(`/cart`)); }}>
           {!variant ? s.t('pickX', { x: label }) : choiceMissing ? s.choice(choiceMissing) : s.t('addBundle')}
         </button>
       </div>

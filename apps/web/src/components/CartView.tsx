@@ -39,13 +39,14 @@ export function CartView({ niche, depositAbove, deposit, cashback }: { niche: st
   const [promoInput, setPromoInput] = useState('');
   const [promo, setPromo] = useState('');
   const { lines, setLines, ready, q } = useQuote(niche, promo);
-  const { t, egp } = useSpeak();
+  const s = useSpeak();
+  const { t, egp } = s;
 
   if (!ready) return <div className="muted" aria-busy="true">{t('loading')}</div>;
   if (!lines.length) return (
     <div className="box" style={{ textAlign: 'center', justifyItems: 'center' }}>
       <b>{t('cartEmpty')}</b>
-      <Link className="btn primary" href={`/${niche}`}>{t('startShopping')}</Link>
+      <Link className="btn primary" href={s.href()}>{t('startShopping')}</Link>
     </div>
   );
   const change = (i: number, d: number) => setLines(lines.map((l, j) => (j === i ? { ...l, qty: Math.max(1, Math.min(5, l.qty + d)) } : l)));
@@ -76,7 +77,7 @@ export function CartView({ niche, depositAbove, deposit, cashback }: { niche: st
       {q && <Summary q={q} />}
       {q && cashback > 0 && <div className="note ok">{t('cashbackNote', { x: egp(Math.floor((q.subtotal - q.bundleDiscount - q.promoDiscount) * cashback)) })}</div>}
       {q?.depositRequired && <div className="note warn">{t('depositNote', { above: egp(depositAbove), x: egp(deposit) })}</div>}
-      <Link className="btn primary block" href={`/${niche}/checkout${promo ? `?promo=${encodeURIComponent(promo)}` : ''}`}>{t('continue')}</Link>
+      <Link className="btn primary block" href={s.href(`/checkout${promo ? `?promo=${encodeURIComponent(promo)}` : ''}`)}>{t('continue')}</Link>
     </>
   );
 }

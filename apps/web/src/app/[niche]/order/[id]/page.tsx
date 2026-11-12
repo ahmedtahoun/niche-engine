@@ -30,7 +30,7 @@ export default async function OrderPage({ params }: { params: Promise<{ niche: s
       <main className="page narrow">
         <h1 className="title">{t('order', { id: o.id })}</h1>
         <p className="muted" style={{ margin: 0 }}>{t('ord.signin')}</p>
-        <Link className="btn primary block" href={`/${niche}/account`}>{t('signIn')}</Link>
+        <Link className="btn primary block" href={s.href(`/account`)}>{t('signIn')}</Link>
       </main>
     );
   }

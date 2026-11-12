@@ -421,5 +421,57 @@
       "keyEn": "Type",
       "emoji": "🫘"
     }
+  ],
+  "homeFaq": [
+    {
+      "q": {
+        "ar": "منين أشتري بن مختص أونلاين في مصر؟",
+        "en": "Where can I buy specialty coffee online in Egypt?"
+      },
+      "a": {
+        "ar": "من محمصة القاهرة: قهوات مختصة من محامص مختارة زي بوندز، بلندات وقهوة أحادية المصدر بوزن 250 جم و1 كجم، مع توصيل لكل محافظات مصر والدفع عند الاستلام.",
+        "en": "At Cairo Roast: specialty coffee from selected roasters such as Bonds, blends and single origins in 250 g and 1 kg, delivered across Egypt with cash on delivery."
+      }
+    },
+    {
+      "q": {
+        "ar": "الشحن بكام وبيوصل إمتى؟",
+        "en": "How much is delivery and how long does it take?"
+      },
+      "a": {
+        "ar": "الشحن {shipping} ج لأي محافظة، والطلب بيوصل خلال 2–4 أيام مع بوسطة.",
+        "en": "Delivery is EGP {shipping} to any governorate and arrives in 2–4 days with Bosta."
+      }
+    },
+    {
+      "q": {
+        "ar": "بتطحنوا القهوة؟",
+        "en": "Do you grind the coffee?"
+      },
+      "a": {
+        "ar": "أيوه، اختار طريقة التحضير وإحنا نطحنها بعد طلبك: كنكة، اسبريسو، موكا بوت، فلتر أو فرنش بريس. ولو عندك مطحنة اطلبها حبوب كاملة.",
+        "en": "Yes. Pick how you brew and we grind it after you order: kanaka, espresso, moka pot, filter or French press. Have a grinder? Order whole beans."
+      }
+    },
+    {
+      "q": {
+        "ar": "أبدأ بأنهي قهوة لو أول مرة؟",
+        "en": "Which coffee should I start with?"
+      },
+      "a": {
+        "ar": "لو بتحب القهوة ناعمة أو باللبن ابدأ بنكهات الشوكولاتة والمكسرات، ولو حابب تجرب أكتر من طعم خد صندوق الاكتشاف: 3 قهوات بخصم.",
+        "en": "If you like smooth coffee or drink it with milk, start with chocolate and nut notes. To try several tastes, get the discovery box: three coffees at a discount."
+      }
+    },
+    {
+      "q": {
+        "ar": "الدفع إزاي؟",
+        "en": "How do I pay?"
+      },
+      "a": {
+        "ar": "كاش للمندوب لما الطلب يوصلك. الطلبات اللي فوق {depositAbove} ج بس بيبقى ليها عربون {deposit} ج.",
+        "en": "Cash to the courier when your order arrives. Only orders over EGP {depositAbove} need a EGP {deposit} deposit."
+      }
+    }
   ]
 }

@@ -50,7 +50,7 @@ export default async function AccountPage({ params }: { params: Promise<{ niche:
       <section style={{ display: 'grid', gap: 8 }}>
         <h2 className="h4">{t('acc.orders')}</h2>
         {orders.length ? orders.map((o) => (
-          <Link key={o.id} href={`/${cfg.id}/order/${o.id}`} className="line" style={{ gridTemplateColumns: '1fr auto' }}>
+          <Link key={o.id} href={s.href(`/order/${o.id}`)} className="line" style={{ gridTemplateColumns: '1fr auto' }}>
             <div><b className="small">#{o.id} · {o.quote.lines[0]?.title.split(' · ')[0]}{o.quote.lines.length > 1 ? ` + ${o.quote.lines.length - 1}` : ''}</b><div className="pby">{t(`st.${o.status}` as 'st.confirmed')}</div></div>
             <span className="num small">{egp(o.quote.total)}</span>
           </Link>

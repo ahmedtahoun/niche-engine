@@ -4,15 +4,15 @@ import { useRouter } from 'next/navigation';
 import { createContext, useContext, useMemo, useTransition } from 'react';
 import { LANG_COOKIE, speak, type Lang, type Voice } from '@/lib/i18n';
 
-const Ctx = createContext<{ lang: Lang; voice: Voice }>({ lang: 'ar', voice: 'm' });
+const Ctx = createContext<{ lang: Lang; voice: Voice; base: string }>({ lang: 'ar', voice: 'm', base: '' });
 
-export function LangProvider({ lang, voice, children }: { lang: Lang; voice: Voice; children: React.ReactNode }) {
-  return <Ctx.Provider value={{ lang, voice }}>{children}</Ctx.Provider>;
+export function LangProvider({ lang, voice, base, children }: { lang: Lang; voice: Voice; base: string; children: React.ReactNode }) {
+  return <Ctx.Provider value={{ lang, voice, base }}>{children}</Ctx.Provider>;
 }
 
 export function useSpeak() {
-  const { lang, voice } = useContext(Ctx);
-  return useMemo(() => speak(lang, voice), [lang, voice]);
+  const { lang, voice, base } = useContext(Ctx);
+  return useMemo(() => speak(lang, voice, base), [lang, voice, base]);
 }
 
 /** ع / EN button: saves the choice for a year and re-renders the page in the other language. */

@@ -147,6 +147,8 @@ export interface NicheConfig {
   facts?: { key: string; keyEn: string; emoji: string; emojiBy?: Record<string, string> }[];
   /** 1–5 scales drawn on product pages (coffee: body, acidity), with the words at each end. */
   profileScales?: { id: string; labelAr: string; labelEn?: string; lowAr: string; highAr: string; lowEn?: string; highEn?: string }[];
+  /** Short questions and answers on the home page (also FAQPage data for search engines and AI answers). {shipping}, {deposit} and {depositAbove} become the fees from this config. */
+  homeFaq?: { q: Bilingual; a: Bilingual }[];
   /** Shown on the empty search page. English terms should map to catalog words through searchSynonyms. */
   popularSearches?: { ar: string[]; en?: string[] };
 }

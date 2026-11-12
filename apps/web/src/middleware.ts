@@ -17,6 +17,11 @@ export function middleware(req: NextRequest) {
   if (lang) headers.set('x-lang', lang);
   const route = routeFor({ host: req.headers.get('host') ?? '', pathname, ids: NICHE_IDS, domains: DOMAINS, defaultNiche: process.env.DEFAULT_NICHE });
   let res: NextResponse;
+  if (route.kind === 'redirect') {
+    const url = req.nextUrl.clone();
+    url.pathname = route.path;
+    return NextResponse.redirect(url, 308);
+  }
   if (route.kind === 'next') res = NextResponse.next({ request: { headers } });
   else {
     const url = req.nextUrl.clone();

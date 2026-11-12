@@ -25,7 +25,7 @@ export default async function BundlePage({ params }: { params: Promise<{ niche: 
       <div className="price num"><b style={{ color: 'var(--primary)' }}>{egp(bv.price)}</b><s className="muted">{egp(bv.fullPrice)}</s><span className="muted">{s.t('bundleSave', { x: egp(bv.bundle.discountEgp) })}</span></div>
       <div style={{ display: 'grid', gap: 8 }}>
         {bv.parts.map((pt) => (
-          <Link key={pt.product.slug} href={`/${niche}/p/${pt.product.slug}`} className="line">
+          <Link key={pt.product.slug} href={s.href(`/p/${pt.product.slug}`)} className="line">
             <div className="pimg"><Art kind={pt.product.art} color={pt.product.color} image={pt.product.images?.[0]} alt={pt.product.nameAr} /></div>
             <div><b className="small">{s.product(pt.product)}{pt.qty > 1 ? ` × ${pt.qty}` : ''}</b><div className="pby">{s.t('by', { name: s.seller(cat.sellerOf(pt.product)) })}</div></div>
             <span className="num small">{egp((pt.variant === null ? pt.product.price : priceOf(pt.product, resolveVariant(pt.product, pt.variant))) * pt.qty)}</span>

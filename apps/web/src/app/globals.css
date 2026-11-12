@@ -320,3 +320,17 @@ details p { margin: 6px 0 0; color: var(--muted); }
 .filters input:checked + label .n { background: rgba(255, 255, 255, .22); color: inherit; }
 .filters input:focus-visible + label { outline: 2px solid var(--primary); outline-offset: 2px; }
 .fhint { display: none; margin: -2px 0 0; }
+
+/* Home: FAQ and guide cards */
+.home-faq { display: grid; gap: 0; }
+.home-faq h2 { margin-bottom: 6px; }
+.home-faq details { border-bottom: 1px solid var(--line); padding: 4px 0; }
+.home-faq summary { font-weight: 700; padding: 10px 0; cursor: pointer; }
+.home-faq p { margin: 0 0 10px; color: var(--muted); font-size: 14px; }
+.guide-cards { display: grid; gap: 10px; }
+@media (min-width: 700px) { .guide-cards { grid-template-columns: 1fr 1fr; } }
+.guide-card { display: grid; grid-template-columns: 44px 1fr; column-gap: 12px; row-gap: 3px; align-items: start; padding: 14px; border-radius: 16px; border: 1px solid var(--line); background: var(--surface); }
+.guide-card .ge { grid-row: span 3; width: 44px; height: 44px; border-radius: 12px; display: grid; place-items: center; font-size: 22px; background: var(--primary-soft); }
+.guide-card b { font-size: 15px; line-height: 1.35; }
+.guide-card .muted { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.guide-card .rt { color: var(--primary); font-weight: 700; }

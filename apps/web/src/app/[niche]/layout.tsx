@@ -29,19 +29,19 @@ export default async function NicheLayout({ children, params }: P & { children: 
   const style = { '--primary': cfg.brand.palette.primary, '--base': cfg.brand.palette.base, '--accent': cfg.brand.palette.accent } as React.CSSProperties;
   const tagline = cfg.brand.tagline ? (s.en && cfg.brand.tagline.en) || cfg.brand.tagline.ar : '';
   return (
-    <LangProvider lang={s.lang} voice={voiceOf(cfg)}>
+    <LangProvider lang={s.lang} voice={voiceOf(cfg)} base={s.base}>
       <div className="shell" style={style}>
         {store().kind === 'memory' && <div className="demo" role="note">{s.t('demo')}</div>}
         <header className="head">
-          <Link href={`/${cfg.id}`} className="logo" style={cfg.brand.logo ? { display: 'flex', alignItems: 'center', gap: 10 } : undefined}>
+          <Link href={s.href()} className="logo" style={cfg.brand.logo ? { display: 'flex', alignItems: 'center', gap: 10 } : undefined}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
             {cfg.brand.logo && <img src={cfg.brand.logo} alt="" width={30} height={36} style={{ flex: 'none' }} />}
             <span>{s.brand(cfg)}<small>{tagline}</small></span>
           </Link>
           <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-            {balance > 0 && <Link href={`/${cfg.id}/account`} className="chip" style={{ borderColor: 'var(--accent)' }} aria-label={s.t('wallet')}>{s.egp(balance)}</Link>}
+            {balance > 0 && <Link href={s.href(`/account`)} className="chip" style={{ borderColor: 'var(--accent)' }} aria-label={s.t('wallet')}>{s.egp(balance)}</Link>}
             <LangSwitch />
-            <Link href={`/${cfg.id}/search`} className="iconbtn" aria-label={s.t('nav.search')}>{Icon.search}</Link>
+            <Link href={s.href(`/search`)} className="iconbtn" aria-label={s.t('nav.search')}>{Icon.search}</Link>
           </div>
         </header>
         {children}

@@ -2,6 +2,7 @@
 import { cookies, headers } from 'next/headers';
 import type { NicheConfig } from '@niche-engine/core';
 import { LANG_COOKIE, speak, voiceOf, type Lang } from './i18n.ts';
+import { domainMap } from './site.ts';
 
 export async function getLang(): Promise<Lang> {
   try {
@@ -16,5 +17,15 @@ export async function getLang(): Promise<Lang> {
 
 /** The speaker for a page or server action in this niche. */
 export async function speaker(cfg?: NicheConfig | null) {
-  return speak(await getLang(), cfg ? voiceOf(cfg) : 'm');
+  return speak(await getLang(), cfg ? voiceOf(cfg) : 'm', cfg ? await storeBase(cfg.id) : '');
+}
+
+/** Links start at the domain root on the store's own domain (cairoroast.com/p/x), and with the store id elsewhere (localhost/coffee/p/x). */
+export async function storeBase(id: string): Promise<string> {
+  try {
+    const host = ((await headers()).get('host') ?? '').split(':')[0];
+    return domainMap()[host] === id ? '' : `/${id}`;
+  } catch {
+    return `/${id}`;
+  }
 }

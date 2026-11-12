@@ -42,7 +42,7 @@ export default async function GuidePage({ params }: P) {
     <main className="page narrow">
       <script type="application/ld+json" dangerouslySetInnerHTML={jsonLd(ld)} />
       <article className="article">
-        <Link className="small muted" href={`/${cfg.id}/guide`}>{s.t('guides')}</Link>
+        <Link className="small muted" href={s.href(`/guide`)}>{s.t('guides')}</Link>
         <h1 className="title" style={{ margin: 0 }}>{L(g.title)}</h1>
         <div className="short"><b>{s.t('inShort')}</b>{L(g.short)}</div>
         {g.sections.map((x) => (

@@ -381,3 +381,48 @@ details p { margin: 6px 0 0; color: var(--muted); }
 .freebar.done i b { background: var(--ok); }
 .free { color: var(--ok); }
 .nudge { justify-self: start; border: 1px dashed var(--accent); background: color-mix(in srgb, var(--accent) 10%, transparent); color: inherit; border-radius: 10px; padding: 7px 10px; font: inherit; font-size: 13px; cursor: pointer; text-align: start; }
+
+/* Quick add: card button, sheet, toast, mini cart */
+.cardw { position: relative; display: grid; }
+.cardw > .card { height: 100%; }
+.card.has-qa .pprice { padding-inline-end: 44px; min-height: 34px; display: flex; align-items: center; flex-wrap: wrap; gap: 4px; }
+.qa-btn { position: absolute; bottom: 8px; inset-inline-end: 8px; z-index: 2; height: 34px; min-width: 34px; border-radius: 99px; border: 0; background: var(--primary); color: #fff; display: inline-flex; align-items: center; justify-content: center; gap: 4px; padding: 0 9px; font: inherit; font-weight: 700; font-size: 14px; cursor: pointer; box-shadow: 0 3px 10px rgba(36,22,15,.18); transition: transform .12s ease; }
+.qa-btn span { font-size: 17px; line-height: 1; }
+.qa-btn b { display: none; }
+.qa-btn:hover { transform: scale(1.05); }
+.qa-btn:active { transform: scale(.95); }
+@media (min-width: 700px) { .qa-btn { padding: 0 13px; } .qa-btn b { display: inline; font-weight: 700; } .card.has-qa .pprice { padding-inline-end: 84px; } }
+.qa-layer { position: fixed; inset: 0; z-index: 20; background: rgba(20,12,8,.45); display: grid; align-items: end; animation: qa-fade .18s ease; }
+.qa-sheet { background: var(--surface); border-radius: 20px 20px 0 0; padding: 14px 16px calc(16px + env(safe-area-inset-bottom, 0px)); display: grid; gap: 14px; max-height: 88vh; overflow-y: auto; outline: none; animation: qa-up .22s ease; }
+.qa-head { display: grid; grid-template-columns: 64px 1fr auto; gap: 12px; align-items: center; }
+.qa-head .pimg { width: 64px; height: 64px; border-radius: 12px; overflow: hidden; background: var(--surface-2); }
+.qa-head .pimg img, .qa-head .pimg svg { width: 100%; height: 100%; object-fit: cover; }
+.qa-x { width: 34px; height: 34px; border-radius: 50%; border: 1px solid var(--line); background: var(--surface-2); font-size: 20px; line-height: 1; cursor: pointer; color: inherit; align-self: start; }
+.qa-sheet .h4 { margin: 0; }
+.qa-actions { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; position: sticky; bottom: -16px; background: var(--surface); padding: 10px 0 2px; }
+.qa-more { flex-basis: 100%; text-align: center; color: var(--muted); font-weight: 600; }
+.qty.big { flex: none; height: 46px; border: 1px solid var(--line); border-radius: 12px; padding: 0 4px; display: inline-grid; grid-template-columns: 36px minmax(26px, auto) 36px; align-items: center; gap: 4px; min-width: 118px; }
+.qty.big button { flex: none; width: 36px; height: 36px; font-size: 20px; }
+.qty.big button:disabled { opacity: .35; }
+.qty.big .num { min-width: 22px; text-align: center; font-weight: 700; }
+@media (min-width: 700px) {
+  .qa-layer { align-items: center; justify-items: center; padding: 24px; }
+  .qa-sheet { width: min(460px, 100%); border-radius: 20px; animation: qa-pop .18s ease; }
+}
+@keyframes qa-fade { from { opacity: 0; } }
+@keyframes qa-up { from { transform: translateY(40px); opacity: .4; } }
+@keyframes qa-pop { from { transform: scale(.96); opacity: 0; } }
+.qa-toast { position: fixed; z-index: 21; left: 50%; transform: translateX(-50%); bottom: 150px; background: #1f1712; color: #fff; padding: 10px 16px; border-radius: 99px; font-weight: 700; font-size: 14px; box-shadow: 0 8px 24px rgba(0,0,0,.25); animation: qa-up .2s ease; }
+.minicart { position: sticky; bottom: 58px; z-index: 5; margin: 12px -16px 0; background: var(--surface); border-top: 1px solid var(--line); box-shadow: 0 -6px 18px rgba(36,22,15,.07); padding: 10px 16px; display: flex; gap: 10px; align-items: center; }
+.minicart .mc-sum { flex: 1; display: grid; gap: 3px; color: inherit; min-width: 0; }
+.minicart .mc-sum b { font-size: 14.5px; }
+.minicart .mc-sum small { font-size: 12px; color: var(--muted); font-weight: 600; }
+.minicart .mc-sum i { display: block; height: 5px; border-radius: 99px; background: var(--line); overflow: hidden; }
+.minicart .mc-sum i em { display: block; height: 100%; background: var(--accent); border-radius: inherit; transition: width .3s; }
+.minicart .btn { white-space: nowrap; }
+.minicart.bump { animation: mc-bump .45s ease; }
+@keyframes mc-bump { 30% { transform: translateY(-4px); } }
+@media (min-width: 900px) { .minicart { max-width: 600px; margin: 16px auto 0; border: 1px solid var(--line); border-radius: 14px; bottom: 66px; } .qa-toast { bottom: 150px; } }
+.shell:has(.minicart) .wa-fab { bottom: 150px; }
+@media (min-width: 900px) { .shell:has(.minicart) .wa-fab { bottom: 24px; } }
+@media (prefers-reduced-motion: reduce) { .qa-layer, .qa-sheet, .qa-toast, .minicart.bump { animation: none; } }

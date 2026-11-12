@@ -5,6 +5,7 @@ import { notFound } from 'next/navigation';
 import { BundleArt, TrustIcon } from '@/components/Art';
 import { Footer } from '@/components/Footer';
 import { ProductCard } from '@/components/ProductCard';
+import { MiniCart, QuickAddSheet } from '@/components/QuickAdd';
 import { catalog } from '@/lib/catalog';
 import { guidesFor, readMinutes } from '@/lib/guides';
 import { speaker } from '@/lib/lang';
@@ -110,7 +111,7 @@ export default async function Home({ params }: P) {
             ))}
           </div>
           {filters.filter((f) => f.hint).map((f) => <p key={f.id} className="fhint muted small" data-for={f.id}>{f.emoji} {f.hint}</p>)}
-          <div className="grid">{products.map((p) => <ProductCard key={p.id} p={p} seller={cat.sellerOf(p)} s={s} tags={[p.profile?.family, p.category].filter(Boolean).join(' ')} />)}</div>
+          <div className="grid">{products.map((p) => <ProductCard key={p.id} p={p} seller={cat.sellerOf(p)} s={s} quick tags={[p.profile?.family, p.category].filter(Boolean).join(' ')} />)}</div>
         </section>
       ) : products.length ? (
         <>
@@ -118,7 +119,7 @@ export default async function Home({ params }: P) {
             {cfg.categories.map((c) => <Link key={c.id} className="chip" href={s.href(`/search?cat=${c.id}`)}>{s.category(c)}</Link>)}
           </nav>
           <h2 className="sec" id="coffees">{text(cfg.homeSection)}</h2>
-          <div className="grid">{products.map((p) => <ProductCard key={p.id} p={p} seller={cat.sellerOf(p)} s={s} />)}</div>
+          <div className="grid">{products.map((p) => <ProductCard key={p.id} p={p} seller={cat.sellerOf(p)} s={s} quick />)}</div>
         </>
       ) : (
         <section className="box soon">
@@ -187,6 +188,8 @@ export default async function Home({ params }: P) {
         </Link>
       )}
       <Footer cfg={cfg} s={s} />
+      {products.length > 0 && <MiniCart niche={cfg.id} freeOver={cfg.freeShippingOverEgp} />}
+      {products.length > 0 && <QuickAddSheet niche={cfg.id} axes={cfg.optionAxes ?? []} freeOver={cfg.freeShippingOverEgp} />}
     </main>
   );
 }

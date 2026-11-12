@@ -75,7 +75,7 @@ function useAxes(variants: Variant[], axes: OptionAxis[]) {
   return { values, sel, setSel, chosen, ok, missing };
 }
 
-export function AddToCart({ niche, slug, price, variants, finder, axes = [], choices = [], freeOver }: { niche: string; slug: string; price: number; variants: Variant[]; finder: 'size' | null; axes?: OptionAxis[]; choices?: Choice[]; freeOver?: number }) {
+export function AddToCart({ niche, slug, price, variants, finder, axes = [], choices = [], freeOver, onAdded, detailsHref }: { niche: string; slug: string; price: number; variants: Variant[]; finder: 'size' | null; axes?: OptionAxis[]; choices?: Choice[]; freeOver?: number; /** Quick-add sheet: a quantity stepper and one add button; called after adding. */ onAdded?: () => void; detailsHref?: string }) {
   const router = useRouter();
   const s = useSpeak();
   const t = s.t;
@@ -99,10 +99,12 @@ export function AddToCart({ niche, slug, price, variants, finder, axes = [], cho
   const shown = chosen?.price ?? price;
   const [added, setAdded] = useState(false);
   const pick = (sz: string) => { if (twoStep) setSize(sz); else if (variants.some((x) => x.label === sz && x.stock > 0)) setPlain(sz); };
+  const [qty, setQty] = useState(1);
   const add = (go: boolean) => {
     if (!variant) return;
-    addLine(niche, { kind: 'item', slug, variant, qty: 1, ...(choices.length ? { choice: Object.fromEntries(choices.map((c) => [c.id, picked[c.id]])) } : {}) });
-    if (go) router.push(s.href(`/checkout`));
+    addLine(niche, { kind: 'item', slug, variant, qty: onAdded ? qty : 1, ...(choices.length ? { choice: Object.fromEntries(choices.map((c) => [c.id, picked[c.id]])) } : {}) });
+    if (onAdded) onAdded();
+    else if (go) router.push(s.href(`/checkout`));
     else setAdded(true);
   };
   const left = (v?: Variant) => (!v || !v.stock ? t('soldOut') : v.stock <= 3 ? t('left', { n: v.stock }) : t('available'));
@@ -185,6 +187,19 @@ export function AddToCart({ niche, slug, price, variants, finder, axes = [], cho
         )}
         {choices.length > 0 && <ChoicePicker niche={niche} choices={choices} picked={picked} setPicked={setPicked} />}
       </section>
+      {onAdded ? (
+        <div className="qa-actions">
+          <div className="qty big" aria-label={t('qty')}>
+            <button type="button" aria-label={t('less')} disabled={qty <= 1} onClick={() => setQty(Math.max(1, qty - 1))}>−</button>
+            <span className="num">{qty}</span>
+            <button type="button" aria-label={t('more')} disabled={qty >= 5} onClick={() => setQty(Math.min(5, qty + 1))}>+</button>
+          </div>
+          <button type="button" className="btn primary" style={{ flex: 1 }} disabled={!variant} onClick={() => add(false)}>
+            {variant ? t('qa.addTo', { price: s.egp(shown * qty) }) : missing}
+          </button>
+          {detailsHref && <a className="qa-more small" href={detailsHref}>{t('qa.details')}</a>}
+        </div>
+      ) : (
       <div className="sticky">
         {added && <div className="note ok" role="status">{t('added')} <a href={s.href(`/cart`)} style={{ fontWeight: 700 }}>{t('openCart')}</a></div>}
         <div style={{ display: 'flex', gap: 8 }}>
@@ -195,6 +210,7 @@ export function AddToCart({ niche, slug, price, variants, finder, axes = [], cho
         </div>
         <span className="muted" style={{ textAlign: 'center' }}>{t('stickyNote')}</span>
       </div>
+      )}
     </>
   );
 }

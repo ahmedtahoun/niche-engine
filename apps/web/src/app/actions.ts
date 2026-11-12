@@ -4,7 +4,7 @@ import { normalizeEgyptPhone } from '@niche-engine/core';
 import { catalog, publicQuote } from '@/lib/catalog';
 import { getNiche } from '@/lib/niches';
 import { applyStatus, draftOrder, findDuplicate, getOrder, mutateOrder, ordersFor } from '@/lib/orders';
-import { accountByPhone, createAccount, MIN_PASSWORD, saveAddress, signIn } from '@/lib/customers';
+import { accountByPhone, createAccount, ensureCustomer, hasPassword, MIN_PASSWORD, saveAddress, signIn } from '@/lib/customers';
 import { takeStock } from '@/lib/stock';
 import { currentCustomer, endSession, isGuestOrder, rememberGuestOrder, startSession } from '@/lib/current-customer';
 import { moveOrderTo } from '@/lib/fulfillment';
@@ -64,7 +64,7 @@ export async function placeOrder(niche: string, cart: CartLine[], form: Checkout
   else if (await isBlocked(phone)) errors.phone = s.t('err.blocked');
   else if (!me && form.password) {
     // A password is optional: with one we sign in (or create the account); without one it's a guest order.
-    existing = Boolean(await accountByPhone(phone));
+    existing = hasPassword(await accountByPhone(phone));
     if (existing) {
       const r = await signIn(phone, form.password);
       if (r !== 'ok') errors.password = passwordError(s, r);
@@ -100,6 +100,7 @@ export async function placeOrder(niche: string, cart: CartLine[], form: Checkout
   }
   // A guest order never changes a saved account (someone could type another person's phone).
   if (!guest) await saveAddress(phone!, details);
+  else await ensureCustomer(phone!, details);
   if (!me && !guest) await startSession(phone!);
 
   const cat = await catalog();

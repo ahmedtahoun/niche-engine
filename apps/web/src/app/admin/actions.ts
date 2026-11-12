@@ -7,6 +7,7 @@ import { revalidatePath } from 'next/cache';
 import { adminChats, approveProduct, approveSeller, notifyOrder } from '@/bot/engine';
 import { deliver } from '@/bot/transport';
 import { checkPassword, COOKIE, isAdmin } from '@/lib/admin-auth';
+import { ensureCustomer } from '@/lib/customers';
 import { unblock } from '@/lib/blocklist';
 import { catalog, deleteProduct, deleteSeller, saveProduct, saveSeller } from '@/lib/catalog';
 import { store } from '@/lib/store';
@@ -331,6 +332,7 @@ export async function createManualOrder(input: ManualOrderInput): Promise<Manual
   q.depositRequired = false;
 
   const details = { name: c.name.trim().slice(0, 80), governorate: c.governorate, area: c.area.trim().slice(0, 80), address: c.address.trim().slice(0, 200), landmark: (c.landmark ?? '').trim().slice(0, 120) };
+  await ensureCustomer(phone, details);
   const order = await store().createOrder(draftOrder({
     niche: input.niche, status: 'confirmed', type: previous.length ? 'repeat' : 'new', payment: input.payment === 'instapay' ? 'instapay' : 'cod',
     customer: { ...details, phone }, cart: lines, quote: q, source: input.source,

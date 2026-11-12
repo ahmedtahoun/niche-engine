@@ -48,7 +48,7 @@ export const rowToOrder = (r: OrderRow): Order => ({
 export const itemRows = (o: Pick<Order, 'items'>) => o.items.map((i) => ({ seller_id: i.sellerId, product_id: i.productId, name: i.name, variant: i.variant, qty: i.qty, unit_price: i.unitPrice }));
 
 export interface CustomerRow { phone: string; name: string; governorate: string; area: string; address: string; landmark: string; password_hash: string | null; created_at: string }
-export const accountToRow = (a: Account): CustomerRow => ({ phone: a.phone, name: a.name, password_hash: a.passwordHash, governorate: a.governorate, area: a.area, address: a.address, landmark: a.landmark, created_at: a.createdAt });
+export const accountToRow = (a: Account): CustomerRow => ({ phone: a.phone, name: a.name, password_hash: a.passwordHash || null, governorate: a.governorate, area: a.area, address: a.address, landmark: a.landmark, created_at: a.createdAt });
 export const rowToAccount = (r: CustomerRow): Account => ({ phone: r.phone, name: r.name, passwordHash: r.password_hash ?? '', governorate: r.governorate, area: r.area, address: r.address, landmark: r.landmark, createdAt: new Date(r.created_at).toISOString() });
 export const accountPatchToRow = (p: Partial<Account>) => ({
   ...(p.name !== undefined ? { name: p.name } : {}), ...(p.passwordHash !== undefined ? { password_hash: p.passwordHash } : {}),

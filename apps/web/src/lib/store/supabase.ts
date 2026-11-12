@@ -82,7 +82,8 @@ export class SupabaseStore implements Store {
   // ---------- customers ----------
   async getAccount(phone: string): Promise<Account | null> {
     const rows = await req<CustomerRow[]>(`customers?select=*&phone=eq.${v(phone)}`);
-    return rows[0]?.password_hash ? rowToAccount(rows[0]) : null;
+    // Records without a password (guest and admin orders) come back too; hasPassword() tells them apart.
+    return rows[0] ? rowToAccount(rows[0]) : null;
   }
   createAccount(a: Account) { return insertOnce('customers', accountToRow(a)); }
   async updateAccount(phone: string, patch: Partial<Account>) {

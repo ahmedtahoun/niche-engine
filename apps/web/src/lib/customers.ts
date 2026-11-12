@@ -36,11 +36,28 @@ export async function verifyPassword(password: string, stored: string): Promise<
 
 export const accountByPhone = (phone: string) => store().getAccount(phone);
 
-/** Throws 'exists' if the phone already has an account. */
+/** A real account has a password; a record without one was made by a guest or admin order. */
+export const hasPassword = (a: Account | null | undefined) => Boolean(a?.passwordHash);
+
+/**
+ * Every order points at a customer record (the database requires it). Guest checkout and orders
+ * typed in the admin create a record without a password when the phone has none yet.
+ * It never changes an existing record: someone could type another person's phone.
+ */
+export async function ensureCustomer(phone: string, d: Pick<Account, 'name' | 'governorate' | 'area' | 'address' | 'landmark'>) {
+  if (await store().getAccount(phone)) return;
+  await store().createAccount({ phone, ...d, passwordHash: '', createdAt: new Date().toISOString() });
+}
+
+/** Throws 'exists' if the phone already has an account with a password. A record without a password becomes the account. */
 export async function createAccount(phone: string, name: string, password: string): Promise<Account> {
-  const a: Account = { phone, name, passwordHash: await hashPassword(password), governorate: '', area: '', address: '', landmark: '', createdAt: new Date().toISOString() };
-  if (!(await store().createAccount(a))) throw new Error('exists');
-  return a;
+  const passwordHash = await hashPassword(password);
+  const a: Account = { phone, name, passwordHash, governorate: '', area: '', address: '', landmark: '', createdAt: new Date().toISOString() };
+  if (await store().createAccount(a)) return a;
+  const old = await store().getAccount(phone);
+  if (!old || hasPassword(old)) throw new Error('exists');
+  await store().updateAccount(phone, { name, passwordHash });
+  return { ...old, name, passwordHash };
 }
 
 export async function saveAddress(phone: string, d: Pick<Account, 'name' | 'governorate' | 'area' | 'address' | 'landmark'>) {
@@ -57,7 +74,7 @@ export async function tooManyAttempts(phone: string): Promise<boolean> {
 export async function signIn(phone: string, password: string): Promise<'ok' | 'no_account' | 'wrong' | 'locked'> {
   if (await tooManyAttempts(phone)) return 'locked';
   const a = await store().getAccount(phone);
-  if (!a) return 'no_account';
+  if (!a || !hasPassword(a)) return 'no_account';
   if (!(await verifyPassword(password, a.passwordHash))) { await store().addAuthFailure(phone); return 'wrong'; }
   await store().clearAuthFailures(phone);
   return 'ok';

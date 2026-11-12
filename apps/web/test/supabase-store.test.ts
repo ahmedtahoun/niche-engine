@@ -19,7 +19,7 @@ const { applyTracking, settleShipments } = await import('../src/lib/fulfillment.
 const { orderById } = await import('../src/lib/orders.ts');
 const { walletOf, adjust } = await import('../src/lib/wallet.ts');
 const { recordRefusal, isBlocked, blockedList } = await import('../src/lib/blocklist.ts');
-const { createAccount, signIn, saveAddress, accountByPhone } = await import('../src/lib/customers.ts');
+const { createAccount, signIn, saveAddress, accountByPhone, ensureCustomer, hasPassword } = await import('../src/lib/customers.ts');
 const { markPaid } = await import('../src/lib/payouts.ts');
 const { makeOrder, CUSTOMER } = await import('./helpers.ts');
 
@@ -169,4 +169,25 @@ test('sellers: one with no products or orders can be deleted; the database refus
   assert.equal((await s.listSellers()).some((x) => x.id === 'tmp-seller'), false, 'gone');
   await assert.rejects(() => s.deleteSeller(SELLERS[0].id), 'products and orders keep their seller');
   assert.ok((await s.listSellers()).some((x) => x.id === SELLERS[0].id));
+});
+
+test('guest and admin orders: a phone without an account gets a customer record first, which later becomes the account', async () => {
+  const phone = '01198765432';
+  // Without a customer record the database refuses the order (this is what crashed WhatsApp orders).
+  await assert.rejects(makeOrder({ phone }));
+  await ensureCustomer(phone, { name: 'ضيف', governorate: 'الجيزة', area: 'الدقي', address: '5 شارع التحرير', landmark: '' });
+  const o = await makeOrder({ phone });
+  assert.equal(o.customer.phone, phone);
+  const rec = await accountByPhone(phone);
+  assert.equal(hasPassword(rec), false);
+  const row = await fake.db.query<{ p: string | null }>('select password_hash as p from customers where phone = $1', [phone]);
+  assert.equal(row.rows[0].p, null, 'no password is stored as null');
+  assert.equal(await signIn(phone, 'anything'), 'no_account', 'nobody can sign in to a record without a password');
+  // A second guest order keeps the first record untouched.
+  await ensureCustomer(phone, { name: 'someone else', governorate: 'القاهرة', area: 'x', address: 'yyyyy', landmark: '' });
+  assert.equal((await accountByPhone(phone))?.name, 'ضيف');
+  // Choosing a password later turns the record into the account; a second sign-up is refused.
+  await createAccount(phone, 'ضيف', 'secret12');
+  assert.equal(await signIn(phone, 'secret12'), 'ok');
+  await assert.rejects(createAccount(phone, 'x', 'other123'));
 });

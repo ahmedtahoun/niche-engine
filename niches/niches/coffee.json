@@ -64,6 +64,7 @@
     "days": 30
   },
   "shippingEgp": 100,
+  "freeShippingOverEgp": 1500,
   "risk": {
     "depositAboveEgp": 1500,
     "depositEgp": 100,
@@ -441,8 +442,8 @@
         "en": "How much is delivery and how long does it take?"
       },
       "a": {
-        "ar": "الشحن {shipping} ج لأي محافظة، والطلب بيوصل خلال 2–4 أيام مع بوسطة.",
-        "en": "Delivery is EGP {shipping} to any governorate and arrives in 2–4 days with Bosta."
+        "ar": "الشحن {shipping} ج لأي محافظة، ومجاني للطلبات من {freeOver} ج. الطلب بيوصل خلال 2–4 أيام مع بوسطة.",
+        "en": "Delivery is EGP {shipping} to any governorate, free on orders from EGP {freeOver}. It arrives in 2–4 days with Bosta."
       }
     },
     {

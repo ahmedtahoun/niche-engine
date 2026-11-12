@@ -14,8 +14,8 @@
       "accent": "#C8963E"
     },
     "tagline": {
-      "ar": "قهوة مختصة طازة",
-      "en": "Fresh specialty coffee"
+      "ar": "قهوة مختصة طازة ☕",
+      "en": "Fresh specialty coffee ☕"
     },
     "ogImage": "/brands/coffee/og.png",
     "description": {
@@ -129,12 +129,12 @@
   ],
   "reorderTrigger": "2 days before the bag runs out: weight_g / (cups_per_day * 15 g)",
   "homeEyebrow": {
-    "ar": "جرّب 3 قهوات بسعر أقل",
-    "en": "Try 3 coffees for less"
+    "ar": "🎁 أول مرة؟ ابدأ من هنا",
+    "en": "🎁 First time? Start here"
   },
   "homeSection": {
-    "ar": "قهوات بوندز",
-    "en": "Bonds coffees"
+    "ar": "قهوات بوندز ☕",
+    "en": "Bonds coffees ☕"
   },
   "popularSearches": {
     "ar": [
@@ -156,21 +156,24 @@
       "labelAr": "شوكولاتة ومكسرات",
       "labelEn": "Chocolate & nuts",
       "hintAr": "ناعمة ومريحة، حلوة سادة أو باللبن",
-      "hintEn": "Smooth and comforting, lovely black or with milk"
+      "hintEn": "Smooth and comforting, lovely black or with milk",
+      "emoji": "🍫"
     },
     {
       "id": "caramel",
       "labelAr": "كراميل وحلاوة",
       "labelEn": "Caramel & sweet",
       "hintAr": "حلاوة طبيعية زي التوفي والقيقب",
-      "hintEn": "Natural sweetness like toffee and maple"
+      "hintEn": "Natural sweetness like toffee and maple",
+      "emoji": "🍯"
     },
     {
       "id": "fruity",
       "labelAr": "فواكه وشاي",
       "labelEn": "Fruity & tea-like",
       "hintAr": "أخف وأكثر تعقيد، لمسة برتقال وشاي",
-      "hintEn": "Lighter and more complex, hints of orange and tea"
+      "hintEn": "Lighter and more complex, hints of orange and tea",
+      "emoji": "🍊"
     }
   ],
   "profileScales": [
@@ -193,21 +196,112 @@
       "highEn": "Bright"
     }
   ],
-  "trust": [
+  "trust": [],
+  "hero": {
+    "title": {
+      "ar": "قهوة مختصة من المحمصة لباب بيتك ☕",
+      "en": "Specialty coffee, from the roastery to your door ☕"
+    },
+    "subtitle": {
+      "ar": "حبوب كاملة من بوندز: بلندات وقهوة أحادية المصدر من إثيوبيا والبرازيل وكولومبيا. اختار على ذوقك وادفع عند الاستلام.",
+      "en": "Whole beans from Bonds: blends and single origins from Ethiopia, Brazil and Colombia. Pick by taste and pay on delivery."
+    },
+    "cta": {
+      "ar": "اختار قهوتك",
+      "en": "Find your coffee"
+    },
+    "badges": [
+      {
+        "ar": "✅ أصلية ومقفولة",
+        "en": "✅ Original & sealed"
+      },
+      {
+        "ar": "💵 الدفع عند الاستلام",
+        "en": "💵 Cash on delivery"
+      },
+      {
+        "ar": "🚚 لكل مصر",
+        "en": "🚚 All of Egypt"
+      }
+    ],
+    "images": [
+      "/products/coffee/chrome.webp",
+      "/products/coffee/ethiopia-guji.webp",
+      "/products/coffee/amber.webp"
+    ]
+  },
+  "steps": [
     {
-      "icon": "seal",
-      "ar": "أصلية ومقفولة من المحمصة",
-      "en": "Original, sealed from the roastery"
+      "emoji": "☕",
+      "ar": "اختار قهوتك",
+      "en": "Pick your coffee",
+      "text": {
+        "ar": "على ذوقك: شوكولاتة، فواكه أو مكسرات",
+        "en": "By taste: chocolate, fruity or nutty"
+      }
     },
     {
-      "icon": "cash",
-      "ar": "الدفع عند الاستلام",
-      "en": "Cash on delivery"
+      "emoji": "📲",
+      "ar": "اطلب في دقيقة",
+      "en": "Order in a minute",
+      "text": {
+        "ar": "برقم موبايلك، من غير تسجيل طويل",
+        "en": "With your phone number, no long sign-up"
+      }
     },
     {
-      "icon": "truck",
-      "ar": "توصيل 2–4 أيام لكل مصر",
-      "en": "2–4 day delivery across Egypt"
+      "emoji": "🚚",
+      "ar": "بتوصلك في 2–4 أيام",
+      "en": "Arrives in 2–4 days",
+      "text": {
+        "ar": "لكل محافظات مصر مع بوسطة",
+        "en": "To every governorate with Bosta"
+      }
+    },
+    {
+      "emoji": "💵",
+      "ar": "ادفع عند الاستلام",
+      "en": "Pay on delivery",
+      "text": {
+        "ar": "كاش للمندوب لما القهوة توصل",
+        "en": "Cash to the courier when it arrives"
+      }
     }
-  ]
+  ],
+  "noteEmoji": {
+    "شوكولاتة": "🍫",
+    "chocolate": "🍫",
+    "كاكاو": "🍫",
+    "cocoa": "🍫",
+    "كراميل": "🍮",
+    "caramel": "🍮",
+    "توفي": "🍬",
+    "toffee": "🍬",
+    "عسل": "🍯",
+    "molasses": "🍯",
+    "قصب": "🎋",
+    "sugar cane": "🎋",
+    "سكر": "🍬",
+    "sugar": "🍬",
+    "بندق": "🌰",
+    "hazelnut": "🌰",
+    "عين جمل": "🌰",
+    "walnut": "🌰",
+    "مكسرات": "🥜",
+    "nuts": "🥜",
+    "توت": "🫐",
+    "berries": "🫐",
+    "زهر البرتقال": "🌼",
+    "orange blossom": "🌼",
+    "زهور": "🌸",
+    "floral": "🌸",
+    "مشمش": "🍑",
+    "apricot": "🍑",
+    "برتقال": "🍊",
+    "orange": "🍊",
+    "شاي": "🍵",
+    "tea": "🍵",
+    "قيقب": "🍁",
+    "maple": "🍁"
+  }
 }

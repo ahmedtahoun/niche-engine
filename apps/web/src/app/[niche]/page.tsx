@@ -38,7 +38,45 @@ export default async function Home({ params }: P) {
   return (
     <main className="page">
       <script type="application/ld+json" dangerouslySetInnerHTML={jsonLd(structured)} />
-      {hero && (
+      {cfg.hero && (
+        <section className="photo-hero">
+          <div className="ph-text">
+            <h1>{text(cfg.hero.title)}</h1>
+            <p>{text(cfg.hero.subtitle)}</p>
+            <div className="ph-cta">
+              <a className="btn" href="#coffees">{text(cfg.hero.cta)}</a>
+              {hero && <Link className="btn ghost-light" href={`/${cfg.id}/b/${hero.bundle.id}`}>🎁 {s.bundle(hero.bundle).split(':')[0]}</Link>}
+            </div>
+            {cfg.hero.badges?.length ? <div className="ph-badges">{cfg.hero.badges.map((b) => <span key={b.ar}>{text(b)}</span>)}</div> : null}
+          </div>
+          <div className="ph-stack" aria-hidden="true">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            {cfg.hero.images.slice(0, 3).map((src, i) => <img key={src} src={src} alt="" className={`s${i}`} decoding="async" fetchPriority={i === 0 ? 'high' : 'auto'} />)}
+          </div>
+        </section>
+      )}
+      {cfg.steps?.length ? (
+        <section className="steps" aria-label={s.en ? 'How it works' : 'إزاي بتطلب'}>
+          <h2 className="sec">{s.en ? 'How it works' : 'إزاي بتطلب؟'}</h2>
+          <ol>
+            {cfg.steps.map((st, i) => (
+              <li key={st.ar}><span className="em" aria-hidden="true">{st.emoji}</span><span className="n">{i + 1}</span><b>{text(st)}</b><span className="muted">{text(st.text)}</span></li>
+            ))}
+          </ol>
+        </section>
+      ) : null}
+      {hero && cfg.hero && (
+        <Link className="box-card" href={`/${cfg.id}/b/${hero.bundle.id}`}>
+          <div className="art"><BundleArt parts={hero.parts.map((p) => p.product)} /></div>
+          <div>
+            <span className="small">{text(cfg.homeEyebrow)}</span>
+            <b>{s.bundle(hero.bundle)}</b>
+            <span className="small muted">{hero.parts.map((p) => s.product(p.product).split(' — ')[0]).join(' + ')}</span>
+            <div className="price num"><b>{s.egp(hero.price)}</b><s>{s.egp(hero.fullPrice)}</s><span className="save">{s.t('bundleSave', { x: s.egp(hero.bundle.discountEgp) })}</span></div>
+          </div>
+        </Link>
+      )}
+      {hero && !cfg.hero && (
         <section className="hero">
           <div className="art"><BundleArt parts={hero.parts.map((p) => p.product)} /></div>
           <div>
@@ -50,7 +88,7 @@ export default async function Home({ params }: P) {
           </div>
         </section>
       )}
-      {cfg.trust?.length ? (
+      {cfg.steps?.length ? null : cfg.trust?.length ? (
         <ul className="trustbar">{cfg.trust.map((x) => <li key={x.ar}><span className="ti" aria-hidden="true">{TrustIcon[x.icon ?? 'seal']}</span>{text(x)}</li>)}</ul>
       ) : (
         <div className="how">
@@ -65,7 +103,7 @@ export default async function Home({ params }: P) {
           <div className="families">
             {families.map((f) => (
               <Link key={f.id} className="family" href={`/${cfg.id}/search?family=${f.id}`}>
-                <b>{(s.en && f.labelEn) || f.labelAr}</b>
+                <b>{f.emoji ? <span className="fe" aria-hidden="true">{f.emoji}</span> : null}{(s.en && f.labelEn) || f.labelAr}</b>
                 {f.hintAr && <span className="muted">{(s.en && f.hintEn) || f.hintAr}</span>}
                 <span className="go" aria-hidden="true">←</span>
               </Link>
@@ -78,7 +116,7 @@ export default async function Home({ params }: P) {
           <nav className="chips" aria-label={s.t('categories')}>
             {cfg.categories.map((c) => <Link key={c.id} className="chip" href={`/${cfg.id}/search?cat=${c.id}`}>{s.category(c)}</Link>)}
           </nav>
-          <h2 className="sec">{text(cfg.homeSection)}</h2>
+          <h2 className="sec" id="coffees">{text(cfg.homeSection)}</h2>
           <div className="grid">{products.map((p) => <ProductCard key={p.id} p={p} seller={cat.sellerOf(p)} s={s} />)}</div>
         </>
       ) : (

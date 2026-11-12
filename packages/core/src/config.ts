@@ -128,13 +128,19 @@ export interface NicheConfig {
   acceptsSellers?: boolean;
   /** Arabic voice: "f" speaks to women (اختاري), default speaks to everyone (اختار). */
   voice?: 'f' | 'm';
+  /** Photo hero at the top of the home page (otherwise the first bundle is the hero). */
+  hero?: { title: Bilingual; subtitle: Bilingual; cta: Bilingual; badges?: Bilingual[]; images: string[] };
+  /** "How it works" steps on the home page, each with an emoji. */
+  steps?: (Bilingual & { emoji: string; text: Bilingual })[];
+  /** Emoji shown before tasting notes that contain a word (Arabic or English), e.g. { "شوكولاتة": "🍫" }. */
+  noteEmoji?: Record<string, string>;
   /** Short trust promises shown on the home page (only true ones). */
   trust?: (Bilingual & { icon?: 'seal' | 'cash' | 'truck' | 'return' | 'star' })[];
   /** Small text on the home page: above the hero, and the products heading. */
   homeEyebrow?: Bilingual;
   homeSection?: Bilingual;
   /** Taste families customers shop by (coffee: "chocolate and nuts", "fruity"...). Products point to one. */
-  tasteFamilies?: { id: string; labelAr: string; labelEn?: string; hintAr?: string; hintEn?: string }[];
+  tasteFamilies?: { id: string; labelAr: string; labelEn?: string; hintAr?: string; hintEn?: string; emoji?: string }[];
   /** 1–5 scales drawn on product pages (coffee: body, acidity), with the words at each end. */
   profileScales?: { id: string; labelAr: string; labelEn?: string; lowAr: string; highAr: string; lowEn?: string; highEn?: string }[];
   /** Shown on the empty search page. English terms should map to catalog words through searchSynonyms. */

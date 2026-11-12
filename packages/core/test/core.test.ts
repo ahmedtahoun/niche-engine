@@ -108,22 +108,22 @@ test('free shipping: goods at or over the line ship free and the platform pays t
   const line = (unitPrice: number, qty = 1) => ({ sellerId: 'bonds', unitPrice, qty });
   const base = { bundleDiscount: 0, walletBalance: 0, useWallet: false, isFirstOrder: true };
   const under = cartTotals({ ...base, lines: [line(1499)] }, coffee);
-  assert.equal(under.shipping, 100);
+  assert.equal(under.shipping, coffee.shippingEgp);
   assert.equal(under.shippingWaived, 0);
   assert.equal(toFreeShipping(1499, coffee), 1);
   const at = cartTotals({ ...base, lines: [line(750, 2)] }, coffee);
   assert.equal(at.shipping, 0);
-  assert.equal(at.shippingWaived, 100);
+  assert.equal(at.shippingWaived, coffee.shippingEgp);
   assert.equal(at.total, 1500);
   assert.equal(toFreeShipping(1500, coffee), null);
   // Bundle discounts count: 1,540 of goods with a 60 bundle discount is under the line.
   const bundle = cartTotals({ ...base, lines: [line(1540)], bundleDiscount: 60 }, coffee);
-  assert.equal(bundle.shipping, 100);
+  assert.equal(bundle.shipping, coffee.shippingEgp);
   // A niche without a line always charges shipping.
   const umrah = load('umrah');
   assert.equal(cartTotals({ ...base, lines: [line(5000)] }, umrah).shippingWaived, 0);
   assert.equal(toFreeShipping(10, umrah), null);
   // The waived fee is a platform cost in the net.
   const net = platformNet({ type: 'new', lines: [{ sellerId: 'bonds', unitPrice: 1500, qty: 1, unitCost: 1200 }], platformDiscount: at.shippingWaived, wallet: 0, delivered: false }, coffee);
-  assert.equal(net, 200);
+  assert.equal(net, 300 - coffee.shippingEgp);
 });

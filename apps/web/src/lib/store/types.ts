@@ -35,6 +35,8 @@ export interface Store {
   saveProduct(p: Product): Promise<void>;
   /** Removes a product that no order refers to (the database refuses otherwise). */
   deleteProduct(id: string): Promise<void>;
+  /** Removes a seller nothing refers to (the database refuses one with products, orders or payouts). */
+  deleteSeller(id: string): Promise<void>;
 
   // ---------- orders ----------
   /** Saves the order, its lines and the wallet spend in one transaction. */

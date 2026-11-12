@@ -23,6 +23,7 @@ export class SupabaseStore implements Store {
   async listProducts(): Promise<Product[]> { return (await selectAll<ProductRow>('products', 'order=created_at.asc')).map(rowToProduct); }
   async saveSeller(s: Seller) { await upsert('sellers', [sellerToRow(s)], 'id'); }
   async saveProduct(p: Product) { await upsert('products', [productToRow(p)], 'id'); }
+  async deleteSeller(id: string) { await req(`sellers?id=eq.${v(id)}`, { method: 'DELETE', prefer: 'return=minimal' }); }
   async deleteProduct(id: string) { await req(`products?id=eq.${v(id)}`, { method: 'DELETE', prefer: 'return=minimal' }); }
 
   // ---------- orders ----------

@@ -19,6 +19,8 @@ export const STATUS: Record<OrderStatus, [string, string]> = {
   cancelled: ['Cancelled', 'mute'],
 };
 
+export const SSTAT: Record<string, [string, string]> = { applied: ['Applied', 'info'], active: ['Active', 'ok'], warning: ['Warning', 'warn'], suspended: ['Paused', 'bad'], declined: ['Declined', 'mute'] };
+
 export const Pill = ({ kind, children }: { kind: string; children: React.ReactNode }) => <span className={`pill ${kind}`}>{children}</span>;
 
 /** Reads ?niche=… and returns the selected niche id, or null for all. */

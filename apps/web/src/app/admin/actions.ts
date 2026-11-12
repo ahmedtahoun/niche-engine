@@ -8,7 +8,7 @@ import { adminChats, approveProduct, approveSeller, notifyOrder } from '@/bot/en
 import { deliver } from '@/bot/transport';
 import { checkPassword, COOKIE, isAdmin } from '@/lib/admin-auth';
 import { unblock } from '@/lib/blocklist';
-import { catalog, deleteProduct, saveProduct, saveSeller } from '@/lib/catalog';
+import { catalog, deleteProduct, deleteSeller, saveProduct, saveSeller } from '@/lib/catalog';
 import { store } from '@/lib/store';
 import { RIBBONS, type CartLine, type Product } from '@/lib/types';
 import { moveOrderTo } from '@/lib/fulfillment';
@@ -75,21 +75,92 @@ export async function unblockPhone(phone: string) {
 // ---------- sellers ----------
 export async function approveSellerAction(id: string) { await guard(); await deliver(await approveSeller(id)); done(); }
 
+const SELLER_STATUSES = ['applied', 'active', 'warning', 'suspended', 'declined'] as const;
+type SellerStatus = (typeof SELLER_STATUSES)[number];
+const STATUS_TEXT: Record<Exclude<SellerStatus, 'applied'>, string> = {
+  declined: 'شكراً لاهتمامك 🤍 للأسف مش هنقدر نكمل دلوقتي. تقدر تقدم تاني بعد 60 يوم.',
+  suspended: 'حسابك اتوقف مؤقتاً ومنتجاتك اتخفت. كلم فريق خدمة البائعين على واتساب.',
+  active: 'حسابك رجع شغال ✅ منتجاتك ظاهرة تاني.',
+  warning: 'تنبيه: معدل التسليم أو الرفض عندك محتاج يتحسن. سلم الطلبات للمندوب خلال 48 ساعة.',
+};
+async function tellSeller(s: { telegramChatId?: number }, status: SellerStatus) {
+  if (s.telegramChatId && status !== 'applied') await deliver([{ chatId: s.telegramChatId, text: STATUS_TEXT[status] }]);
+}
+
 export async function setSellerStatus(id: string, status: 'active' | 'warning' | 'suspended' | 'declined') {
   await guard();
   const found = (await catalog()).sellerById(id);
   if (!found) return;
-  const s = { ...structuredClone(found), status };
-  await saveSeller(s);
-  const chat = s.telegramChatId;
-  const text = {
-    declined: 'شكراً لاهتمامك 🤍 للأسف مش هنقدر نكمل دلوقتي. تقدر تقدم تاني بعد 60 يوم.',
-    suspended: 'حسابك اتوقف مؤقتاً ومنتجاتك اتخفت. كلم فريق خدمة البائعين على واتساب.',
-    active: 'حسابك رجع شغال ✅ منتجاتك ظاهرة تاني.',
-    warning: 'تنبيه: معدل التسليم أو الرفض عندك محتاج يتحسن. سلم الطلبات للمندوب خلال 48 ساعة.',
-  }[status];
-  if (chat) await deliver([{ chatId: chat, text }]);
+  await saveSeller({ ...structuredClone(found), status });
+  await tellSeller(found, status);
   done();
+}
+
+/**
+ * The seller editor's single Save (also creates a seller when id is "new"): names, owner, contact,
+ * pickup address, InstaPay, capacity, store story, logo address and status. A status change is
+ * sent to the seller on Telegram, as before.
+ */
+export async function saveSellerForm(id: string, form: FormData) {
+  await guard();
+  const cat = await catalog();
+  const isNew = id === 'new';
+  const found = isNew ? null : cat.sellerById(id);
+  if (!isNew && !found) redirect('/admin/sellers');
+  const name = text(form, 'name', 80) ?? '';
+  const niche = String(form.get('niche') ?? found?.niche ?? '');
+  if (!name || !getNiche(niche)) redirect(isNew ? '/admin/sellers/new?error=1' : `/admin/sellers/${id}`);
+  const base = found ? structuredClone(found) : { id: '', niche, name, area: '', rating: 0, status: 'active' as SellerStatus };
+  const s = { ...base, niche, name };
+  const opt = (key: string, max: number) => { const v = text(form, key, max); return v ? v : undefined; };
+  const set = <K extends keyof typeof s>(k: K, v: (typeof s)[K] | undefined) => { if (v === undefined || v === '') delete (s as Record<string, unknown>)[k as string]; else s[k] = v; };
+  set('nameEn', opt('nameEn', 80));
+  set('ownerName', opt('ownerName', 80));
+  const phone = text(form, 'contactPhone', 20);
+  set('contactPhone', phone ? normalizeEgyptPhone(phone) ?? phone : undefined);
+  s.area = text(form, 'area', 80) ?? s.area ?? '';
+  set('governorate', opt('governorate', 40));
+  set('pickupAddress', opt('pickupAddress', 200));
+  set('instapay', opt('instapay', 60));
+  set('capacity', opt('capacity', 40));
+  set('logo', opt('logo', 300));
+  const aboutAr = text(form, 'aboutAr', 600), aboutEn = text(form, 'aboutEn', 600);
+  set('about', aboutAr ? { ar: aboutAr, ...(aboutEn ? { en: aboutEn } : {}) } : undefined);
+  const status = String(form.get('status') ?? s.status) as SellerStatus;
+  const changed = SELLER_STATUSES.includes(status) && status !== s.status;
+  if (SELLER_STATUSES.includes(status)) s.status = status;
+  if (isNew) {
+    const slug = (s.nameEn ?? '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 30);
+    let newId = slug || `seller-${Date.now().toString(36)}`;
+    while (cat.sellerById(newId)) newId = `${slug || 'seller'}-${Math.random().toString(36).slice(2, 6)}`;
+    s.id = newId;
+  }
+  await saveSeller(s);
+  if (changed && !isNew) await tellSeller(s, status);
+  done();
+  if (isNew) redirect(`/admin/sellers/${s.id}`);
+}
+
+/**
+ * Deletes a seller with no products, orders or payouts. Anyone with history is archived instead
+ * (suspended: their products leave the store), so orders and payouts stay complete.
+ */
+export async function deleteSellerAction(id: string) {
+  await guard();
+  const cat = await catalog();
+  const s = cat.sellerById(id);
+  if (!s) redirect('/admin/sellers');
+  const hasProducts = cat.products.some((p) => p.sellerId === id);
+  const hasOrders = (await store().listOrders({ sellerId: id, limit: 1 })).length > 0;
+  let result = 'deleted';
+  if (hasProducts || hasOrders) {
+    await saveSeller({ ...structuredClone(s), status: 'suspended' });
+    result = 'archived';
+  } else {
+    try { await deleteSeller(id); } catch { await saveSeller({ ...structuredClone(s), status: 'suspended' }); result = 'archived'; }
+  }
+  done();
+  redirect(`/admin/sellers?${new URLSearchParams({ done: result, name: s.name })}`);
 }
 
 // ---------- products ----------

@@ -133,7 +133,7 @@ export default async function ProductEditor({ params }: { params: Promise<{ id: 
           <section className="panel danger-zone">
             <h2>Delete</h2>
             <p className="hint">Removes the coffee. If it was ever ordered, it is archived (hidden) instead so order history stays complete.</p>
-            <DeleteButton action={deleteProductAction.bind(null, p.id)} name={p.nameAr} />
+            <DeleteButton action={deleteProductAction.bind(null, p.id)} confirmText={`Delete “${p.nameAr}”? If it was ever ordered it will be archived (hidden) instead, to keep order history.`} />
           </section>
         </aside>
       </div>

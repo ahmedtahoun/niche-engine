@@ -162,3 +162,11 @@ test('products: one never ordered can be deleted; the database refuses one that 
   await assert.rejects(() => s.deleteProduct(ordered.id), 'order history keeps the product');
   assert.ok((await s.listProducts()).some((p) => p.id === ordered.id));
 });
+
+test('sellers: one with no products or orders can be deleted; the database refuses one with products', async () => {
+  await s.saveSeller({ id: 'tmp-seller', niche: 'umrah', name: 'تجربة', area: 'القاهرة', rating: 0, status: 'active' });
+  await s.deleteSeller('tmp-seller');
+  assert.equal((await s.listSellers()).some((x) => x.id === 'tmp-seller'), false, 'gone');
+  await assert.rejects(() => s.deleteSeller(SELLERS[0].id), 'products and orders keep their seller');
+  assert.ok((await s.listSellers()).some((x) => x.id === SELLERS[0].id));
+});

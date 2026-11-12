@@ -37,6 +37,7 @@ export class MemoryStore implements Store {
   async listSellers() { return copy(this.sellers); }
   async listProducts() { return copy(this.products); }
   async saveSeller(s: Seller) { const i = this.sellers.findIndex((x) => x.id === s.id); if (i >= 0) this.sellers[i] = copy(s); else this.sellers.push(copy(s)); }
+  async deleteSeller(id: string) { this.sellers = this.sellers.filter((x) => x.id !== id); }
   async deleteProduct(id: string) { this.products = this.products.filter((x) => x.id !== id); }
   async saveProduct(p: Product) { const i = this.products.findIndex((x) => x.id === p.id); if (i >= 0) this.products[i] = copy(p); else this.products.push(copy(p)); }
 

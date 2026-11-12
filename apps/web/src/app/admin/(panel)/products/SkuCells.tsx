@@ -67,11 +67,11 @@ export function PricingTable({ rows, low }: { rows: SkuRow[]; low: number }) {
   );
 }
 
-/** Delete button inside the editor form: asks first, then posts to the delete action. */
-export function DeleteButton({ action, name }: { action: () => Promise<void>; name: string }) {
+/** Delete button inside an editor form: asks first, then posts to the delete action. */
+export function DeleteButton({ action, label = 'Delete product', confirmText }: { action: () => Promise<void>; label?: string; confirmText: string }) {
   return (
-    <button className="mini danger block" formAction={action} formNoValidate onClick={(e) => { if (!confirm(`Delete “${name}”? If it was ever ordered it will be archived (hidden) instead, to keep order history.`)) e.preventDefault(); }}>
-      Delete product
+    <button className="mini danger block" formAction={action} formNoValidate onClick={(e) => { if (!confirm(confirmText)) e.preventDefault(); }}>
+      {label}
     </button>
   );
 }

@@ -96,7 +96,7 @@ test('Cairo Roast: the Bonds seed SQL loads into real Postgres, re-runs keep sto
   const coffeeCfg = getNiche('coffee')!;
   const live = new Catalog(sellers, products);
   assert.deepEqual(live.bundleProblems(coffeeCfg), []);
-  const q = live.quote(coffeeCfg, [{ kind: 'item', slug: 'bonds-ethiopia-limu', variant: '1 كجم', qty: 1 }, { kind: 'bundle', id: 'discovery_box', variant: '', qty: 1 }], opts);
+  const q = live.quote(coffeeCfg, [{ kind: 'item', slug: 'bonds-ethiopia-limu', variant: '1 كجم', qty: 1, choice: { grind: 'kanaka' } }, { kind: 'bundle', id: 'discovery_box', variant: '', qty: 1, choice: { grind: 'beans' } }], opts);
   assert.deepEqual(q.problems, []);
   // Price list (1 kg): Limu 1,200; box = Chrome 225 + Limu 300 + Brazil 325 at 250 g, minus 60.
   assert.equal(q.subtotal, 1200 + 225 + 300 + 325);
@@ -113,7 +113,7 @@ test('wholesale coffee: Bonds is paid exactly the agreed cost, Cairo Roast keeps
   const { BONDS, BONDS_PRODUCTS, withCosts } = await import('../src/lib/seeds/bonds.ts');
   const coffeeCfg = getNiche('coffee')!;
   const live = new Catalog([BONDS], withCosts(BONDS_PRODUCTS, { 'bonds-chrome': 720, 'bonds-ethiopia-guji': 1650 }));
-  const q = live.quote(coffeeCfg, [{ kind: 'item', slug: 'bonds-chrome', variant: '1 كجم', qty: 2 }, { kind: 'item', slug: 'bonds-ethiopia-guji', variant: '250 جم', qty: 1 }], { isFirstOrder: false, walletBalance: 0, useWallet: false });
+  const q = live.quote(coffeeCfg, [{ kind: 'item', slug: 'bonds-chrome', variant: '1 كجم', qty: 2, choice: { grind: 'espresso' } }, { kind: 'item', slug: 'bonds-ethiopia-guji', variant: '250 جم', qty: 1, choice: { grind: 'filter' } }], { isFirstOrder: false, walletBalance: 0, useWallet: false });
   // Made-up costs: real supplier prices never go in this public repository.
   assert.deepEqual(q.items.map((i) => i.unitCost), [720, 413]);
   const money = { type: 'repeat' as const, lines: q.items.map((i) => ({ sellerId: i.sellerId, unitPrice: i.unitPrice, qty: i.qty, unitCost: i.unitCost })), platformDiscount: 0, wallet: 0, delivered: true };
@@ -126,4 +126,20 @@ test('wholesale coffee: Bonds is paid exactly the agreed cost, Cairo Roast keeps
   const pub = publicQuote(q);
   assert.ok(!JSON.stringify(pub).includes('unitCost'), 'no cost in what the browser gets');
   assert.equal(pub.total, q.total);
+});
+
+test('coffee is ground to order: the grind is required, shown on the order, and on its own line for the seller', async () => {
+  const { notifyOrder } = await import('../src/bot/engine.ts');
+  const { freshStore, makeOrder } = await import('./helpers.ts');
+  const { catalog } = await import('../src/lib/catalog.ts');
+  freshStore();
+  const coffeeCfg = getNiche('coffee')!;
+  const cat = await catalog();
+  const missing = cat.quote(coffeeCfg, [{ kind: 'item', slug: 'bonds-chrome', variant: '250 جم', qty: 1 }], opts);
+  assert.deepEqual(missing.problems, ['choice_missing:bonds-chrome'], 'no grind chosen = not orderable');
+  const o = await makeOrder({ niche: 'coffee', cart: [{ kind: 'item', slug: 'bonds-chrome', variant: '250 جم', qty: 1, choice: { grind: 'kanaka' } }, { kind: 'item', slug: 'bonds-amber', variant: '1 كجم', qty: 1, choice: { grind: 'beans' } }] });
+  assert.deepEqual(o.items.map((i) => i.variant), ['250 جم · كنكة (تركي)', '1 كجم · حبوب كاملة']);
+  const text = notifyOrder(o, cat).map((m) => m.text).join('\n');
+  assert.match(text, /• قهوة كروم بلند \| 250 جم \| × 1\n {3}⚙️ اطحنها: كنكة \(تركي\)/);
+  assert.match(text, /⚙️ حبوب كاملة \(من غير طحن\)/);
 });

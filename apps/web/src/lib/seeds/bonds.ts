@@ -34,12 +34,12 @@ const weights = (p1000: number, stock = 20): Variant[] => [
 
 const FAQ: [string, string][] = [
   ['مين بيحمص القهوة؟', 'بوندز لتحميص القهوة، شريكنا. القهوة جاية من المحمصة على طول، أصلية ومقفولة.'],
-  ['حبوب ولا مطحونة؟', 'حبوب كاملة، علشان تفضل طازة لحد ما تطحنها قبل التحضير.'],
+  ['حبوب ولا مطحونة؟', 'زي ما تحب: اختار طريقة التحضير وإحنا نطحنها بعد طلبك، من ناعم جداً للكنكة لخشن للفرنش بريس. ولو عندك مطحنة اختار حبوب كاملة.'],
   ['أحفظها إزاي؟', 'في الكيس مقفول، في مكان ناشف بعيد عن الشمس والتلاجة. أحلى طعم خلال 4 أسابيع من الفتح.'],
 ];
 const FAQ_EN: [string, string][] = [
   ['Who roasts the coffee?', 'Bonds Coffee Roasters, our partner. The coffee comes straight from the roastery, original and sealed.'],
-  ['Beans or ground?', 'Whole beans, so they stay fresh until you grind them just before brewing.'],
+  ['Beans or ground?', 'Your choice: pick how you brew and we grind it after you order, from extra fine for the kanaka to coarse for a French press. Have a grinder? Choose whole beans.'],
   ['How do I store it?', 'In the closed bag, somewhere dry, away from sunlight and the fridge. Best within 4 weeks of opening.'],
 ];
 
@@ -47,9 +47,9 @@ type En = { name: string; lead: string; attributes: Record<string, string> };
 // Profile values come only from what Bonds states (body and acidity for the blends; notes for all). No roast level: Bonds doesn't publish it.
 const coffee = (o: Pick<Product, 'slug' | 'category' | 'color' | 'nameAr' | 'leadAr' | 'attributes' | 'profile'> & { kg: number; photo?: string; en: En }): Product => ({
   id: o.slug, niche: 'coffee', slug: o.slug, sellerId: BONDS.id, category: o.category, art: 'coffee', color: o.color,
-  nameAr: o.nameAr, leadAr: o.leadAr, price: Math.round(o.kg / 4), attributes: { ...o.attributes, 'الشكل': 'حبوب كاملة' },
+  nameAr: o.nameAr, leadAr: o.leadAr, price: Math.round(o.kg / 4), attributes: { ...o.attributes, 'الشكل': 'حبوب أو مطحونة على طلبك' },
   variants: weights(o.kg), status: 'live', views: 0, reviews: [], faq: FAQ,
-  en: { name: o.en.name, lead: o.en.lead, attributes: { ...o.en.attributes, Form: 'Whole beans' }, faq: FAQ_EN },
+  en: { name: o.en.name, lead: o.en.lead, attributes: { ...o.en.attributes, Form: 'Whole beans or ground to order' }, faq: FAQ_EN },
   ...(o.profile ? { profile: o.profile } : {}),
   ...(o.photo ? { images: [`/products/coffee/${o.photo}.webp`] } : {}),
 });

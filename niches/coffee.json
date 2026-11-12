@@ -203,8 +203,8 @@
       "en": "Specialty coffee, from the roastery to your door ☕"
     },
     "subtitle": {
-      "ar": "حبوب كاملة من بوندز: بلندات وقهوة أحادية المصدر من إثيوبيا والبرازيل وكولومبيا. اختار على ذوقك وادفع عند الاستلام.",
-      "en": "Whole beans from Bonds: blends and single origins from Ethiopia, Brazil and Colombia. Pick by taste and pay on delivery."
+      "ar": "قهوة مختصة من بوندز: بلندات وقهوة أحادية المصدر من إثيوبيا والبرازيل وكولومبيا. حبوب أو مطحونة على طلبك، حتى للكنكة. ادفع عند الاستلام.",
+      "en": "Specialty coffee from Bonds: blends and single origins from Ethiopia, Brazil and Colombia. Whole or ground to order, even for the kanaka. Pay on delivery."
     },
     "cta": {
       "ar": "اختار قهوتك",
@@ -212,8 +212,8 @@
     },
     "badges": [
       {
-        "ar": "✅ أصلية ومقفولة",
-        "en": "✅ Original & sealed"
+        "ar": "⚙️ مطحونة على طلبك",
+        "en": "⚙️ Ground to order"
       },
       {
         "ar": "💵 الدفع عند الاستلام",
@@ -303,5 +303,60 @@
     "tea": "🍵",
     "قيقب": "🍁",
     "maple": "🍁"
-  }
+  },
+  "choices": [
+    {
+      "id": "grind",
+      "labelAr": "بتعمل قهوتك ازاي؟",
+      "labelEn": "How do you brew it?",
+      "categories": [
+        "blends",
+        "single-origin"
+      ],
+      "values": [
+        {
+          "id": "kanaka",
+          "labelAr": "كنكة (تركي)",
+          "labelEn": "Kanaka (Turkish)",
+          "hintAr": "ناعم جداً زي البودرة. بنطحنها بعد طلبك، وأحلى طعم في أول أسبوعين.",
+          "hintEn": "Extra fine, like powder. Ground after you order; best within two weeks."
+        },
+        {
+          "id": "espresso",
+          "labelAr": "مكنة اسبريسو",
+          "labelEn": "Espresso machine",
+          "hintAr": "طحنة ناعمة للاسبريسو. بنطحنها بعد طلبك.",
+          "hintEn": "Fine, for espresso. Ground after you order."
+        },
+        {
+          "id": "moka",
+          "labelAr": "موكا بوت",
+          "labelEn": "Moka pot",
+          "hintAr": "ناعم متوسط. بنطحنها بعد طلبك.",
+          "hintEn": "Fine-medium. Ground after you order."
+        },
+        {
+          "id": "filter",
+          "labelAr": "فلتر / V60",
+          "labelEn": "Filter / V60",
+          "hintAr": "طحنة متوسطة للفلتر والـ V60. بنطحنها بعد طلبك.",
+          "hintEn": "Medium, for filter and V60. Ground after you order."
+        },
+        {
+          "id": "french",
+          "labelAr": "فرنش بريس",
+          "labelEn": "French press",
+          "hintAr": "طحنة خشنة. بنطحنها بعد طلبك.",
+          "hintEn": "Coarse. Ground after you order."
+        },
+        {
+          "id": "beans",
+          "labelAr": "حبوب كاملة",
+          "labelEn": "Whole beans",
+          "hintAr": "لو عندك مطحنة: الحبوب بتحافظ على طعمها أطول.",
+          "hintEn": "If you have a grinder: beans keep their taste longest."
+        }
+      ]
+    }
+  ]
 }

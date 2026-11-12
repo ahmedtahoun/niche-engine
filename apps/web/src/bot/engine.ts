@@ -427,6 +427,14 @@ export async function approveProduct(productId: string): Promise<Outgoing[]> {
 }
 
 // ---------- orders ----------
+/** One order line for the seller. A per-order choice (e.g. the grind) gets its own line, so it is never missed when packing. */
+function itemLine(cfg: NicheConfig, i: { name: string; variant: string; qty: number }): string {
+  const picked = (cfg.choices ?? []).flatMap((c) => c.values.filter((v) => i.variant.includes(v.labelAr)).map((v) => ({ c, v })));
+  if (!picked.length) return `• ${i.name} | ${i.variant} | × ${i.qty}`;
+  let base = i.variant;
+  for (const { v } of picked) base = base.replace(` · ${v.labelAr}`, '').replace(v.labelAr, '');
+  return `• ${i.name} | ${base.trim()} | × ${i.qty}\n   ⚙️ ${picked.map(({ v }) => (v.id === 'beans' ? `${v.labelAr} (من غير طحن)` : `اطحنها: ${v.labelAr}`)).join(' · ')}`;
+}
 /** New-order messages for every seller in an order (sent when the customer confirms). */
 export function notifyOrder(o: Order, cat: Catalog): Outgoing[] {
   const cfg = getNiche(o.niche)!;
@@ -439,7 +447,7 @@ export function notifyOrder(o: Order, cat: Catalog): Outgoing[] {
     const share = items.reduce((a, i) => a + (i.unitCost !== undefined ? i.unitCost : i.unitPrice * (1 - cfg.commission[o.type])) * i.qty, 0);
     const wholesale = items.every((i) => i.unitCost !== undefined);
     const multi = Object.keys(o.sellerState).length > 1 ? ' (جزء من طلب فيه أكتر من بائع)' : '';
-    return [msg(s.telegramChatId, `🔔 طلب جديد #${o.id}${multi}\n${items.map((i) => `• ${i.name} | ${i.variant} | × ${i.qty}`).join('\n')}\nالعميل: ${o.customer.name.split(' ')[0]} — ${o.customer.governorate}\nالاستلام: بكرة من 12 لـ 4\nنصيبك: ${egp(share)} (${wholesale ? 'سعر الجملة المتفق عليه' : tag})`, [row(['✅ قبول', `acc:${o.id}`], ['❌ مش متاح', `rej:${o.id}`])])];
+    return [msg(s.telegramChatId, `🔔 طلب جديد #${o.id}${multi}\n${items.map((i) => itemLine(cfg, i)).join('\n')}\nالعميل: ${o.customer.name.split(' ')[0]} — ${o.customer.governorate}\nالاستلام: بكرة من 12 لـ 4\nنصيبك: ${egp(share)} (${wholesale ? 'سعر الجملة المتفق عليه' : tag})`, [row(['✅ قبول', `acc:${o.id}`], ['❌ مش متاح', `rej:${o.id}`])])];
   });
 }
 

@@ -34,13 +34,13 @@ test('an English cart shows English titles while the order items stay Arabic for
   const cfg = getNiche('coffee')!;
   const cat = await catalog();
   const opts = { isFirstOrder: true, walletBalance: 0, useWallet: false };
-  const en = cat.quote(cfg, [{ kind: 'item', slug: 'bonds-ethiopia-limu', variant: '1 كجم', qty: 1 }], { ...opts, lang: 'en' });
-  assert.equal(en.lines[0].title, 'Ethiopia Limu · 1 kg');
+  const en = cat.quote(cfg, [{ kind: 'item', slug: 'bonds-ethiopia-limu', variant: '1 كجم', qty: 1, choice: { grind: 'kanaka' } }], { ...opts, lang: 'en' });
+  assert.equal(en.lines[0].title, 'Ethiopia Limu · 1 kg · Kanaka (Turkish)');
   assert.equal(en.lines[0].by, 'Bonds Coffee Roasters');
   assert.equal(en.items[0].name, 'إثيوبيا ليمو');
-  assert.equal(en.items[0].variant, '1 كجم');
-  const ar = cat.quote(cfg, [{ kind: 'item', slug: 'bonds-ethiopia-limu', variant: '1 كجم', qty: 1 }], opts);
-  assert.equal(ar.lines[0].title, 'إثيوبيا ليمو · 1 كجم');
+  assert.equal(en.items[0].variant, '1 كجم · كنكة (تركي)');
+  const ar = cat.quote(cfg, [{ kind: 'item', slug: 'bonds-ethiopia-limu', variant: '1 كجم', qty: 1, choice: { grind: 'kanaka' } }], opts);
+  assert.equal(ar.lines[0].title, 'إثيوبيا ليمو · 1 كجم · كنكة (تركي)');
   assert.equal(en.total, ar.total);
   // English search finds products by their English names too.
   assert.equal(cat.search(cfg, { q: 'catuai' })[0]?.slug, 'bonds-brazil-red-catuai');

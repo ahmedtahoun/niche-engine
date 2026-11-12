@@ -7,6 +7,7 @@ import { waLink } from '@/lib/site';
 export function Footer({ cfg, s }: { cfg: NicheConfig; s: Speaker }) {
   return (
     <footer className="foot">
+      {cfg.brand.about && <p className="about small">{(s.en && cfg.brand.about.en) || cfg.brand.about.ar}</p>}
       <div className="trust">
         <div>{s.t('ft.exchange')}</div>
         <div>{s.t('ft.cr')}</div>

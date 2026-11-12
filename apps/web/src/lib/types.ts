@@ -31,6 +31,27 @@ export interface Seller {
   about?: { ar: string; en?: string };
 }
 
+/**
+ * A customer's words about a product. Real reviews only: typed in the admin from what a customer
+ * who received the order said (orderId), never made up.
+ */
+export interface Review {
+  name: string;
+  tags: string[];
+  text: string;
+  /** 1–5. Reviews without stars (older demo data) don't count in the rating. */
+  stars?: number;
+  orderId?: number;
+  at?: string;
+}
+
+/** Average stars and how many reviews have them (null when none do). */
+export function ratingOf(reviews: Review[]): { value: number; count: number } | null {
+  const rated = reviews.filter((r) => r.stars && r.stars >= 1 && r.stars <= 5);
+  if (!rated.length) return null;
+  return { value: Math.round((rated.reduce((a, r) => a + r.stars!, 0) / rated.length) * 10) / 10, count: rated.length };
+}
+
 export interface Variant {
   /** Unique option name, e.g. "أسود · 2" (what the cart and orders store). */
   label: string;
@@ -70,7 +91,7 @@ export interface Product {
   ribbon?: Ribbon;
   priceConfirmedAt?: string;
   views: number;
-  reviews: { name: string; tags: string[]; text: string }[];
+  reviews: Review[];
   /** Photo addresses (Supabase Storage). Without photos the page shows a drawing. */
   images?: string[];
   faq: [string, string][];

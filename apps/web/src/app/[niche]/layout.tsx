@@ -4,7 +4,8 @@ import { notFound } from 'next/navigation';
 import { Icon } from '@/components/Art';
 import { LangProvider, LangSwitch, Txt } from '@/components/I18n';
 import { waLink } from '@/lib/site';
-import { TabBar } from '@/components/TabBar';
+import { HeaderNav, TabBar } from '@/components/TabBar';
+import { CampaignTracker } from '@/components/Campaign';
 import { speak, voiceOf } from '@/lib/i18n';
 import { speaker } from '@/lib/lang';
 import { getNiche } from '@/lib/niches';
@@ -39,13 +40,14 @@ export default async function NicheLayout({ children, params }: P & { children: 
         <header className="head">
           <Link href={s.href()} className="logo" style={cfg.brand.logo ? { display: 'flex', alignItems: 'center', gap: 10 } : undefined}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            {cfg.brand.logo && <img src={cfg.brand.logo} alt="" width={30} height={36} style={{ flex: 'none' }} />}
+            {cfg.brand.logo && <img src={cfg.brand.logo} alt={s.t('alt.logo', { name: s.brand(cfg) })} width={30} height={36} style={{ flex: 'none' }} />}
             <span>{both((x) => x.brand(cfg))}<small>{cfg.brand.tagline ? <Txt ar={cfg.brand.tagline.ar} en={cfg.brand.tagline.en} /> : null}</small></span>
           </Link>
           <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
             {balance > 0 && <Link href={s.href(`/account`)} className="chip" style={{ borderColor: 'var(--accent)' }} aria-label={s.t('wallet')}>{s.egp(balance)}</Link>}
             <LangSwitch />
             <Link href={s.href(`/search`)} className="iconbtn" aria-label={s.t('nav.search')}>{Icon.search}</Link>
+            <HeaderNav niche={cfg.id} />
           </div>
         </header>
         {children}
@@ -55,6 +57,7 @@ export default async function NicheLayout({ children, params }: P & { children: 
           </a>
         )}
         <TabBar niche={cfg.id} />
+        <CampaignTracker />
       </div>
     </LangProvider>
   );

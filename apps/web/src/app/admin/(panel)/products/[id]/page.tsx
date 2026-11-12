@@ -4,7 +4,8 @@ import { catalog } from '@/lib/catalog';
 import { getNiche } from '@/lib/niches';
 import { coverDays, DAYS, productStats, soldMargin } from '@/lib/product-stats';
 import { store } from '@/lib/store';
-import { deleteProductAction, saveProductForm } from '../../../actions';
+import { ratingOf } from '@/lib/types';
+import { deleteProductAction, deleteReviewAction, saveProductForm } from '../../../actions';
 import { EGP, Pill, STATUS, pct } from '../../shared';
 import { DeleteButton, PricingTable } from '../SkuCells';
 
@@ -118,6 +119,19 @@ export default async function ProductEditor({ params }: { params: Promise<{ id: 
           <section className="panel">
             <h2>Photos</h2>
             {p.images?.length ? <div className="thumbs">{p.images.map((src) => <a key={src} href={src} target="_blank" rel="noreferrer"><img src={src} alt="" loading="lazy" /></a>)}</div> : <p className="empty">No photos.</p>}
+          </section>
+          <section className="panel">
+            <h2>Reviews <span className="sub">{((r) => (r ? `★ ${r.value} · ${r.count}` : 'none yet'))(ratingOf(p.reviews))}</span></h2>
+            {p.reviews.length ? (
+              <ul className="rev-list">{p.reviews.map((r, i) => (
+                <li key={i}>
+                  <b className="ar">{r.stars ? '★'.repeat(r.stars) : ''} {r.name}</b>
+                  <span className="ar">{r.text}</span>
+                  <small className="sub2">{r.orderId ? <Link href={`/admin/orders/${r.orderId}`}>Order #{r.orderId}</Link> : 'no order'}{r.at ? ` · ${new Date(r.at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}` : ''}</small>
+                  <DeleteButton action={deleteReviewAction.bind(null, p.id, i)} label="Remove" confirmText={`Remove ${r.name}'s review?`} />
+                </li>
+              ))}</ul>
+            ) : <p className="hint">Add reviews from a delivered order (Orders → the order → Review).</p>}
           </section>
           <section className="panel">
             <h2>All time</h2>

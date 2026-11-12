@@ -76,7 +76,7 @@ export function QuickAddSheet({ niche, axes, freeOver }: { niche: string; axes: 
         <div className="qa-layer" onClick={(e) => { if (e.target === e.currentTarget) close(); }}>
           <div className="qa-sheet" role="dialog" aria-modal="true" aria-label={item.name} tabIndex={-1} ref={panel}>
             <div className="qa-head">
-              <div className="pimg"><Art kind={item.art} color={item.color} image={item.image} alt="" /></div>
+              <div className="pimg"><Art kind={item.art} color={item.color} image={item.image} alt={item.name} /></div>
               <div>
                 <b>{item.name}</b>
                 <div className="pby">{item.by}</div>

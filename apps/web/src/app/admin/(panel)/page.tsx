@@ -110,8 +110,8 @@ export default async function Overview({ searchParams }: { searchParams: Promise
         </section>
         <section className="panel">
           <h2>Sales channels</h2>
-          {d.sources.length ? <Bars rows={d.sources.map((s) => ({ label: SOURCE[s.source] ?? s.source, value: s.revenue, note: `${EGP(s.revenue)} · ${s.orders}` }))} /> : <p className="empty">No sales in this period.</p>}
-          <p className="hint">WhatsApp and phone orders come from “New order”.</p>
+          {d.sources.length ? <Bars rows={d.sources.map((s) => ({ label: SOURCE[s.source] ?? (s.source.startsWith('site:') ? `Website · ${s.source.slice(5)}` : s.source), value: s.revenue, note: `${EGP(s.revenue)} · ${s.orders}` }))} /> : <p className="empty">No sales in this period.</p>}
+          <p className="hint">WhatsApp and phone orders come from “New order”. Website orders from a link with utm_source show that source.</p>
         </section>
         <section className="panel">
           <h2>Customers</h2>

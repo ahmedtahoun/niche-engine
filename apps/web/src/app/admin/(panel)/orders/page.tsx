@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { blockedList } from '@/lib/blocklist';
-import type { Order } from '@/lib/orders';
+import { utmLabel, type Order } from '@/lib/orders';
 import { customerKey } from '@/lib/session';
 import { store } from '@/lib/store';
 import { unblockPhone } from '../../actions';
@@ -74,7 +74,7 @@ export default async function Orders({ searchParams }: { searchParams: Promise<{
               return (
                 <tr key={o.id} className={`row-link${o.needsAttention ? ' attn' : ''}`}>
                   <td><Link href={`/admin/orders/${o.id}`} className="stretch-link"><b>#{o.id}</b></Link><small className="sub2">{ago(o.createdAt)}</small></td>
-                  <td><Link href={`/admin/customers/${customerKey(o.customer.phone)}`} className="above ar"><b>{o.customer.name}</b></Link><small className="sub2"><span dir="ltr">{o.customer.phone}</span> · <span className="ar">{o.customer.governorate}</span>{o.type === 'repeat' ? ' · repeat' : ''}{o.source && o.source !== 'web' ? <span className="src"> · {SOURCE[o.source]}</span> : null}</small></td>
+                  <td><Link href={`/admin/customers/${customerKey(o.customer.phone)}`} className="above ar"><b>{o.customer.name}</b></Link><small className="sub2"><span dir="ltr">{o.customer.phone}</span> · <span className="ar">{o.customer.governorate}</span>{o.type === 'repeat' ? ' · repeat' : ''}{o.source && o.source !== 'web' ? <span className="src"> · {SOURCE[o.source]}</span> : o.utm ? <span className="src"> · {utmLabel(o.utm)}</span> : null}</small></td>
                   <td><span className="ar">{o.quote.lines[0]?.title}</span><small className="sub2">{units} {units === 1 ? 'item' : 'items'}{o.quote.lines.length > 1 ? ` · +${o.quote.lines.length - 1} more` : ''}</small></td>
                   <td className="r"><b>{EGP(o.quote.total)}</b><small className="sub2">{o.payment === 'cod' ? 'cash on delivery' : 'InstaPay'}{o.promoCode ? ` · ${o.promoCode}` : ''}</small></td>
                   <td><Pill kind={STATUS[o.status][1]}>{STATUS[o.status][0]}</Pill>{o.needsAttention && <small className="sub2 bad-t">{o.needsAttention}</small>}</td>

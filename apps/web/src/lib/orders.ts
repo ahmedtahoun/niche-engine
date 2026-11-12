@@ -37,10 +37,30 @@ export interface Order {
   promoCode?: string;
   /** Where the order came from (website by default; the admin adds WhatsApp, phone… orders). */
   source?: OrderSource;
+  /** Campaign link the customer arrived from (utm_… or an ad click), kept on website orders. */
+  utm?: Utm;
   needsAttention?: string;
   /** Changes on every save; an update based on an older version is refused. */
   version: number;
 }
+
+export interface Utm { source?: string; medium?: string; campaign?: string; content?: string }
+
+/** Cleans campaign tags from the browser: short, plain text, lower case; null when there's nothing. */
+export function cleanUtm(raw: unknown): Utm | null {
+  if (!raw || typeof raw !== 'object') return null;
+  const out: Utm = {};
+  for (const k of ['source', 'medium', 'campaign', 'content'] as const) {
+    const v = (raw as Record<string, unknown>)[k];
+    if (typeof v !== 'string') continue;
+    const clean = v.toLowerCase().replace(/[^\p{L}\p{N} ._\-]/gu, '').trim().slice(0, 60);
+    if (clean) out[k] = clean;
+  }
+  return Object.keys(out).length ? out : null;
+}
+
+/** "instagram / box_launch" for the admin. */
+export const utmLabel = (u?: Utm) => (u ? [u.source, u.campaign].filter(Boolean).join(' / ') : '');
 
 export type OrderDraft = Omit<Order, 'id' | 'createdAt' | 'items' | 'sellerState' | 'version'>;
 

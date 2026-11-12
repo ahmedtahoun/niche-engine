@@ -1,14 +1,15 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { AddToCart } from '@/components/AddToCart';
+import { EtaPicker } from '@/components/Eta';
 import { Art, PickSeal } from '@/components/Art';
 import { TasteProfile } from '@/components/Taste';
 import { bestPer100g, catalog, choicesFor, freshnessOf, isSoldOut, priceRange, saleOf } from '@/lib/catalog';
-import { etaDate } from '@/lib/eta';
 import { speaker } from '@/lib/lang';
 import { getNiche } from '@/lib/niches';
 import { jsonLd, pageMeta, siteUrl, waLink } from '@/lib/site';
 import { PAGE_SIZES, responsive } from '@/lib/img';
+import { ratingOf } from '@/lib/types';
 
 type P = { params: Promise<{ niche: string; slug: string }> };
 
@@ -34,6 +35,7 @@ export default async function ProductPage({ params }: P) {
   const finder = p.category === 'abaya' ? 'size' : null;
   const choices = choicesFor(cfg, p);
   const range = priceRange(p);
+  const rating = ratingOf(p.reviews);
   const sale = saleOf(p);
   const per100 = bestPer100g(p);
   const fresh = freshnessOf(cfg, p);
@@ -52,7 +54,9 @@ export default async function ProductPage({ params }: P) {
       shippingDetails: { '@type': 'OfferShippingDetails', shippingRate: { '@type': 'MonetaryAmount', value: cfg.shippingEgp, currency: 'EGP' } },
       hasMerchantReturnPolicy: { '@type': 'MerchantReturnPolicy', merchantReturnDays: 14, returnFees: 'https://schema.org/FreeReturn' },
     },
-    ...(p.reviews.length ? { aggregateRating: { '@type': 'AggregateRating', ratingValue: seller.rating, reviewCount: p.reviews.length } } : {}),
+    // Only real reviews with stars count, and only when there are some.
+    ...(rating ? { aggregateRating: { '@type': 'AggregateRating', ratingValue: rating.value, reviewCount: rating.count, bestRating: 5, worstRating: 1 } } : {}),
+    ...(rating ? { review: p.reviews.filter((r) => r.stars).slice(-5).map((r) => ({ '@type': 'Review', author: { '@type': 'Person', name: r.name }, reviewRating: { '@type': 'Rating', ratingValue: r.stars, bestRating: 5 }, reviewBody: r.text, ...(r.at ? { datePublished: r.at.slice(0, 10) } : {}) })) } : {}),
   };
   const catLabel = cfg.categories.find((c) => c.id === p.category);
   const breadcrumb = { '@context': 'https://schema.org', '@type': 'BreadcrumbList', itemListElement: [
@@ -130,7 +134,7 @@ export default async function ProductPage({ params }: P) {
       )}
       {!isSoldOut(p) && <AddToCart niche={niche} slug={p.slug} price={p.price} variants={p.variants} finder={finder} axes={cfg.optionAxes} choices={choices} freeOver={cfg.freeShippingOverEgp} />}
       <div className="eta">
-        <div><b>{s.t('eta.cairo', { day: s.date(etaDate('القاهرة'), true) })}</b> {s.t('eta.cairoArea')}</div>
+        <EtaPicker />
         <span>{cfg.freeShippingOverEgp ? s.t('eta.feesFree', { fee: s.egp(cfg.shippingEgp), x: s.egp(cfg.freeShippingOverEgp) }) : s.t('eta.fees', { fee: s.egp(cfg.shippingEgp) })}</span>
       </div>
       {lead && <p className="lead" style={{ margin: 0 }}>{lead}</p>}
@@ -154,9 +158,12 @@ export default async function ProductPage({ params }: P) {
       )}
       {p.reviews.length > 0 && (
         <section id="sec-revs" style={{ display: 'grid', gap: 8 }}>
-          <h2 className="h4">{s.t('reviewsN', { n: p.reviews.length })}</h2>
-          {p.reviews.map((r, i) => (
-            <div className="rev" key={i}><div className="tags"><b>{r.name}</b>{r.tags.map((t) => <span className="tag" key={t}>{t}</span>)}</div>{r.text}</div>
+          <h2 className="h4">{s.t('reviewsN', { n: p.reviews.length })}{rating && <span className="stars-sum"> · <span aria-hidden="true">★</span> {rating.value}</span>}</h2>
+          {[...p.reviews].reverse().map((r, i) => (
+            <div className="rev" key={i}>
+              <div className="tags"><b>{r.name}</b>{r.stars ? <span className="stars" aria-label={s.t('starsOf', { n: r.stars })}>{'★'.repeat(r.stars)}{'☆'.repeat(5 - r.stars)}</span> : null}{r.orderId ? <span className="tag ok">{s.t('verifiedBuyer')}</span> : null}{r.tags.map((t) => <span className="tag" key={t}>{t}</span>)}</div>
+              {r.text}
+            </div>
           ))}
         </section>
       )}
@@ -168,7 +175,7 @@ export default async function ProductPage({ params }: P) {
       )}
       <section id="sec-roaster" className="roaster" aria-label={s.t('meetRoaster')}>
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <div className="av">{seller.logo ? <img src={seller.logo} alt="" /> : s.seller(seller).slice(0, 1)}</div>
+        <div className="av">{seller.logo ? <img src={seller.logo} alt={s.t('alt.logo', { name: s.seller(seller) })} /> : s.seller(seller).slice(0, 1)}</div>
         <div>
           <span className="small muted">{s.t('meetRoaster')}</span>
           <b style={{ display: 'block' }}>{s.seller(seller)}</b>

@@ -34,7 +34,7 @@ export interface OrderRow {
 /** The columns an update writes (id and created_at never change). */
 export const orderToRow = (o: Order): Omit<OrderRow, 'id' | 'created_at'> => ({
   // The order source is kept inside the customer column (no extra column needed).
-  niche_id: o.niche, customer_phone: o.customer.phone, customer: o.source && o.source !== 'web' ? { ...o.customer, source: o.source } as Order['customer'] : o.customer, status: o.status, type: o.type, payment: o.payment,
+  niche_id: o.niche, customer_phone: o.customer.phone, customer: { ...o.customer, ...(o.source && o.source !== 'web' ? { source: o.source } : {}), ...(o.utm ? { utm: o.utm } : {}) } as Order['customer'], status: o.status, type: o.type, payment: o.payment,
   promo_code: o.promoCode ?? null, total: o.quote.total, quote: o.quote, cart: o.cart, seller_state: o.sellerState, seller_ids: Object.keys(o.sellerState),
   shipments: o.shipments ?? {}, tracking_numbers: Object.values(o.shipments ?? {}).map((s) => s.tracking), needs_attention: o.needsAttention ?? null,
   delivered_at: o.deliveredAt ?? null, version: o.version,
@@ -59,7 +59,7 @@ export const accountPatchToRow = (p: Partial<Account>) => ({
 export interface WalletRow { id: string; phone: string; niche_id: string; amount: number; kind: WalletEntry['kind']; order_id: number | null; note: string | null; expires_at: string | null; created_at: string }
 export const rowToWallet = (r: WalletRow): WalletEntry => ({ id: r.id, phone: r.phone, niche: r.niche_id, amount: Number(r.amount), kind: r.kind, createdAt: new Date(r.created_at).toISOString(), ...(r.order_id ? { orderId: Number(r.order_id) } : {}), ...(r.note ? { note: r.note } : {}), ...(r.expires_at ? { expiresAt: new Date(r.expires_at).toISOString() } : {}) });
 
-function customerOf(raw: OrderRow['customer']): Pick<Order, 'customer' | 'source'> {
-  const { source, ...customer } = raw as Order['customer'] & { source?: Order['source'] };
-  return { customer, ...(source ? { source } : {}) };
+function customerOf(raw: OrderRow['customer']): Pick<Order, 'customer' | 'source' | 'utm'> {
+  const { source, utm, ...customer } = raw as Order['customer'] & { source?: Order['source']; utm?: Order['utm'] };
+  return { customer, ...(source ? { source } : {}), ...(utm ? { utm } : {}) };
 }

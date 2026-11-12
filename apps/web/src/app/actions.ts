@@ -3,7 +3,7 @@
 import { normalizeEgyptPhone } from '@niche-engine/core';
 import { catalog, publicQuote } from '@/lib/catalog';
 import { getNiche } from '@/lib/niches';
-import { applyStatus, draftOrder, findDuplicate, getOrder, mutateOrder, ordersFor } from '@/lib/orders';
+import { applyStatus, cleanUtm, draftOrder, findDuplicate, getOrder, mutateOrder, ordersFor } from '@/lib/orders';
 import { accountByPhone, createAccount, ensureCustomer, hasPassword, MIN_PASSWORD, saveAddress, signIn } from '@/lib/customers';
 import { takeStock } from '@/lib/stock';
 import { currentCustomer, endSession, isGuestOrder, rememberGuestOrder, startSession } from '@/lib/current-customer';
@@ -44,6 +44,8 @@ export interface CheckoutForm {
   password: string;
   /** Signed-in customers only: pay part of the goods with wallet credit. */
   useWallet: boolean;
+  /** Campaign link the visitor arrived from (saved in the browser by CampaignTracker). */
+  utm?: unknown;
 }
 
 type Errors = Partial<Record<keyof CheckoutForm | 'cart', string>>;
@@ -122,6 +124,7 @@ export async function placeOrder(niche: string, cart: CartLine[], form: Checkout
       cart,
       quote: q,
       promoCode: q.promoDiscount > 0 ? form.promoCode.trim().toUpperCase() : undefined,
+      ...(cleanUtm(form.utm) ? { utm: cleanUtm(form.utm)! } : {}),
     }), q.wallet > 0 && wallet ? { amount: q.wallet, walletVersion: wallet.version } : null);
     if (order === 'wallet_conflict') continue;
     // With WhatsApp confirmation off, the order goes straight to the sellers.

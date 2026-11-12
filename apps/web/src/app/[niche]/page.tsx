@@ -62,7 +62,7 @@ export default async function Home({ params }: P) {
           </div>
           <div className="ph-stack" aria-hidden="true">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            {cfg.hero.images.slice(0, 3).map((src, i) => <img key={src} {...responsive(src, CARD_SIZES)} alt="" className={`s${i}`} decoding="async" fetchPriority={i === 0 ? 'high' : 'auto'} />)}
+            {cfg.hero.images.slice(0, 3).map((src, i) => <img key={src} {...responsive(src, CARD_SIZES)} alt={i === 0 ? s.t('alt.hero', { brand: s.brand(cfg) }) : ''} className={`s${i}`} decoding="async" fetchPriority={i === 0 ? 'high' : 'auto'} />)}
           </div>
         </section>
       )}
@@ -144,7 +144,7 @@ export default async function Home({ params }: P) {
       {sellers.map((x) => (
         <section key={x.id} className="roaster" aria-label={s.t('meetRoaster')}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <div className="av">{x.logo ? <img src={x.logo} alt="" /> : s.seller(x).slice(0, 1)}</div>
+          <div className="av">{x.logo ? <img src={x.logo} alt={s.t('alt.logo', { name: s.seller(x) })} /> : s.seller(x).slice(0, 1)}</div>
           <div>
             <span className="small muted">{s.t('meetRoaster')}</span>
             <b style={{ display: 'block' }}>{s.seller(x)}</b>
@@ -152,6 +152,22 @@ export default async function Home({ params }: P) {
           </div>
         </section>
       ))}
+      {(() => {
+        // Real reviews only (from delivered orders, typed in the admin); the section stays hidden until there are some.
+        const revs = products.flatMap((p) => p.reviews.filter((r) => r.stars && r.orderId).map((r) => ({ r, p }))).sort((a, b) => (b.r.at ?? '').localeCompare(a.r.at ?? '')).slice(0, 6);
+        return revs.length ? (
+          <section className="home-revs" aria-labelledby="revs-h">
+            <div><h2 className="sec" id="revs-h">{s.t('revs.title')}</h2><span className="muted small">{s.t('revs.sub')}</span></div>
+            <div className="rev-strip">{revs.map(({ r, p }, i) => (
+              <Link key={i} href={s.href(`/p/${p.slug}`)} className="rev-card">
+                <span className="stars" aria-label={s.t('starsOf', { n: r.stars! })}>{'★'.repeat(r.stars!)}{'☆'.repeat(5 - r.stars!)}</span>
+                <p>“{r.text}”</p>
+                <span className="small"><b>{r.name}</b> · <span className="muted">{s.product(p)}</span></span>
+              </Link>
+            ))}</div>
+          </section>
+        ) : null;
+      })()}
       {faq.length > 0 && (
         <section className="home-faq" aria-labelledby="faq-h">
           <h2 className="sec" id="faq-h">{s.t('faq')}</h2>

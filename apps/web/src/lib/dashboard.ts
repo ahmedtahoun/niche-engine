@@ -89,7 +89,8 @@ export function dashboard(orders: Order[], productList: Product[], days: number,
       refused: current.filter((o) => o.status === 'refused').length,
       cancelled: current.filter((o) => o.status === 'cancelled').length,
     },
-    sources: group((o) => o.source ?? 'web').map(([source, e]) => ({ source, ...e })),
+    // Website orders from a campaign link count under that source ("site:instagram").
+    sources: group((o) => (o.source && o.source !== 'web' ? o.source : o.utm?.source ? `site:${o.utm.source}` : 'web')).map(([source, e]) => ({ source, ...e })),
     governorates: group((o) => o.customer.governorate).slice(0, 6).map(([name, e]) => ({ name, ...e })),
     topProducts: [...prod.entries()].sort((a, b) => b[1].revenue - a[1].revenue).slice(0, 6)
       .map(([id, e]) => ({ id, name: products.get(id)?.nameAr ?? id, units: e.units, revenue: e.revenue, profit: e.costed ? e.profit : null })),

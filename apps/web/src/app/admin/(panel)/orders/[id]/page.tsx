@@ -3,11 +3,12 @@ import { notFound } from 'next/navigation';
 import { catalog } from '@/lib/catalog';
 import { customers } from '@/lib/customer-stats';
 import { getNiche } from '@/lib/niches';
-import { orderById } from '@/lib/orders';
+import { orderById, utmLabel } from '@/lib/orders';
 import { customerKey } from '@/lib/session';
 import { waLink } from '@/lib/site';
 import { store } from '@/lib/store';
 import { EGP, Pill, STATUS } from '../../shared';
+import { addReviewAction } from '../../../actions';
 import { OrderActions } from '../OrderActions';
 
 export const metadata = { title: 'Order' };
@@ -108,6 +109,28 @@ export default async function OrderPage({ params }: { params: Promise<{ id: stri
             <a className="wa-btn" href={waLink(o.customer.phone, message)} target="_blank" rel="noreferrer">💬 WhatsApp the customer</a>
             <a className="mini block" href={`tel:${o.customer.phone}`} style={{ textAlign: 'center', textDecoration: 'none' }}>📞 Call</a>
           </section>
+          {o.status === 'delivered' && (() => {
+            const bought = [...new Map(o.items.map((i) => [i.productId, i])).values()];
+            const given = bought.flatMap((i) => (cat.productById(i.productId)?.reviews ?? []).filter((r) => r.orderId === o.id).map((r) => ({ ...r, product: i.name })));
+            const first = o.customer.name.trim().split(/\s+/);
+            const shortName = first.length > 1 ? `${first[0]} ${first[1].slice(0, 1)}.` : first[0];
+            const ask = `أهلاً ${first[0]} ☕ معاك ${brand}. إن شاء الله ${bought.length > 1 ? 'القهوة' : bought[0].name} عجبتك! ممكن تقولنا رأيك في جملة أو اتنين، وتقييمك من 5؟ رأيك بيساعد ناس تانية تختار قهوتها 🤍`;
+            return (
+              <section className="panel">
+                <h2>Review <span className="sub">{given.length ? `${given.length} saved` : 'real customers only'}</span></h2>
+                <a className="wa-btn" href={waLink(o.customer.phone, ask)} target="_blank" rel="noreferrer">💬 Ask for a review</a>
+                {given.map((r, i) => <p key={i} className="rev-saved"><b className="ar">{'★'.repeat(r.stars ?? 0)} {r.product}</b><span className="ar">“{r.text}” · {r.name}</span></p>)}
+                <form action={addReviewAction.bind(null, o.id)} className="rev-form">
+                  <p className="hint">Paste what they replied. It shows on the coffee&apos;s page and the home page.</p>
+                  {bought.length > 1 ? <select name="product" className="sel" required>{bought.map((i) => <option key={i.productId} value={i.productId}>{i.name}</option>)}</select> : <input type="hidden" name="product" value={bought[0].productId} />}
+                  <select name="stars" className="sel" defaultValue="5" aria-label="Stars">{[5, 4, 3, 2, 1].map((n) => <option key={n} value={n}>{'★'.repeat(n)} {n}</option>)}</select>
+                  <input name="name" className="cell" defaultValue={shortName} dir="rtl" aria-label="Name shown" required />
+                  <textarea name="text" className="cell" rows={3} dir="rtl" placeholder="رأي العميل بكلامه…" required minLength={2} maxLength={600} />
+                  <button className="btn-save block-btn">Save review</button>
+                </form>
+              </section>
+            );
+          })()}
           <section className="panel">
             <h2>Delivery address</h2>
             <p className="ar addr">{address}</p>
@@ -118,6 +141,7 @@ export default async function OrderPage({ params }: { params: Promise<{ id: stri
               <div><dt>Method</dt><dd>{o.payment === 'cod' ? 'Cash on delivery' : 'InstaPay'}</dd></div>
               <div><dt>Customer</dt><dd>{o.type === 'repeat' ? 'Repeat' : 'New'}</dd></div>
               <div><dt>Came from</dt><dd>{({ whatsapp: 'WhatsApp', phone: 'Phone call', instagram: 'Instagram', facebook: 'Facebook', other: 'Manual' } as Record<string, string>)[o.source ?? ''] ?? 'Website'}</dd></div>
+              {o.utm && <div><dt>Campaign</dt><dd>{utmLabel(o.utm)}{o.utm.medium ? ` · ${o.utm.medium}` : ''}</dd></div>}
               {o.promoCode && <div><dt>Promo</dt><dd>{o.promoCode}</dd></div>}
             </dl>
           </section>

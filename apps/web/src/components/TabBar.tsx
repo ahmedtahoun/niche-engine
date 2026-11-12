@@ -29,3 +29,18 @@ export function TabBar({ niche }: { niche: string }) {
     </nav>
   );
 }
+
+/** Cart and account in the header on wide screens, where the bottom tab bar is hidden. */
+export function HeaderNav({ niche }: { niche: string }) {
+  const s = useSpeak();
+  const [lines] = useCart(niche);
+  const count = lines.reduce((a, l) => a + l.qty, 0);
+  return (
+    <>
+      <Link href={s.href('/account')} className="iconbtn only-wide-grid" aria-label={s.t('nav.account')}>{Icon.user}</Link>
+      <Link href={s.href('/cart')} className="iconbtn only-wide-grid cartbtn" aria-label={count ? s.t('nav.cartN', { n: count }) : s.t('nav.cart')}>
+        {Icon.cart}{count > 0 && <span className="badge-n num">{count}</span>}
+      </Link>
+    </>
+  );
+}

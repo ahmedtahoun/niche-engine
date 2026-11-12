@@ -98,6 +98,8 @@ export interface NicheConfig {
     description?: Bilingual;
     /** Customer-service WhatsApp / phone, Egyptian format (e.g. 01109200150). Shown in the footer, the WhatsApp button and order pages. */
     whatsapp?: string;
+    /** One or two lines on who we are, in the footer (e.g. a store that picks from roasters, not a roastery). */
+    about?: Bilingual;
     /** Round stamp on product photos, e.g. "Cairo Roast pick" (drawn with the logo). */
     pickSeal?: Bilingual;
   };
@@ -110,6 +112,8 @@ export interface NicheConfig {
   commission: CommissionRates;
   reserve: { percent: number; days: number };
   shippingEgp: number;
+  /** Google product category for the Meta / Google catalog feed, e.g. "Food, Beverages & Tobacco > Beverages > Coffee". */
+  feedCategory?: string;
   /** Orders whose goods (after bundle discounts) reach this ship free; the platform pays the courier. */
   freeShippingOverEgp?: number;
   risk: {

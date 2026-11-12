@@ -367,6 +367,34 @@ export async function createManualOrder(input: ManualOrderInput): Promise<Manual
   return { ok: true, id: order.id };
 }
 
+// ---------- reviews (real customers only: typed from what they said after delivery) ----------
+/** Saves a delivered order's review on one of its products (one per order and product; saving again replaces it). */
+export async function addReviewAction(orderId: number, form: FormData) {
+  await guard();
+  const o = await orderById(orderId);
+  const productId = String(form.get('product') ?? '');
+  const stars = Math.round(Number(form.get('stars')));
+  const text = String(form.get('text') ?? '').trim().slice(0, 600);
+  const name = String(form.get('name') ?? '').trim().slice(0, 40);
+  if (!o || o.status !== 'delivered' || !o.items.some((i) => i.productId === productId) || !(stars >= 1 && stars <= 5) || text.length < 2 || !name) return;
+  const p = (await catalog()).productById(productId);
+  if (!p) return;
+  const item = o.items.find((i) => i.productId === productId)!;
+  const review = { name, tags: [item.variant.split(' · ')[0]], text, stars, orderId, at: new Date().toISOString() };
+  await saveProduct({ ...structuredClone(p), reviews: [...p.reviews.filter((r) => !(r.orderId === orderId)), review] });
+  done();
+  revalidatePath('/', 'layout');
+}
+
+export async function deleteReviewAction(productId: string, index: number) {
+  await guard();
+  const p = (await catalog()).productById(productId);
+  if (!p || !p.reviews[index]) return;
+  await saveProduct({ ...structuredClone(p), reviews: p.reviews.filter((_, i) => i !== index) });
+  done();
+  revalidatePath('/', 'layout');
+}
+
 // ---------- payouts ----------
 export async function markPaidAction(sellerId: string) {
   await guard();

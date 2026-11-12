@@ -445,3 +445,30 @@ html.lang-switching main { opacity: .55; transition: opacity .15s; pointer-event
 .line.short { border-color: var(--bad); }
 .bad-line { color: var(--bad); font-weight: 600; margin-top: 2px; }
 .minicart .bad-t { color: var(--bad); }
+
+/* Reviews */
+.stars { color: #C8963E; letter-spacing: 1px; font-size: 13px; }
+.stars-sum { color: #C8963E; font-weight: 700; }
+.tag.ok { background: color-mix(in srgb, var(--ok) 12%, transparent); color: var(--ok); }
+.home-revs { display: grid; gap: 10px; }
+.rev-strip { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(240px, 80%); gap: 10px; overflow-x: auto; scroll-snap-type: x mandatory; padding-bottom: 4px; }
+.rev-card { scroll-snap-align: start; display: grid; gap: 6px; align-content: start; background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 12px; color: inherit; }
+.rev-card p { margin: 0; font-size: 14.5px; line-height: 1.6; }
+@media (min-width: 900px) { .rev-strip { grid-auto-flow: row; grid-template-columns: repeat(3, 1fr); overflow: visible; } }
+.foot .about { margin: 0; color: var(--muted); line-height: 1.7; }
+
+/* Wide screens: cart and account move to the header, the bottom tab bar goes away,
+   and the mini cart floats in a corner instead of covering the product grid. */
+.only-wide-grid { display: none !important; }
+.cartbtn { position: relative; }
+.badge-n { position: absolute; top: -4px; inset-inline-end: -4px; min-width: 18px; height: 18px; border-radius: 99px; background: var(--primary); color: #fff; font-size: 11px; font-weight: 700; display: grid; place-items: center; padding: 0 4px; }
+@media (min-width: 900px) {
+  .only-wide-grid { display: grid !important; }
+  .tabbar { display: none; }
+  .minicart { position: fixed; bottom: 24px; inset-inline-end: 24px; width: 380px; max-width: calc(100vw - 48px); margin: 0; border: 1px solid var(--line); border-radius: 16px; box-shadow: 0 12px 32px rgba(36,22,15,.16); }
+  .qa-toast { bottom: 110px; }
+}
+
+.eta-gov select { font: inherit; font-weight: 700; color: var(--primary); background: transparent; border: 0; border-bottom: 1px dashed var(--primary); padding: 0 2px; cursor: pointer; }
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+@media (min-width: 900px) { .shell:has(.minicart) main { padding-bottom: 110px; } }

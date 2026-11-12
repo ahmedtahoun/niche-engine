@@ -1,8 +1,9 @@
 'use client';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useState, useTransition } from 'react';
+import { useEffect, useState, useTransition } from 'react';
 import { placeOrder, type CheckoutForm as Form } from '@/app/actions';
+import { savedCampaign } from './Campaign';
 import { writeCart } from './cart-store';
 import { Summary, useQuote } from './CartView';
 import { useSpeak } from './I18n';
@@ -21,6 +22,12 @@ export function CheckoutForm({ niche, governorates, initialPromo, openBeforePay,
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [pending, start] = useTransition();
   const { lines, ready, q } = useQuote(niche, form.promoCode, form.useWallet);
+  // The governorate picked on a product page ("arrives … to") is the starting choice here, and the other way round.
+  useEffect(() => {
+    try { const g = localStorage.getItem('ne_gov'); if (!me?.governorate && g && governorates.includes(g)) setForm((f) => ({ ...f, governorate: g })); } catch { /* storage blocked */ }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+  useEffect(() => { try { localStorage.setItem('ne_gov', form.governorate); } catch { /* storage blocked */ } }, [form.governorate]);
   const set = (k: keyof Form) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => setForm({ ...form, [k]: e.target.value });
 
   if (ready && !lines.length) return <div className="box" style={{ textAlign: 'center' }}><b>{t('cartEmpty')}</b><Link className="btn primary" href={s.href()}>{t('startShopping')}</Link></div>;
@@ -28,7 +35,7 @@ export function CheckoutForm({ niche, governorates, initialPromo, openBeforePay,
   const submit = (e: React.FormEvent) => {
     e.preventDefault();
     start(async () => {
-      const r = await placeOrder(niche, lines, form);
+      const r = await placeOrder(niche, lines, { ...form, utm: savedCampaign() });
       if (r.ok) {
         writeCart(niche, []);
         router.push(s.href(`/order/${r.id}`));

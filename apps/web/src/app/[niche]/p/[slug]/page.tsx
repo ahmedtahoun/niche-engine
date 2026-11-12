@@ -144,7 +144,6 @@ export default async function ProductPage({ params }: P) {
           <span className="small muted">{s.t('meetRoaster')}</span>
           <b style={{ display: 'block' }}>{s.seller(seller)}</b>
           {seller.about && <p>{(s.en && seller.about.en) || seller.about.ar}</p>}
-          {seller.instagram && <a className="small" style={{ color: 'var(--primary)', fontWeight: 700 }} href={`https://instagram.com/${seller.instagram}`} rel="noopener" target="_blank">{s.t('instagram')} ↗</a>}
         </div>
       </section>
     </main>

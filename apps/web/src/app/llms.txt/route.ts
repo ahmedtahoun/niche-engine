@@ -30,7 +30,7 @@ export async function GET() {
     }),
     '',
     ...(cfg.bundles.length ? ['## Bundles', ...cfg.bundles.flatMap((b) => { const v = cat.bundleView(cfg, b.id); return v ? [`- [${b.nameEn ?? b.nameAr}](${siteUrl(cfg, `/b/${b.id}`, 'en')}): EGP ${v.price} instead of EGP ${v.fullPrice}.`] : []; }), ''] : []),
-    ...(sellers.length ? ['## Roasters and sellers', ...sellers.map((s) => `- ${s.nameEn ?? s.name}${s.about?.en ? `: ${s.about.en}` : ''}${s.instagram ? ` (instagram.com/${s.instagram})` : ''}`), ''] : []),
+    ...(sellers.length ? ['## Roasters and sellers', ...sellers.map((s) => `- ${s.nameEn ?? s.name}${s.about?.en ? `: ${s.about.en}` : ''}`), ''] : []),
     ...(guidesFor(cfg.id).length ? ['## Guides', ...guidesFor(cfg.id).map((g) => `- [${g.title.en}](${siteUrl(cfg, `/guide/${g.slug}`, 'en')}): ${g.short.en}`), ''] : []),
     ...(cfg.acceptsSellers !== false ? ['## For sellers', `- [Sell on ${cfg.brand.nameEn}](${siteUrl(cfg, '/sell', 'en')}): commission ${Math.round(cfg.commission.new * 100)}% on new customers, ${Math.round(cfg.commission.repeat * 100)}% on repeat customers, ${Math.round(cfg.commission.referral * 100)}% on customers the seller brings; weekly payouts.`, ''] : []),
   ];

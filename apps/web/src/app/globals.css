@@ -298,3 +298,5 @@ details p { margin: 6px 0 0; color: var(--muted); }
 .best-list { display: flex; flex-wrap: wrap; gap: 6px; }
 .best-list span { display: inline-flex; align-items: center; gap: 5px; padding: 6px 11px; border-radius: 999px; border: 1px solid var(--line); background: var(--surface-2); font-size: 13px; font-weight: 600; }
 .best-list i { font-style: normal; }
+.roaster .av:has(img), .roaster-chip .av:has(img) { background: #fff; border: 1px solid var(--line); }
+.roaster .av img, .roaster-chip .av img { object-fit: contain; }

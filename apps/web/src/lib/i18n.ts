@@ -229,7 +229,6 @@ const D = {
   partnerOf: { ar: 'شريك {brand}', en: '{brand} partner' },
   bestIn: { ar: 'أحلى في', en: 'Best in' },
   facts: { ar: 'عن القهوة', en: 'About this coffee' },
-  instagram: { ar: 'إنستجرام', en: 'Instagram' },
   startHere: { ar: 'أول مرة؟ ابدأ من هنا', en: 'First time? Start here' },
   'trust.original': { ar: 'أصلية ومقفولة من المحمصة', en: 'Original and sealed from the roastery' },
   'trust.cod': { ar: 'الدفع عند الاستلام', en: 'Cash on delivery' },

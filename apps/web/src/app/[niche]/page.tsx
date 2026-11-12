@@ -137,7 +137,6 @@ export default async function Home({ params }: P) {
             <span className="small muted">{s.t('meetRoaster')}</span>
             <b style={{ display: 'block' }}>{s.seller(x)}</b>
             <p>{(s.en && x.about?.en) || x.about?.ar}</p>
-            {x.instagram && <a className="small" style={{ color: 'var(--primary)', fontWeight: 700 }} href={`https://instagram.com/${x.instagram}`} rel="noopener" target="_blank">{s.t('instagram')} ↗</a>}
           </div>
         </section>
       ))}

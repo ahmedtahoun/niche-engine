@@ -1,4 +1,5 @@
 // Cairo Roast's first roaster: Bonds Coffee Roasters, and the coffees we sell.
+// Customers buy through Cairo Roast only: no seller Instagram, phone, address or location on the store.
 // Prices: Ahmed's retail price list (2026-11-12), the price for 1 kg; 250 g is a quarter of it.
 // Cost (what Bonds charges us) is private and never in this public repository: it lives in
 // seeds/costs.local.json (git-ignored) and reaches Supabase through supabase/seed/coffee-costs.local.sql.
@@ -16,13 +17,13 @@ export const BONDS: Seller = {
   name: 'بوندز لتحميص القهوة',
   nameEn: 'Bonds Coffee Roasters',
   about: {
-    ar: 'محمصة قهوة مختصة بتعمل برامج قهوة متكاملة: من التحميص المخصص للكافيهات والشركات لحد القهوة بعلامتك الخاصة. القهوة اللي هنا جاية من المحمصة على طول.',
-    en: 'A specialty coffee roaster that builds complete coffee programs, from tailored roasting for cafés and offices to private-label coffee. Everything here comes straight from their roastery.',
+    ar: 'محمصة قهوة مختصة وشريك محمصة القاهرة. بتحمص بلندات وقهوة أحادية المصدر من إثيوبيا والبرازيل وكولومبيا والسلفادور، وكل كيس بيوصلك عن طريقنا مقفول وأصلي.',
+    en: 'A specialty coffee roaster and Cairo Roast partner. They roast blends and single origins from Ethiopia, Brazil, Colombia and El Salvador, and every bag reaches you through us, sealed and original.',
   },
   area: 'القاهرة',
   rating: 0,
   status: 'active',
-  instagram: 'bondscoffeeroasters',
+  logo: '/sellers/bonds/mark.webp',
   governorate: 'القاهرة',
 };
 

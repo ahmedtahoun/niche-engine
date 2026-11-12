@@ -39,7 +39,7 @@ alter table sellers add column if not exists about jsonb;
 insert into niches (id, status, config) values ('coffee', ${q(cfg.status)}, ${q(cfg)})
 on conflict (id) do nothing;
 
-${insert('sellers', seller, ['store_name', 'name_en', 'about', 'instagram', 'area', 'governorate'])}
+${insert('sellers', seller, ['store_name', 'name_en', 'about', 'instagram', 'logo_url', 'area', 'governorate'])}
 
 ${products.map((r) => insert('products', r, ['name_ar', 'lead_ar', 'category', 'art', 'color', 'price', 'attributes', 'faq', 'en', 'profile', 'images', 'status'])).join('\n\n')}
 

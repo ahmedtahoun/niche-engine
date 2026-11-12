@@ -78,7 +78,7 @@ test('freshness: no date means made to order; a dated product goes stale after t
   assert.equal(freshnessOf(base, eth, now), null);
 });
 
-test('Cairo Roast: the Bonds seed SQL loads into real Postgres, re-runs keep stock, and checkout prices each weight', async () => {
+test('Cairo Roast: the Bonds seed SQL loads into real Postgres, re-runs keep stock and admin prices, and checkout prices each weight', async () => {
   const { readFileSync } = await import('node:fs');
   const { startFakeSupabase } = await import('./postgrest-fake.ts');
   const { rowToProduct, rowToSeller } = await import('../src/lib/store/rows.ts');
@@ -86,6 +86,8 @@ test('Cairo Roast: the Bonds seed SQL loads into real Postgres, re-runs keep sto
   const seed = readFileSync(new URL('../../../supabase/seed/coffee-bonds.sql', import.meta.url), 'utf8');
   await db.exec(seed);
   await db.exec(`update products set variants = jsonb_set(variants, '{0,stock}', '7') where id = 'bonds-chrome'`);
+  // A price changed in the admin survives a re-run of the seed.
+  await db.exec(`update products set variants = jsonb_set(variants, '{1,price}', '880'), price = 225 where id = 'bonds-amber'`);
   await db.exec(seed);
   const products = (await db.query<Record<string, unknown>>('select * from products order by id')).rows.map((r) => rowToProduct(r as never));
   const sellers = (await db.query<Record<string, unknown>>('select * from sellers')).rows.map((r) => rowToSeller(r as never));
@@ -105,6 +107,7 @@ test('Cairo Roast: the Bonds seed SQL loads into real Postgres, re-runs keep sto
   assert.deepEqual(live.search(coffeeCfg, { q: 'بن اثيوبي' }).map((p) => p.slug).sort(), ['bonds-ethiopia-guji', 'bonds-ethiopia-limu']);
   assert.deepEqual(products.find((p) => p.id === 'bonds-ethiopia-guji')!.variants.map((v) => v.price), [500, 2000]);
   assert.equal(products.find((p) => p.id === 'bonds-amber')!.images?.[0], '/products/coffee/amber.webp');
+  assert.deepEqual(products.find((p) => p.id === 'bonds-amber')!.variants.map((v) => v.price), [245, 880], 'the admin price is kept');
 });
 
 test('wholesale coffee: Bonds is paid exactly the agreed cost, Cairo Roast keeps the margin, and the cost never reaches the browser', async () => {

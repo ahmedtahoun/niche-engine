@@ -41,10 +41,11 @@ on conflict (id) do nothing;
 
 ${insert('sellers', seller, ['store_name', 'name_en', 'about', 'instagram', 'logo_url', 'area', 'governorate'])}
 
-${products.map((r) => insert('products', r, ['name_ar', 'lead_ar', 'category', 'art', 'color', 'price', 'attributes', 'faq', 'en', 'profile', 'images', 'status'])).join('\n\n')}
+${products.map((r) => insert('products', r, ['name_ar', 'lead_ar', 'category', 'art', 'color', 'attributes', 'faq', 'en', 'profile', 'images', 'status'])).join('\n\n')}
 
--- Prices per weight live inside "variants". On a re-run, refresh them without touching stock:
-${BONDS_PRODUCTS.map((p) => `update products set variants = (select jsonb_agg(case ${p.variants.map((v) => `when e->>'label' = ${q(v.label)} then e || ${q({ price: v.price, opts: v.opts, ...(v.labelEn ? { labelEn: v.labelEn } : {}) })}`).join(' ')} else e end) from jsonb_array_elements(variants) e) where id = ${q(p.id)};`).join('\n')}
+-- Prices and stock are managed in the admin (Products) once a coffee exists: a re-run never
+-- changes them. It only fills a price where a weight has none, and refreshes option names:
+${BONDS_PRODUCTS.map((p) => `update products set variants = (select jsonb_agg(case ${p.variants.map((v) => `when e->>'label' = ${q(v.label)} then (${q({ price: v.price })}::jsonb || e) || ${q({ opts: v.opts, ...(v.labelEn ? { labelEn: v.labelEn } : {}) })}`).join(' ')} else e end) from jsonb_array_elements(variants) e) where id = ${q(p.id)};`).join('\n')}
 
 -- Coffees no longer sold: hidden (kept for past orders).
 update products set status = 'hidden' where id in (${BONDS_RETIRED.map(q).join(', ')});
@@ -65,8 +66,9 @@ if (existsSync(costsFile)) {
   const rows = Object.entries(costKg).filter(([k, v]) => !k.startsWith('_') && typeof v === 'number') as [string, number][];
   const costSql = `-- PRIVATE: Bonds' prices to Cairo Roast (wholesale cost). Do not commit or share.
 -- Run in Supabase → SQL Editor after coffee-bonds.sql. Bonds is paid exactly these on each delivered item.
+-- Only fills coffees without a buying price: after that, buying prices are edited in the admin.
 alter table products add column if not exists cost jsonb;
-${rows.map(([slug, kg]) => `update products set cost = ${q({ '250 جم': Math.round(kg / 4), '1 كجم': kg })} where id = ${q(slug)};`).join('\n')}
+${rows.map(([slug, kg]) => `update products set cost = ${q({ '250 جم': Math.round(kg / 4), '1 كجم': kg })} where id = ${q(slug)} and cost is null;`).join('\n')}
 `;
   writeFileSync(new URL('../supabase/seed/coffee-costs.local.sql', import.meta.url), costSql);
   console.log('wrote supabase/seed/coffee-costs.local.sql (private, git-ignored)');

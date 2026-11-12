@@ -66,3 +66,35 @@
 .login { max-width: 360px; margin: 12vh auto; display: grid; gap: 12px; background: var(--a-surface); border: 1px solid var(--a-line); border-radius: 14px; padding: 24px; }
 .login input { font: inherit; font-size: 16px; padding: 10px 12px; border: 1px solid var(--a-line); border-radius: 10px; }
 .empty { color: var(--a-muted); font-size: 13px; margin: 0; }
+
+/* Products CRM table */
+.tools { display: flex; justify-content: space-between; gap: 10px; flex-wrap: wrap; margin-bottom: 10px; }
+.t.crm { min-width: 1080px; }
+.t.crm tbody.prod tr:last-child td { border-bottom: 2px solid var(--a-line); }
+.t.crm tbody.prod:hover td { background: #FAFBF8; }
+.t.crm td { padding: 6px 8px; }
+.pcell { vertical-align: top !important; padding-top: 10px !important; min-width: 220px; }
+.pinfo { display: flex; gap: 10px; align-items: flex-start; }
+.pinfo small { display: block; color: var(--a-muted); font-size: 12px; margin-top: 3px; }
+.pname { font-weight: 700; text-decoration: none; }
+.pname:hover { text-decoration: underline; }
+input.cell { width: 76px; font: inherit; font-variant-numeric: tabular-nums; padding: 5px 7px; border: 1px solid var(--a-line); border-radius: 7px; background: #fff; text-align: right; }
+input.cell:focus { outline: 2px solid var(--a-accent); outline-offset: 0; border-color: transparent; }
+input.cell.warn { background: var(--a-warn-soft); }
+input.cell.bad { background: var(--a-bad-soft); }
+.mg { font-variant-numeric: tabular-nums; font-weight: 600; padding: 2px 7px; border-radius: 6px; white-space: nowrap; }
+.mg.ok { background: var(--a-ok-soft); color: var(--a-ok); }
+.mg.warn { background: var(--a-warn-soft); color: var(--a-warn); }
+.mg.bad { background: var(--a-bad-soft); color: var(--a-bad); }
+.acts-cell { vertical-align: top !important; padding-top: 10px !important; }
+.acts-cell > * { display: block; margin-bottom: 6px; text-align: center; text-decoration: none; }
+/* Product detail */
+.pd-head { display: flex; gap: 14px; align-items: center; }
+.pd-head img, .pd-head .thumb { width: 64px; height: 64px; border-radius: 12px; object-fit: cover; }
+.bars { display: flex; align-items: flex-end; gap: 3px; height: 120px; padding-top: 6px; }
+.bars i { flex: 1; background: var(--a-accent); border-radius: 3px 3px 0 0; min-height: 2px; opacity: .85; }
+.bars i.zero { background: var(--a-line); }
+.bars-x { display: flex; justify-content: space-between; color: var(--a-muted); font-size: 11px; margin-top: 4px; }
+.hbar { display: grid; grid-template-columns: 150px 1fr 60px; gap: 10px; align-items: center; font-size: 13px; margin: 6px 0; }
+.hbar .track { background: var(--a-bg); border-radius: 6px; height: 10px; overflow: hidden; }
+.hbar .track i { display: block; height: 100%; background: var(--a-accent); border-radius: 6px; }

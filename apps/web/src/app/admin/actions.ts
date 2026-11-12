@@ -118,6 +118,45 @@ export async function setStock(id: string, form: FormData) {
   done();
 }
 
+const num = (raw: FormDataEntryValue | null) => {
+  if (raw === null || String(raw).trim() === '') return null;
+  const n = Number(String(raw).replace(/[٠-٩]/g, (d) => String('٠١٢٣٤٥٦٧٨٩'.indexOf(d))).replace(/,/g, ''));
+  return Number.isFinite(n) ? n : NaN;
+};
+
+/**
+ * Stock, selling price and buying price (cost) per option, from the products table
+ * (fields "stock:<label>", "price:<label>", "cost:<label>"). Whole numbers; a blank cost removes it.
+ * The cost stays in the database and the admin only (never sent to shoppers).
+ */
+export async function saveSkus(id: string, form: FormData) {
+  await guard();
+  const found = (await catalog()).productById(id);
+  if (!found) return;
+  const p = structuredClone(found);
+  let priced = false;
+  for (const v of p.variants) {
+    const stock = num(form.get(`stock:${v.label}`));
+    if (stock !== null && Number.isInteger(stock) && stock >= 0 && stock <= 100000) v.stock = stock;
+    const price = num(form.get(`price:${v.label}`));
+    if (price !== null && Number.isInteger(price) && price > 0 && price <= 1_000_000 && price !== (v.price ?? p.price)) { v.price = price; priced = true; }
+    if (form.has(`cost:${v.label}`)) {
+      const cost = num(form.get(`cost:${v.label}`));
+      if (cost === null) { if (p.cost) delete p.cost[v.label]; }
+      else if (Number.isInteger(cost) && cost >= 0 && cost <= 1_000_000) p.cost = { ...(p.cost ?? {}), [v.label]: cost };
+    }
+  }
+  if (p.cost && !Object.keys(p.cost).length) delete p.cost;
+  if (priced) {
+    // The "from" price shown on cards is the lowest option price.
+    const prices = p.variants.map((v) => v.price).filter((x): x is number => typeof x === 'number');
+    if (prices.length) p.price = Math.min(...prices);
+    p.priceConfirmedAt = new Date().toISOString();
+  }
+  await saveProduct(p);
+  done();
+}
+
 // ---------- payouts ----------
 export async function markPaidAction(sellerId: string) {
   await guard();

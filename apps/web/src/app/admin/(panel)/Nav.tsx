@@ -10,7 +10,7 @@ export function Nav({ counts }: { counts: { orders: number; review: number } }) 
     ['/admin', 'Overview'],
     ['/admin/orders', 'Orders', counts.orders],
     ['/admin/sellers', 'Sellers'],
-    ['/admin/products', 'Products & review', counts.review],
+    ['/admin/products', 'Products', counts.review],
     ['/admin/payouts', 'Payouts'],
     ['/admin/telegram', 'Telegram bot'],
   ];

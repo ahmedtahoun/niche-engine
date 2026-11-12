@@ -8,6 +8,7 @@ import { catalog } from '@/lib/catalog';
 import { guidesFor } from '@/lib/guides';
 import { speaker } from '@/lib/lang';
 import { getNiche } from '@/lib/niches';
+import { responsive } from '@/lib/img';
 import { jsonLd, origin, pageMeta, siteUrl } from '@/lib/site';
 
 type P = { params: Promise<{ niche: string }> };
@@ -51,7 +52,7 @@ export default async function Home({ params }: P) {
           </div>
           <div className="ph-stack" aria-hidden="true">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            {cfg.hero.images.slice(0, 3).map((src, i) => <img key={src} src={src} alt="" className={`s${i}`} decoding="async" fetchPriority={i === 0 ? 'high' : 'auto'} />)}
+            {cfg.hero.images.slice(0, 3).map((src, i) => <img key={src} {...responsive(src, '(min-width: 700px) 240px, 46vw')} alt="" className={`s${i}`} decoding="async" fetchPriority={i === 0 ? 'high' : 'auto'} />)}
           </div>
         </section>
       )}

@@ -1,4 +1,5 @@
 // Placeholder product drawings until real seller photos are uploaded.
+import { responsive } from '@/lib/img';
 import type { ArtKind } from '@/lib/types';
 
 const SHAPES: Record<Exclude<ArtKind, 'kit' | 'coffee'>, string> = {
@@ -32,7 +33,8 @@ const Shape = ({ kind, color }: { kind: Exclude<ArtKind, 'kit'>; color: string }
 
 export function Art({ kind, color, kitColors, image, alt = '' }: { kind: ArtKind; color: string; kitColors?: string[]; image?: string; alt?: string }) {
   // eslint-disable-next-line @next/next/no-img-element
-  if (image) return <img className="photo" src={image} alt={alt} loading="lazy" decoding="async" />;
+  // Cards, cart lines and bundle parts: small photo on phones.
+  if (image) return <img className="photo" {...responsive(image, '(min-width: 700px) 240px, 46vw')} alt={alt} loading="lazy" decoding="async" />;
   if (kind === 'kit') {
     const [a = '#D8C6A6', b = '#2A2D30', c = '#CBBDA5'] = kitColors ?? [];
     return (

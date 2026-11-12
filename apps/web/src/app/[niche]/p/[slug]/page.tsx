@@ -8,6 +8,7 @@ import { etaDate } from '@/lib/eta';
 import { speaker } from '@/lib/lang';
 import { getNiche } from '@/lib/niches';
 import { jsonLd, pageMeta, siteUrl } from '@/lib/site';
+import { responsive } from '@/lib/img';
 
 type P = { params: Promise<{ niche: string; slug: string }> };
 
@@ -69,7 +70,7 @@ export default async function ProductPage({ params }: P) {
         <>
           <div className="gallery" aria-label={s.t('photos')}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            {p.images.map((src, i) => <img key={src} src={src} alt={s.t('photoN', { name, n: i + 1 })} loading={i ? 'lazy' : 'eager'} decoding="async" />)}
+            {p.images.map((src, i) => <img key={src} {...responsive(src, '(min-width: 900px) 50vw, 100vw')} alt={s.t('photoN', { name, n: i + 1 })} loading={i ? 'lazy' : 'eager'} decoding="async" />)}
           </div>
           {p.images.length > 1 && <span className="small muted gallery-hint" style={{ textAlign: 'center' }}>{s.t('swipe', { n: p.images.length })}</span>}
         </>

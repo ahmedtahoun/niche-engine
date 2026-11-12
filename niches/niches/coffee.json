@@ -21,6 +21,10 @@
     "description": {
       "ar": "محمصة القاهرة متجر قهوة مختصة أونلاين في مصر: حبوب قهوة من محامص مختارة زي بوندز، بلندات وقهوة أحادية المصدر بوزن 250 جم و1 كجم، والدفع عند الاستلام مع توصيل لكل مصر.",
       "en": "Cairo Roast is an online specialty coffee store in Egypt: whole-bean coffee from selected roasters such as Bonds, blends and single origins in 250 g and 1 kg, with cash on delivery across Egypt."
+    },
+    "pickSeal": {
+      "ar": "اختيار محمصة القاهرة",
+      "en": "CAIRO ROAST PICK"
     }
   },
   "categories": [
@@ -157,7 +161,13 @@
       "labelEn": "Chocolate & nuts",
       "hintAr": "ناعمة ومريحة، حلوة سادة أو باللبن",
       "hintEn": "Smooth and comforting, lovely black or with milk",
-      "emoji": "🍫"
+      "emoji": "🍫",
+      "bestIn": [
+        "kanaka",
+        "espresso",
+        "moka",
+        "french"
+      ]
     },
     {
       "id": "caramel",
@@ -165,7 +175,12 @@
       "labelEn": "Caramel & sweet",
       "hintAr": "حلاوة طبيعية زي التوفي والقيقب",
       "hintEn": "Natural sweetness like toffee and maple",
-      "emoji": "🍯"
+      "emoji": "🍯",
+      "bestIn": [
+        "espresso",
+        "moka",
+        "filter"
+      ]
     },
     {
       "id": "fruity",
@@ -173,7 +188,12 @@
       "labelEn": "Fruity & tea-like",
       "hintAr": "أخف وأكثر تعقيد، لمسة برتقال وشاي",
       "hintEn": "Lighter and more complex, hints of orange and tea",
-      "emoji": "🍊"
+      "emoji": "🍊",
+      "bestIn": [
+        "filter",
+        "french",
+        "espresso"
+      ]
     }
   ],
   "profileScales": [
@@ -319,44 +339,87 @@
           "labelAr": "كنكة (تركي)",
           "labelEn": "Kanaka (Turkish)",
           "hintAr": "ناعم جداً زي البودرة. بنطحنها بعد طلبك، وأحلى طعم في أول أسبوعين.",
-          "hintEn": "Extra fine, like powder. Ground after you order; best within two weeks."
+          "hintEn": "Extra fine, like powder. Ground after you order; best within two weeks.",
+          "emoji": "🫖"
         },
         {
           "id": "espresso",
           "labelAr": "مكنة اسبريسو",
           "labelEn": "Espresso machine",
           "hintAr": "طحنة ناعمة للاسبريسو. بنطحنها بعد طلبك.",
-          "hintEn": "Fine, for espresso. Ground after you order."
+          "hintEn": "Fine, for espresso. Ground after you order.",
+          "emoji": "☕"
         },
         {
           "id": "moka",
           "labelAr": "موكا بوت",
           "labelEn": "Moka pot",
           "hintAr": "ناعم متوسط. بنطحنها بعد طلبك.",
-          "hintEn": "Fine-medium. Ground after you order."
+          "hintEn": "Fine-medium. Ground after you order.",
+          "emoji": "🔥"
         },
         {
           "id": "filter",
           "labelAr": "فلتر / V60",
           "labelEn": "Filter / V60",
           "hintAr": "طحنة متوسطة للفلتر والـ V60. بنطحنها بعد طلبك.",
-          "hintEn": "Medium, for filter and V60. Ground after you order."
+          "hintEn": "Medium, for filter and V60. Ground after you order.",
+          "emoji": "💧"
         },
         {
           "id": "french",
           "labelAr": "فرنش بريس",
           "labelEn": "French press",
           "hintAr": "طحنة خشنة. بنطحنها بعد طلبك.",
-          "hintEn": "Coarse. Ground after you order."
+          "hintEn": "Coarse. Ground after you order.",
+          "emoji": "🫙"
         },
         {
           "id": "beans",
           "labelAr": "حبوب كاملة",
           "labelEn": "Whole beans",
           "hintAr": "لو عندك مطحنة: الحبوب بتحافظ على طعمها أطول.",
-          "hintEn": "If you have a grinder: beans keep their taste longest."
+          "hintEn": "If you have a grinder: beans keep their taste longest.",
+          "emoji": "🫘"
         }
       ]
+    }
+  ],
+  "facts": [
+    {
+      "key": "المنشأ",
+      "keyEn": "Origin",
+      "emoji": "📍",
+      "emojiBy": {
+        "إثيوبيا": "🇪🇹",
+        "Ethiopia": "🇪🇹",
+        "البرازيل": "🇧🇷",
+        "Brazil": "🇧🇷",
+        "كولومبيا": "🇨🇴",
+        "Colombia": "🇨🇴",
+        "السلفادور": "🇸🇻",
+        "Salvador": "🇸🇻"
+      }
+    },
+    {
+      "key": "المعالجة",
+      "keyEn": "Process",
+      "emoji": "☀️"
+    },
+    {
+      "key": "السلالة",
+      "keyEn": "Variety",
+      "emoji": "🌱"
+    },
+    {
+      "key": "الارتفاع",
+      "keyEn": "Altitude",
+      "emoji": "⛰️"
+    },
+    {
+      "key": "النوع",
+      "keyEn": "Type",
+      "emoji": "🫘"
     }
   ]
 }

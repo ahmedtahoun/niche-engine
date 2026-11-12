@@ -97,7 +97,8 @@
       "valuesEn": {
         "250 جم": "250 g",
         "1 كجم": "1 kg"
-      }
+      },
+      "preselect": true
     }
   ],
   "bundles": [
@@ -473,5 +474,55 @@
         "en": "Cash to the courier when your order arrives. Only orders over EGP {depositAbove} need a EGP {deposit} deposit."
       }
     }
-  ]
+  ],
+  "journey": {
+    "title": {
+      "ar": "رحلة فنجانك ☕",
+      "en": "From farm to your cup ☕"
+    },
+    "originKey": "المنشأ",
+    "originKeyEn": "Origin",
+    "originFallback": {
+      "ar": "مزارع مختارة",
+      "en": "selected farms"
+    },
+    "steps": [
+      {
+        "emoji": "🌱",
+        "ar": "اتزرعت في {origin}",
+        "en": "Grown in {origin}",
+        "text": {
+          "ar": "بن مختص معروف مصدره",
+          "en": "Specialty coffee with a known origin"
+        }
+      },
+      {
+        "emoji": "🔥",
+        "ar": "اتحمصت عند {roaster}",
+        "en": "Roasted by {roaster}",
+        "text": {
+          "ar": "محمصة شريكة لمحمصة القاهرة",
+          "en": "A Cairo Roast partner roastery"
+        }
+      },
+      {
+        "emoji": "⚙️",
+        "ar": "بنطحنها على طريقتك",
+        "en": "Ground your way",
+        "text": {
+          "ar": "بعد طلبك، من الكنكة للفرنش بريس، أو حبوب",
+          "en": "After you order, kanaka to French press, or whole beans"
+        }
+      },
+      {
+        "emoji": "🚚",
+        "ar": "توصلك في 2–4 أيام",
+        "en": "At your door in 2–4 days",
+        "text": {
+          "ar": "وتدفع كاش عند الاستلام",
+          "en": "Pay cash on delivery"
+        }
+      }
+    ]
+  }
 }

@@ -3,6 +3,7 @@ import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import type { Choice, OptionAxis } from '@niche-engine/core';
 import type { Variant } from '@/lib/types';
+import { gramsOf } from '@/lib/weights';
 import { addLine } from './cart-store';
 import { useSpeak } from './I18n';
 
@@ -74,7 +75,7 @@ function useAxes(variants: Variant[], axes: OptionAxis[]) {
   return { values, sel, setSel, chosen, ok, missing };
 }
 
-export function AddToCart({ niche, slug, price, variants, finder, axes = [], choices = [] }: { niche: string; slug: string; price: number; variants: Variant[]; finder: 'size' | null; axes?: OptionAxis[]; choices?: Choice[] }) {
+export function AddToCart({ niche, slug, price, variants, finder, axes = [], choices = [], freeOver }: { niche: string; slug: string; price: number; variants: Variant[]; finder: 'size' | null; axes?: OptionAxis[]; choices?: Choice[]; freeOver?: number }) {
   const router = useRouter();
   const s = useSpeak();
   const t = s.t;
@@ -127,6 +128,18 @@ export function AddToCart({ niche, slug, price, variants, finder, axes = [], cho
                   );
                 })}
               </div>
+              {(() => {
+                // Bigger-size nudge: how much the big bag saves against the same weight in small bags.
+                const sized = ax.values(a.id).map((x) => ({ x, g: gramsOf(x), v: variants.find((y) => y.opts?.[a.id] === x && y.stock > 0 && axes.every((b) => b.id === a.id || y.opts?.[b.id] === ax.sel[b.id])) }))
+                  .filter((e): e is { x: string; g: number; v: Variant } => e.g !== null && Boolean(e.v?.price));
+                if (sized.length < 2) return null;
+                const small = sized.reduce((m, e) => (e.g < m.g ? e : m)), big = sized.reduce((m, e) => (e.g > m.g ? e : m));
+                if (ax.sel[a.id] === big.x) return null;
+                const n = big.g / small.g, save = Math.round(small.v.price! * n - big.v.price!);
+                const text = Number.isInteger(n) && save > 0 ? t('bigSaves', { big: axisValue(a, big.x), x: s.egp(save), n, small: axisValue(a, small.x) })
+                  : freeOver && big.v.price! >= freeOver ? t('bigFree', { big: axisValue(a, big.x) }) : null;
+                return text ? <button type="button" className="nudge" onClick={() => ax.setSel({ ...ax.sel, [a.id]: big.x })}>{text}{freeOver && big.v.price! >= freeOver && save > 0 && Number.isInteger(n) ? ` · 🚚` : ''}</button> : null;
+              })()}
             </div>
           ))
         ) : twoStep ? (

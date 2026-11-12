@@ -11,7 +11,7 @@ export default async function CartPage({ params }: { params: Promise<{ niche: st
   return (
     <main className="page narrow">
       <h1 className="title">{(await speaker(cfg)).t('nav.cart')}</h1>
-      <CartView niche={cfg.id} depositAbove={cfg.risk.depositAboveEgp} deposit={cfg.risk.depositEgp} cashback={cfg.wallet.cashback} />
+      <CartView niche={cfg.id} depositAbove={cfg.risk.depositAboveEgp} deposit={cfg.risk.depositEgp} cashback={cfg.wallet.cashback} freeOver={cfg.freeShippingOverEgp} />
     </main>
   );
 }

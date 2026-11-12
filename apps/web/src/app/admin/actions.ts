@@ -325,7 +325,7 @@ export async function createManualOrder(input: ManualOrderInput): Promise<Manual
     const name = cat.productBySlug(input.niche, slug)?.nameAr ?? slug;
     return { ok: false, error: kind === 'low_stock' ? `Not enough stock: ${name} ${variant ?? ''}. Update the stock in Products first.` : kind === 'choice_missing' ? `Pick the grind for ${name}.` : `${name} is not on sale.` };
   }
-  if (input.freeShipping) { q.total -= q.shipping; q.shipping = 0; }
+  if (input.freeShipping && q.shipping) { q.total -= q.shipping; q.shippingWaived = (q.shippingWaived ?? 0) + q.shipping; q.shipping = 0; }
   const discount = Math.max(0, Math.min(Math.floor(input.discount || 0), q.total));
   if (discount) { q.promoDiscount += discount; q.total -= discount; }
   q.depositRequired = false;

@@ -8,7 +8,7 @@ export function moneyOf(o: Order): OrderMoney {
   return {
     type: o.type,
     lines: o.items.map((i) => ({ sellerId: i.sellerId, unitPrice: i.unitPrice, qty: i.qty, ...(i.unitCost !== undefined ? { unitCost: i.unitCost } : {}) })),
-    platformDiscount: o.quote.bundleDiscount + o.quote.promoDiscount,
+    platformDiscount: o.quote.bundleDiscount + o.quote.promoDiscount + (o.quote.shippingWaived ?? 0),
     wallet: o.quote.wallet,
     delivered: o.status === 'delivered',
   };

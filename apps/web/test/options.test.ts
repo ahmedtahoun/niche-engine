@@ -105,7 +105,10 @@ test('Cairo Roast: the Bonds seed SQL loads into real Postgres, re-runs keep sto
   // Price list (1 kg): Limu 1,200; box = Chrome 225 + Limu 300 + Brazil 325 at 250 g, minus 60.
   assert.equal(q.subtotal, 1200 + 225 + 300 + 325);
   assert.equal(q.bundleDiscount, 60);
-  assert.equal(q.shipping, 100);
+  // 1,990 of goods is over the 1,500 free-shipping line: the platform pays the 100.
+  assert.equal(q.shipping, 0);
+  assert.equal(q.shippingWaived, 100);
+  assert.equal(q.total, 1990);
   assert.deepEqual(live.search(coffeeCfg, { q: 'بن اثيوبي' }).map((p) => p.slug).sort(), ['bonds-ethiopia-guji', 'bonds-ethiopia-limu']);
   assert.deepEqual(products.find((p) => p.id === 'bonds-ethiopia-guji')!.variants.map((v) => v.price), [500, 2000]);
   assert.equal(products.find((p) => p.id === 'bonds-amber')!.images?.[0], '/products/coffee/amber.webp');

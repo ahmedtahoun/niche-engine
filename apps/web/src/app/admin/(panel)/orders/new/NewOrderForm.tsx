@@ -13,7 +13,7 @@ interface Line { slug: string; size: string; qty: number; choice: Record<string,
 const SOURCES: [string, string][] = [['whatsapp', 'WhatsApp'], ['phone', 'Phone call'], ['instagram', 'Instagram'], ['facebook', 'Facebook'], ['other', 'Other']];
 const egp = (n: number) => `EGP ${Math.round(n).toLocaleString('en-US')}`;
 
-export function NewOrderForm({ niche, shipping, governorates, customers, products, preselect }: { niche: string; shipping: number; governorates: string[]; customers: Person[]; products: PickProduct[]; preselect?: string }) {
+export function NewOrderForm({ niche, shipping, freeOver, governorates, customers, products, preselect }: { niche: string; shipping: number; freeOver?: number; governorates: string[]; customers: Person[]; products: PickProduct[]; preselect?: string }) {
   const router = useRouter();
   const [pending, start] = useTransition();
   const [error, setError] = useState('');
@@ -37,7 +37,7 @@ export function NewOrderForm({ niche, shipping, governorates, customers, product
   const update = (i: number, patch: Partial<Line>) => setLines(lines.map((l, j) => (j === i ? { ...l, ...patch } : l)));
   const sizeOf = (l: Line) => product(l.slug)?.sizes.find((s) => s.label === l.size);
   const subtotal = lines.reduce((n, l) => n + (sizeOf(l)?.price ?? 0) * l.qty, 0);
-  const ship = freeShipping ? 0 : lines.length ? shipping : 0;
+  const ship = freeShipping || (freeOver && subtotal >= freeOver) ? 0 : lines.length ? shipping : 0;
   const disc = Math.min(Math.max(0, Number(discount) || 0), subtotal + ship);
   const total = subtotal + ship - disc;
   const short = lines.find((l) => (sizeOf(l)?.stock ?? 0) < l.qty);

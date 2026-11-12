@@ -33,6 +33,7 @@ export default async function NicheLayout({ children, params }: P & { children: 
     <LangProvider lang={s.lang} voice={voiceOf(cfg)} base={s.base}>
       <div className="shell" style={style}>
         {store().kind === 'memory' && <div className="demo" role="note">{s.t('demo')}</div>}
+        {cfg.freeShippingOverEgp ? <div className="ann" role="note">{s.t('ann.freeShip', { x: s.egp(cfg.freeShippingOverEgp) })}</div> : null}
         <header className="head">
           <Link href={s.href()} className="logo" style={cfg.brand.logo ? { display: 'flex', alignItems: 'center', gap: 10 } : undefined}>
             {/* eslint-disable-next-line @next/next/no-img-element */}

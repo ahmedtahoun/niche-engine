@@ -109,6 +109,8 @@ export interface NicheConfig {
   commission: CommissionRates;
   reserve: { percent: number; days: number };
   shippingEgp: number;
+  /** Orders whose goods (after bundle discounts) reach this ship free; the platform pays the courier. */
+  freeShippingOverEgp?: number;
   risk: {
     depositAboveEgp: number;
     /** Deposit amount; we use the shipping fee only. */
@@ -176,6 +178,7 @@ export function validateNiche(c: NicheConfig): string[] {
   }
   if (!isFraction(c.reserve?.percent)) p.push('reserve.percent must be a fraction');
   if (!(c.shippingEgp > 0)) p.push('shippingEgp must be positive');
+  if (c.freeShippingOverEgp !== undefined && !(c.freeShippingOverEgp > 0)) p.push('freeShippingOverEgp must be positive when set');
   if (!isFraction(c.wallet?.cashback)) p.push('wallet.cashback must be a fraction');
   if (!c.bundles?.length) p.push('every niche needs at least one multi-seller hero bundle');
   for (const pr of c.promos ?? []) {

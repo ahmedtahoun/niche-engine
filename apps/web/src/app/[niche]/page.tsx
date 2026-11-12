@@ -38,7 +38,7 @@ export default async function Home({ params }: P) {
     ...families.map((f) => ({ id: f.id, emoji: f.emoji, label: (s.en && f.labelEn) || f.labelAr, hint: (s.en && f.hintEn) || f.hintAr, count: products.filter((p) => p.profile?.family === f.id).length })),
     ...cfg.categories.map((c) => ({ id: c.id, emoji: undefined, label: s.category(c), hint: undefined, count: products.filter((p) => p.category === c.id).length })).filter((c) => c.count > 0),
   ] : [];
-  const fill = (x: string) => x.replace('{shipping}', String(cfg.shippingEgp)).replace('{depositAbove}', String(cfg.risk.depositAboveEgp)).replace('{deposit}', String(cfg.risk.depositEgp));
+  const fill = (x: string) => x.replace('{shipping}', String(cfg.shippingEgp)).replace('{freeOver}', (cfg.freeShippingOverEgp ?? 0).toLocaleString('en-US')).replace('{depositAbove}', String(cfg.risk.depositAboveEgp)).replace('{deposit}', String(cfg.risk.depositEgp));
   const faq = (cfg.homeFaq ?? []).map((f) => ({ q: text(f.q), a: fill(text(f.a)) }));
   const structured = [
     { '@context': 'https://schema.org', '@type': 'OnlineStore', name: cfg.brand.nameEn, alternateName: cfg.brand.nameAr, url: siteUrl(cfg), description: cfg.brand.description?.en, ...(cfg.brand.logo ? { logo: `${origin(cfg)}${cfg.brand.icon ?? cfg.brand.logo}` } : {}), areaServed: 'EG', currenciesAccepted: 'EGP', paymentAccepted: 'Cash on delivery, InstaPay', ...(cfg.brand.whatsapp ? { telephone: intlPhone(cfg.brand.whatsapp), contactPoint: { '@type': 'ContactPoint', contactType: 'customer service', telephone: intlPhone(cfg.brand.whatsapp), availableLanguage: ['ar', 'en'] } } : {}) },

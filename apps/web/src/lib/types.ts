@@ -122,6 +122,8 @@ export interface Quote {
   promoRejected?: string;
   wallet: number;
   shipping: number;
+  /** Shipping the platform paid (free-shipping line or a manual order); missing on older orders. */
+  shippingWaived?: number;
   total: number;
   depositRequired: boolean;
   deposit: number;

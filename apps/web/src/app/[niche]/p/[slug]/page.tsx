@@ -120,10 +120,10 @@ export default async function ProductPage({ params }: P) {
           {facts.map((f) => <li key={f.key} className="fact"><i aria-hidden="true">{f.emoji}</i><span className="small muted">{f.label}</span><b>{f.value}</b></li>)}
         </ul>
       )}
-      <AddToCart niche={niche} slug={p.slug} price={p.price} variants={p.variants} finder={finder} axes={cfg.optionAxes} choices={choices} />
+      <AddToCart niche={niche} slug={p.slug} price={p.price} variants={p.variants} finder={finder} axes={cfg.optionAxes} choices={choices} freeOver={cfg.freeShippingOverEgp} />
       <div className="eta">
         <div><b>{s.t('eta.cairo', { day: s.date(etaDate('القاهرة'), true) })}</b> {s.t('eta.cairoArea')}</div>
-        <span>{s.t('eta.fees', { fee: s.egp(cfg.shippingEgp) })}</span>
+        <span>{cfg.freeShippingOverEgp ? s.t('eta.feesFree', { fee: s.egp(cfg.shippingEgp), x: s.egp(cfg.freeShippingOverEgp) }) : s.t('eta.fees', { fee: s.egp(cfg.shippingEgp) })}</span>
       </div>
       {lead && <p className="lead" style={{ margin: 0 }}>{lead}</p>}
       <TasteProfile p={p} cfg={cfg} s={s} />

@@ -29,6 +29,8 @@ export interface CartTotals {
   promoDiscount: number;
   wallet: number;
   shipping: number;
+  /** Shipping fee the platform pays because the order is over the free-shipping line (0 otherwise). */
+  shippingWaived: number;
   total: number;
   depositRequired: boolean;
   deposit: number;
@@ -45,11 +47,19 @@ export function promoDiscountFor(promo: Promo, subtotalAfterBundles: number, shi
   return { amount: shipping };
 }
 
+/** Goods (after bundle discounts) at or over the niche's free-shipping line ship free. */
+export const freeShippingFor = (goods: number, cfg: NicheConfig) => cfg.freeShippingOverEgp !== undefined && cfg.freeShippingOverEgp > 0 && goods >= cfg.freeShippingOverEgp;
+
+/** How much more the customer needs to add for free shipping (null when there is no line or it is reached). */
+export const toFreeShipping = (goods: number, cfg: NicheConfig) => (cfg.freeShippingOverEgp && goods < cfg.freeShippingOverEgp ? round2(cfg.freeShippingOverEgp - goods) : null);
+
 export function cartTotals(input: CartInput, cfg: NicheConfig): CartTotals {
   const subtotal = subtotalOf(input.lines);
-  const shipping = input.lines.length ? cfg.shippingEgp : 0;
   const bundleDiscount = round2(Math.min(input.bundleDiscount, subtotal));
   const afterBundles = subtotal - bundleDiscount;
+  const fee = input.lines.length ? cfg.shippingEgp : 0;
+  const free = fee > 0 && freeShippingFor(afterBundles, cfg);
+  const shipping = free ? 0 : fee;
   let promoDiscount = 0;
   let promoRejected: string | undefined;
   if (input.promo) {
@@ -63,7 +73,7 @@ export function cartTotals(input: CartInput, cfg: NicheConfig): CartTotals {
   const total = round2(payableBeforeWallet - wallet);
   const depositRequired = total > cfg.risk.depositAboveEgp;
   return {
-    subtotal, bundleDiscount, promoDiscount, wallet, shipping, total,
+    subtotal, bundleDiscount, promoDiscount, wallet, shipping, shippingWaived: free ? fee : 0, total,
     depositRequired, deposit: depositRequired ? cfg.risk.depositEgp : 0,
     ...(promoRejected ? { promoRejected } : {}),
   };
@@ -74,7 +84,7 @@ export const commissionRate = (type: CustomerType, cfg: NicheConfig) => cfg.comm
 export interface OrderMoney {
   type: CustomerType;
   lines: Line[];
-  /** Platform-funded discounts: bundle + platform promos. */
+  /** Platform-funded discounts: bundle + platform promos + shipping the platform pays. */
   platformDiscount: number;
   /** Seller-funded promo amount per seller (reduces that seller's commission base). */
   sellerDiscount?: Record<string, number>;

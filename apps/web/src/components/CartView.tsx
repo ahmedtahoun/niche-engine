@@ -15,7 +15,7 @@ export function Summary({ q }: { q: Quote }) {
       {q.bundleDiscount > 0 && <div className="row"><span>{t('sum.bundle')}</span><span className="num">− {egp(q.bundleDiscount)}</span></div>}
       {q.promoDiscount > 0 && <div className="row"><span>{t('sum.promo')}</span><span className="num">− {egp(q.promoDiscount)}</span></div>}
       {q.wallet > 0 && <div className="row"><span>{t('sum.wallet')}</span><span className="num">− {egp(q.wallet)}</span></div>}
-      <div className="row"><span>{t('sum.shipping')}</span><span className="num">{egp(q.shipping)}</span></div>
+      <div className="row"><span>{t('sum.shipping')}</span><span className="num">{q.shipping === 0 && (q.shippingWaived ?? 0) > 0 ? <b className="free">{t('sum.free')}</b> : egp(q.shipping)}</span></div>
       <div className="row total"><span>{t('sum.total')}</span><span className="num">{egp(q.total)}</span></div>
       <span className="muted">{t('sum.note')}</span>
     </div>
@@ -35,7 +35,19 @@ export function useQuote(niche: string, promo: string, useWallet = false) {
   return { lines, setLines, ready, q };
 }
 
-export function CartView({ niche, depositAbove, deposit, cashback }: { niche: string; depositAbove: number; deposit: number; cashback: number }) {
+/** "Add X more for free shipping" with a progress bar, or a cheer once it is free. */
+export function FreeShipBar({ goods, over }: { goods: number; over: number }) {
+  const { t, egp } = useSpeak();
+  const left = Math.max(0, over - goods);
+  return (
+    <div className={`freebar${left ? '' : ' done'}`} role="status">
+      <span>{left ? t('free.left', { x: egp(Math.ceil(left)) }) : t('free.got')}</span>
+      <i aria-hidden="true"><b style={{ width: `${Math.min(100, (goods / over) * 100)}%` }} /></i>
+    </div>
+  );
+}
+
+export function CartView({ niche, depositAbove, deposit, cashback, freeOver }: { niche: string; depositAbove: number; deposit: number; cashback: number; freeOver?: number }) {
   const [promoInput, setPromoInput] = useState('');
   const [promo, setPromo] = useState('');
   const { lines, setLines, ready, q } = useQuote(niche, promo);
@@ -67,6 +79,7 @@ export function CartView({ niche, depositAbove, deposit, cashback }: { niche: st
           </div>
         ))}
       </div>
+      {q && freeOver ? <FreeShipBar goods={q.subtotal - q.bundleDiscount} over={freeOver} /> : null}
       <form className="sbox" onSubmit={(e) => { e.preventDefault(); setPromo(promoInput); }}>
         <input value={promoInput} onChange={(e) => setPromoInput(e.target.value)} placeholder={t('promo')} aria-label={t('promo')} dir="ltr" />
         <button className="btn ghost" type="submit">{t('apply')}</button>

@@ -15,13 +15,13 @@ export async function GET() {
   const cat = await catalog();
   const products = cat.productsOf(cfg.id);
   const sellers = [...new Map(products.map((p) => [p.sellerId, cat.sellerOf(p)])).values()];
-  const fill = (x: string) => x.replace('{shipping}', String(cfg.shippingEgp)).replace('{depositAbove}', String(cfg.risk.depositAboveEgp)).replace('{deposit}', String(cfg.risk.depositEgp));
+  const fill = (x: string) => x.replace('{shipping}', String(cfg.shippingEgp)).replace('{freeOver}', (cfg.freeShippingOverEgp ?? 0).toLocaleString('en-US')).replace('{depositAbove}', String(cfg.risk.depositAboveEgp)).replace('{deposit}', String(cfg.risk.depositEgp));
   const lines = [
     `# ${cfg.brand.nameEn} (${cfg.brand.nameAr})`,
     '',
     `> ${cfg.brand.description?.en ?? cfg.brand.description?.ar ?? ''}`,
     '',
-    `Online store in Egypt at ${siteUrl(cfg)} (Arabic; English at ${siteUrl(cfg, '/', 'en')}). Cash on delivery across Egypt, delivery in 2–4 days by Bosta, shipping EGP ${cfg.shippingEgp}, a EGP ${cfg.risk.depositEgp} deposit only on orders over EGP ${cfg.risk.depositAboveEgp}, free exchange within 14 days.${cfg.brand.whatsapp ? ` Customer service on WhatsApp: ${cfg.brand.whatsapp}.` : ''}`,
+    `Online store in Egypt at ${siteUrl(cfg)} (Arabic; English at ${siteUrl(cfg, '/', 'en')}). Cash on delivery across Egypt, delivery in 2–4 days by Bosta, shipping EGP ${cfg.shippingEgp}${cfg.freeShippingOverEgp ? ` (free on orders from EGP ${cfg.freeShippingOverEgp})` : ''}, a EGP ${cfg.risk.depositEgp} deposit only on orders over EGP ${cfg.risk.depositAboveEgp}, free exchange within 14 days.${cfg.brand.whatsapp ? ` Customer service on WhatsApp: ${cfg.brand.whatsapp}.` : ''}`,
     '',
     '## Products',
     ...products.map((p) => {

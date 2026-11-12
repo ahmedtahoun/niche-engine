@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import {
-  validateNiche, cartTotals, commissionBySeller, platformNet, sellerPayout,
+  validateNiche, cartTotals, toFreeShipping, commissionBySeller, platformNet, sellerPayout,
   normalizeArabic, searchTerms, matches, normalizeEgyptPhone, maskPhone,
   type NicheConfig, type OrderMoney,
 } from '../src/index.ts';
@@ -101,4 +101,29 @@ test('Egyptian phone numbers', () => {
   assert.equal(normalizeEgyptPhone('0123'), null);
   assert.equal(normalizeEgyptPhone('01312345678'), null);
   assert.equal(maskPhone('01012344471'), '010••••4471');
+});
+
+test('free shipping: goods at or over the line ship free and the platform pays the fee', () => {
+  const coffee = load('coffee');
+  const line = (unitPrice: number, qty = 1) => ({ sellerId: 'bonds', unitPrice, qty });
+  const base = { bundleDiscount: 0, walletBalance: 0, useWallet: false, isFirstOrder: true };
+  const under = cartTotals({ ...base, lines: [line(1499)] }, coffee);
+  assert.equal(under.shipping, 100);
+  assert.equal(under.shippingWaived, 0);
+  assert.equal(toFreeShipping(1499, coffee), 1);
+  const at = cartTotals({ ...base, lines: [line(750, 2)] }, coffee);
+  assert.equal(at.shipping, 0);
+  assert.equal(at.shippingWaived, 100);
+  assert.equal(at.total, 1500);
+  assert.equal(toFreeShipping(1500, coffee), null);
+  // Bundle discounts count: 1,540 of goods with a 60 bundle discount is under the line.
+  const bundle = cartTotals({ ...base, lines: [line(1540)], bundleDiscount: 60 }, coffee);
+  assert.equal(bundle.shipping, 100);
+  // A niche without a line always charges shipping.
+  const umrah = load('umrah');
+  assert.equal(cartTotals({ ...base, lines: [line(5000)] }, umrah).shippingWaived, 0);
+  assert.equal(toFreeShipping(10, umrah), null);
+  // The waived fee is a platform cost in the net.
+  const net = platformNet({ type: 'new', lines: [{ sellerId: 'bonds', unitPrice: 1500, qty: 1, unitCost: 1200 }], platformDiscount: at.shippingWaived, wallet: 0, delivered: false }, coffee);
+  assert.equal(net, 200);
 });

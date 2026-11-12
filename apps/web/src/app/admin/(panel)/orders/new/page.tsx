@@ -29,7 +29,7 @@ export default async function NewOrder({ searchParams }: { searchParams: Promise
         <div className="ed-title"><h1>New order</h1><span className="sub">For orders taken on WhatsApp, by phone or on social media. Priced from today’s prices; stock is taken and the seller is told, like a website order.</span></div>
         {live.length > 1 && <nav className="seg">{live.map((n) => <Link key={n.id} href={`/admin/orders/new?niche=${n.id}`} aria-current={n.id === cfg.id ? 'true' : undefined}>{n.brand.nameEn}</Link>)}</nav>}
       </div>
-      <NewOrderForm niche={cfg.id} shipping={cfg.shippingEgp} governorates={GOVERNORATES} customers={people} products={products} preselect={sp.customer} />
+      <NewOrderForm niche={cfg.id} shipping={cfg.shippingEgp} freeOver={cfg.freeShippingOverEgp} governorates={GOVERNORATES} customers={people} products={products} preselect={sp.customer} />
     </div>
   );
 }

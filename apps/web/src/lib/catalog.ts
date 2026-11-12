@@ -50,6 +50,9 @@ const costOf = (p: Product, label: string) => p.cost?.[label];
 /** A quote safe to send to the browser: wholesale costs removed. */
 export const publicQuote = (q: Quote): Quote => ({ ...q, items: q.items.map(({ unitCost: _c, ...i }) => i) });
 
+/** Nothing left to sell: every option (or the product itself) is at 0 stock. */
+export const isSoldOut = (p: Product) => p.variants.length > 0 && p.variants.every((v) => v.stock <= 0);
+
 /** Lowest and highest option price (cards say "من" when they differ). */
 export function priceRange(p: Product): { min: number; max: number } {
   const all = p.variants.length ? p.variants.map((v) => v.price ?? p.price) : [p.price];
@@ -65,18 +68,28 @@ export function saleOf(p: Product): { compareMin?: number; off: number } {
   return { ...(cheapest ? { compareMin: cheapest.before } : {}), off };
 }
 
-/** Per-order choices (e.g. the grind) that apply to this product. */
-export const choicesFor = (cfg: NicheConfig, p: Product): Choice[] => (cfg.choices ?? []).filter((c) => c.categories.includes(p.category));
+/** Per-order choices (e.g. the grind) that apply to this product, with only the values on offer. */
+export const choicesFor = (cfg: NicheConfig, p: Product): Choice[] =>
+  (cfg.choices ?? []).filter((c) => c.categories.includes(p.category)).map((c) => (c.values.some((v) => v.hidden) ? { ...c, values: c.values.filter((v) => !v.hidden) } : c));
+
+/**
+ * A line's choice values for a product, or null if one is missing or not on offer.
+ * A choice with a single value on offer (whole beans only) uses it, so an older cart that
+ * still says "kanaka" becomes whole beans instead of breaking.
+ */
+export function resolveChoices(cfg: NicheConfig, p: Product, picked: Record<string, string> | undefined): Choice['values'] | null {
+  const out: Choice['values'] = [];
+  for (const c of choicesFor(cfg, p)) {
+    const v = c.values.find((x) => x.id === picked?.[c.id]) ?? (c.values.length === 1 ? c.values[0] : undefined);
+    if (!v) return null;
+    out.push(v);
+  }
+  return out;
+}
 
 /** Checks a line's choices for a product; returns the labels to print on the order, or null if one is missing or unknown. */
 export function choiceLabels(cfg: NicheConfig, p: Product, picked: Record<string, string> | undefined): string[] | null {
-  const out: string[] = [];
-  for (const c of choicesFor(cfg, p)) {
-    const v = c.values.find((x) => x.id === picked?.[c.id]);
-    if (!v) return null;
-    out.push(v.labelAr);
-  }
-  return out;
+  return resolveChoices(cfg, p, picked)?.map((v) => v.labelAr) ?? null;
 }
 
 const DAY = 864e5;
@@ -139,7 +152,8 @@ export class Catalog {
       .filter((p) => !opts.family || p.profile?.family === opts.family)
       .filter((p) => p.price >= lo && p.price <= hi)
       .filter((p) => !terms.length || matches([p.nameAr, p.leadAr, label(p.category), this.sellerOf(p).name, ...Object.values(p.attributes), ...(p.profile?.notes ?? []), ...(p.profile?.notesEn ?? []), p.en?.name ?? '', p.en?.lead ?? '', this.sellerOf(p).nameEn ?? ''].join(' '), terms))
-      .sort(sorters[opts.sort ?? 'best']);
+      // Sold-out products go last, whatever the sort.
+      .sort((a, b) => Number(isSoldOut(a)) - Number(isSoldOut(b)) || sorters[opts.sort ?? 'best'](a, b));
   }
 
   /** Problems with a niche's bundles against the live catalog (tests and the admin panel). */
@@ -166,7 +180,7 @@ export class Catalog {
   /** Prices a cart from the catalog. The browser's prices are never used. */
   quote(cfg: NicheConfig, cart: CartLine[], opts: { promoCode?: string; isFirstOrder: boolean; walletBalance: number; useWallet: boolean; lang?: Lang }): Quote {
     const sp = speak(opts.lang ?? 'ar', voiceOf(cfg));
-    const shownChoices = (p: Product, picked?: Record<string, string>) => choicesFor(cfg, p).flatMap((c) => { const v = c.values.find((x) => x.id === picked?.[c.id]); return v ? [sp.choiceValue(v)] : []; });
+    const shownChoices = (p: Product, picked?: Record<string, string>) => (resolveChoices(cfg, p, picked) ?? []).map((v) => sp.choiceValue(v));
     const problems: string[] = [];
     const priced: PricedLine[] = [];
     const items: OrderItem[] = [];
@@ -186,7 +200,7 @@ export class Catalog {
         const label = [line.variant, ...extra].join(' · ');
         coreLines.push({ sellerId: p.sellerId, unitPrice: unit, qty, ...(costOf(p, line.variant) !== undefined ? { unitCost: costOf(p, line.variant) } : {}) });
         items.push({ sellerId: p.sellerId, productId: p.id, name: p.nameAr, variant: label, qty, unitPrice: unit, ...(costOf(p, line.variant) !== undefined ? { unitCost: costOf(p, line.variant) } : {}) });
-        priced.push({ key: `${i}`, title: [sp.product(p), sp.variant(p, line.variant), ...shownChoices(p, line.choice)].join(' · '), by: this.sellerOf(p) ? sp.seller(this.sellerOf(p)) : '', art: p.art, color: p.color, qty, amount: unit * qty, isBundle: false, ...(p.images?.[0] ? { image: p.images[0] } : {}) });
+        priced.push({ key: `${i}`, title: [sp.product(p), sp.variant(p, line.variant), ...shownChoices(p, line.choice)].join(' · '), by: this.sellerOf(p) ? sp.seller(this.sellerOf(p)) : '', art: p.art, color: p.color, qty, amount: unit * qty, isBundle: false, ...(p.images?.[0] ? { image: p.images[0] } : {}), ...(variant.stock < qty ? { left: Math.max(0, variant.stock) } : {}) });
       } else {
         const bv = this.bundleView(cfg, line.id);
         if (!bv) return void problems.push(`bundle_unavailable:${line.id}`);
@@ -202,7 +216,7 @@ export class Catalog {
           items.push(r);
         }
         const full = rows.reduce((a, r) => a + r.unitPrice * r.qty, 0);
-        const picked = (cfg.choices ?? []).flatMap((c) => { const v = c.values.find((x) => x.id === line.choice?.[c.id]); return v ? [sp.choiceValue(v)] : []; });
+        const picked = shownChoices(bv.parts[0].product, line.choice);
         bundleDiscount += bv.bundle.discountEgp * qty;
         priced.push({ key: `${i}`, title: [sp.bundle(bv.bundle), line.variant, ...picked].filter(Boolean).join(' · '), by: ((n) => (n === 1 ? sp.t('by', { name: sp.seller(this.sellerOf(bv.parts[0].product)) }) : sp.en ? `from ${n} sellers` : `من ${n} بائعين`))(new Set(bv.parts.map((x) => x.product.sellerId)).size), art: 'kit', color: '', qty, amount: full, isBundle: true, parts: bv.parts.map((x) => ({ art: x.product.art, color: x.product.color })) });
       }

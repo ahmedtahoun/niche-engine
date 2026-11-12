@@ -17,7 +17,7 @@ export default async function BundlePage({ params }: { params: Promise<{ niche: 
   const sellers = new Set(bv.parts.map((p) => p.product.sellerId)).size;
   const pickLabel = bv.pickVariantsFrom?.category === 'abaya' ? s.t('bundlePickSize') : s.t('bundlePick');
   // A choice (e.g. the grind) asked once for the whole bundle, for every part it applies to.
-  const choices = (cfg.choices ?? []).filter((c) => bv.parts.some((pt) => choicesFor(cfg, pt.product).includes(c)));
+  const choices = [...new Map(bv.parts.flatMap((pt) => choicesFor(cfg, pt.product)).map((c) => [c.id, c])).values()];
   return (
     <main className="page narrow">
       <div className="big" style={{ aspectRatio: '1 / .7' }}><BundleArt parts={bv.parts.map((p) => p.product)} /></div>

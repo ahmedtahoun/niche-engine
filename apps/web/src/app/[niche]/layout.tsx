@@ -2,10 +2,10 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { Icon } from '@/components/Art';
-import { LangProvider, LangSwitch } from '@/components/I18n';
+import { LangProvider, LangSwitch, Txt } from '@/components/I18n';
 import { waLink } from '@/lib/site';
 import { TabBar } from '@/components/TabBar';
-import { voiceOf } from '@/lib/i18n';
+import { speak, voiceOf } from '@/lib/i18n';
 import { speaker } from '@/lib/lang';
 import { getNiche } from '@/lib/niches';
 import { currentCustomer } from '@/lib/current-customer';
@@ -28,17 +28,19 @@ export default async function NicheLayout({ children, params }: P & { children: 
   const me = await currentCustomer();
   const balance = me ? (await walletOf(me.phone, cfg.id)).balance : 0;
   const style = { '--primary': cfg.brand.palette.primary, '--base': cfg.brand.palette.base, '--accent': cfg.brand.palette.accent } as React.CSSProperties;
-  const tagline = cfg.brand.tagline ? (s.en && cfg.brand.tagline.en) || cfg.brand.tagline.ar : '';
+  // Both languages for the header texts: the ع / EN button switches them without a server trip.
+  const ar = speak('ar', voiceOf(cfg)), en = speak('en', voiceOf(cfg));
+  const both = (f: (x: typeof ar) => string) => <Txt ar={f(ar)} en={f(en)} />;
   return (
     <LangProvider lang={s.lang} voice={voiceOf(cfg)} base={s.base}>
       <div className="shell" style={style}>
-        {store().kind === 'memory' && <div className="demo" role="note">{s.t('demo')}</div>}
-        {cfg.freeShippingOverEgp ? <div className="ann" role="note">{s.t('ann.freeShip', { x: s.egp(cfg.freeShippingOverEgp) })}</div> : null}
+        {store().kind === 'memory' && <div className="demo" role="note">{both((x) => x.t('demo'))}</div>}
+        {cfg.freeShippingOverEgp ? <div className="ann" role="note">{both((x) => x.t('ann.freeShip', { x: x.egp(cfg.freeShippingOverEgp!) }))}</div> : null}
         <header className="head">
           <Link href={s.href()} className="logo" style={cfg.brand.logo ? { display: 'flex', alignItems: 'center', gap: 10 } : undefined}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
             {cfg.brand.logo && <img src={cfg.brand.logo} alt="" width={30} height={36} style={{ flex: 'none' }} />}
-            <span>{s.brand(cfg)}<small>{tagline}</small></span>
+            <span>{both((x) => x.brand(cfg))}<small>{cfg.brand.tagline ? <Txt ar={cfg.brand.tagline.ar} en={cfg.brand.tagline.en} /> : null}</small></span>
           </Link>
           <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
             {balance > 0 && <Link href={s.href(`/account`)} className="chip" style={{ borderColor: 'var(--accent)' }} aria-label={s.t('wallet')}>{s.egp(balance)}</Link>}

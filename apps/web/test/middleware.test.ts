@@ -1,7 +1,7 @@
 // Each live domain shows only its own store; localhost still opens every store by path.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { parseDomains, routeFor } from '../src/lib/routing.ts';
+import { langFromQuery, parseDomains, routeFor } from '../src/lib/routing.ts';
 
 const ids = ['umrah', 'coffee'];
 const domains = parseDomains('sakinaeg.com=umrah,www.sakinaeg.com=umrah,cairoroast.com=coffee,www.cairoroast.com=coffee');
@@ -22,4 +22,12 @@ test('localhost still opens both stores by path (development)', () => {
   assert.deepEqual(go('localhost:3100', '/coffee'), { kind: 'next' });
   assert.deepEqual(go('localhost:3100', '/umrah/p/x'), { kind: 'next' });
   assert.deepEqual(go('localhost:3100', '/'), { kind: 'rewrite', path: '/umrah' });
+});
+
+test('?lang= shows and remembers a language; ?hl= (the ع / EN button and its prefetch) only shows it', () => {
+  const q = (x: string) => langFromQuery(new URLSearchParams(x));
+  assert.deepEqual(q('lang=en'), { view: 'en', save: 'en' });
+  assert.deepEqual(q('hl=en'), { view: 'en', save: null }, 'a prefetch never switches the saved language');
+  assert.deepEqual(q('hl=fr'), { view: null, save: null });
+  assert.deepEqual(q(''), { view: null, save: null });
 });

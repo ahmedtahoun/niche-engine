@@ -33,7 +33,7 @@ export function NewOrderForm({ niche, shipping, freeOver, governorates, customer
   const startNew = () => { const digits = query.replace(/[٠-٩]/g, (d) => String('٠١٢٣٤٥٦٧٨٩'.indexOf(d))).replace(/\D/g, ''); setPicked(null); setFresh(true); setCust({ phone: digits.length >= 10 ? digits : '', name: digits.length >= 10 ? '' : query.trim(), governorate: governorates[0], area: '', address: '', landmark: '' }); setQuery(''); };
 
   const product = (slug: string) => products.find((p) => p.slug === slug);
-  const addItem = (slug: string) => { const p = product(slug); if (!p) return; setLines([...lines, { slug, size: p.sizes.find((s) => s.stock > 0)?.label ?? p.sizes[0].label, qty: 1, choice: Object.fromEntries(p.choices.map((c) => [c.id, ''])) }]); };
+  const addItem = (slug: string) => { const p = product(slug); if (!p) return; setLines([...lines, { slug, size: p.sizes.find((s) => s.stock > 0)?.label ?? p.sizes[0].label, qty: 1, choice: Object.fromEntries(p.choices.map((c) => [c.id, c.values.length === 1 ? c.values[0].id : ''])) }]); };
   const update = (i: number, patch: Partial<Line>) => setLines(lines.map((l, j) => (j === i ? { ...l, ...patch } : l)));
   const sizeOf = (l: Line) => product(l.slug)?.sizes.find((s) => s.label === l.size);
   const subtotal = lines.reduce((n, l) => n + (sizeOf(l)?.price ?? 0) * l.qty, 0);

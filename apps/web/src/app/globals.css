@@ -426,3 +426,22 @@ details p { margin: 6px 0 0; color: var(--muted); }
 .shell:has(.minicart) .wa-fab { bottom: 150px; }
 @media (min-width: 900px) { .shell:has(.minicart) .wa-fab { bottom: 24px; } }
 @media (prefers-reduced-motion: reduce) { .qa-layer, .qa-sheet, .qa-toast, .minicart.bump { animation: none; } }
+
+.choice-one { display: grid; gap: 2px; background: var(--surface-2); border: 1px solid var(--line); border-radius: 12px; padding: 10px 12px; }
+
+/* Language switch feedback while the other language loads */
+html.lang-switching main { opacity: .55; transition: opacity .15s; pointer-events: none; }
+.spin { width: 15px; height: 15px; border-radius: 50%; border: 2px solid currentColor; border-top-color: transparent; display: inline-block; animation: spin .7s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* Sold out */
+.ribbon.r-out { background: #3B3530; }
+.card.out .pimg img, .card.out .pimg svg { filter: grayscale(.85); opacity: .7; }
+.card.out .pprice { color: var(--muted); }
+.card .pmeta s { opacity: .55; }
+.out-box { display: grid; gap: 8px; border: 1px solid var(--line); background: var(--surface-2); border-radius: 14px; padding: 14px; }
+.out-box .btn { justify-self: start; }
+
+.line.short { border-color: var(--bad); }
+.bad-line { color: var(--bad); font-weight: 600; margin-top: 2px; }
+.minicart .bad-t { color: var(--bad); }

@@ -13,7 +13,7 @@ test('a guest order token opens that order only', () => {
 });
 
 const customer = { name: 'منى أحمد', phone: '01012345678', governorate: 'القاهرة', area: 'المعادي', address: 'شارع 9، عمارة 4', landmark: '' };
-const cart = [{ kind: 'item' as const, slug: 'bonds-chrome', variant: '250 جم', qty: 1, choice: { grind: 'kanaka' } }];
+const cart = [{ kind: 'item' as const, slug: 'bonds-chrome', variant: '250 جم', qty: 1, choice: { grind: 'beans' } }];
 const order = (o: Partial<Order>): Order => ({ id: 7, niche: 'coffee', status: 'confirmed', createdAt: new Date(1_000_000).toISOString(), customer, cart, ...o } as Order);
 
 test('the same cart and address from the same phone within two minutes is the same order', () => {

@@ -65,7 +65,8 @@ export interface Choice {
   labelAr: string;
   labelEn?: string;
   categories: string[];
-  values: { id: string; labelAr: string; labelEn?: string; hintAr?: string; hintEn?: string; emoji?: string }[];
+  /** hidden: kept for old orders and guides, but not offered (e.g. grinding paused; whole beans only). */
+  values: { id: string; labelAr: string; labelEn?: string; hintAr?: string; hintEn?: string; emoji?: string; hidden?: boolean }[];
 }
 
 /** Fresh products: a date attribute, and how old a product may get before it is hidden. */
@@ -190,6 +191,7 @@ export function validateNiche(c: NicheConfig): string[] {
   for (const ch of c.choices ?? []) {
     if (!ch.id || !ch.labelAr) p.push('every choice needs id and labelAr');
     if (!ch.values?.length) p.push(`choice ${ch.id}: needs at least one value`);
+    else if (ch.values.every((v) => v.hidden)) p.push(`choice ${ch.id}: every value is hidden`);
     const ids = (ch.values ?? []).map((v) => v.id);
     if (new Set(ids).size !== ids.length) p.push(`choice ${ch.id}: value ids must be unique`);
     for (const k of ch.categories ?? []) if (!cats.has(k)) p.push(`choice ${ch.id}: unknown category ${k}`);

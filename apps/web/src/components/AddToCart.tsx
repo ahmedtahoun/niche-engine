@@ -40,9 +40,23 @@ function ChoicePicker({ niche, choices, picked, setPicked }: { niche: string; ch
     if (Object.keys(init).length) setPicked({ ...init });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [niche]);
+  // A choice with one value on offer (e.g. whole beans only) is picked for the customer and shown as a note.
+  const single = choices.filter((c) => c.values.length === 1);
+  useEffect(() => {
+    if (single.some((c) => picked[c.id] !== c.values[0].id)) setPicked({ ...picked, ...Object.fromEntries(single.map((c) => [c.id, c.values[0].id])) });
+  });
   return (
     <>
-      {choices.map((c) => {
+      {single.map((c) => {
+        const v = c.values[0];
+        return (
+          <div key={c.id} className="choice-one">
+            <b>{v.emoji ? `${v.emoji} ` : ''}{s.choiceValue(v)}</b>
+            {s.hint(v) && <span className="muted small">{s.hint(v)}</span>}
+          </div>
+        );
+      })}
+      {choices.filter((c) => c.values.length > 1).map((c) => {
         const cur = c.values.find((v) => v.id === picked[c.id]);
         return (
           <div key={c.id} style={{ display: 'grid', gap: 8 }}>

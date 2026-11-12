@@ -99,6 +99,8 @@ export interface PricedLine {
   /** First product photo, if any. */
   image?: string;
   parts?: { art: ArtKind; color: string }[];
+  /** Fewer in stock than asked: how many are left (0 = sold out). The order is refused until fixed. */
+  left?: number;
 }
 
 /** One sellable unit inside an order, after bundles are expanded. */

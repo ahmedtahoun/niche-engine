@@ -3,11 +3,11 @@ import { notFound } from 'next/navigation';
 import { AddToCart } from '@/components/AddToCart';
 import { Art, PickSeal } from '@/components/Art';
 import { TasteProfile } from '@/components/Taste';
-import { bestPer100g, catalog, choicesFor, freshnessOf, priceRange, saleOf } from '@/lib/catalog';
+import { bestPer100g, catalog, choicesFor, freshnessOf, isSoldOut, priceRange, saleOf } from '@/lib/catalog';
 import { etaDate } from '@/lib/eta';
 import { speaker } from '@/lib/lang';
 import { getNiche } from '@/lib/niches';
-import { jsonLd, pageMeta, siteUrl } from '@/lib/site';
+import { jsonLd, pageMeta, siteUrl, waLink } from '@/lib/site';
 import { PAGE_SIZES, responsive } from '@/lib/img';
 
 type P = { params: Promise<{ niche: string; slug: string }> };
@@ -120,7 +120,15 @@ export default async function ProductPage({ params }: P) {
           {facts.map((f) => <li key={f.key} className="fact"><i aria-hidden="true">{f.emoji}</i><span className="small muted">{f.label}</span><b>{f.value}</b></li>)}
         </ul>
       )}
-      <AddToCart niche={niche} slug={p.slug} price={p.price} variants={p.variants} finder={finder} axes={cfg.optionAxes} choices={choices} freeOver={cfg.freeShippingOverEgp} />
+      {isSoldOut(p) && (
+        <div className="out-box" role="status">
+          <b>{s.t('out.title')}</b>
+          <span className="small muted">{s.t('out.text')}</span>
+          {cfg.brand.whatsapp && <a className="btn primary" href={waLink(cfg.brand.whatsapp, s.t('out.waText', { name: s.product(p) }))} target="_blank" rel="noopener">💬 {s.t('out.wa')}</a>}
+          <a className="small" href={s.href('/')} style={{ fontWeight: 700 }}>{s.t('startShopping')}</a>
+        </div>
+      )}
+      {!isSoldOut(p) && <AddToCart niche={niche} slug={p.slug} price={p.price} variants={p.variants} finder={finder} axes={cfg.optionAxes} choices={choices} freeOver={cfg.freeShippingOverEgp} />}
       <div className="eta">
         <div><b>{s.t('eta.cairo', { day: s.date(etaDate('القاهرة'), true) })}</b> {s.t('eta.cairoArea')}</div>
         <span>{cfg.freeShippingOverEgp ? s.t('eta.feesFree', { fee: s.egp(cfg.shippingEgp), x: s.egp(cfg.freeShippingOverEgp) }) : s.t('eta.fees', { fee: s.egp(cfg.shippingEgp) })}</span>

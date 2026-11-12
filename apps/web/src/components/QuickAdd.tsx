@@ -98,7 +98,8 @@ export function MiniCart({ niche, freeOver }: { niche: string; freeOver?: number
   const s = useSpeak();
   const { lines, ready, q } = useQuote(niche, '');
   const [bump, setBump] = useState(false);
-  const count = lines.reduce((n, l) => n + l.qty, 0);
+  const count = q ? q.lines.reduce((n, l) => n + l.qty, 0) : lines.reduce((n, l) => n + l.qty, 0);
+  const short = Boolean(q?.lines.some((l) => l.left !== undefined));
   const last = useRef(count);
   useEffect(() => {
     if (ready && count > last.current) { setBump(true); const id = setTimeout(() => setBump(false), 450); last.current = count; return () => clearTimeout(id); }
@@ -111,7 +112,7 @@ export function MiniCart({ niche, freeOver }: { niche: string; freeOver?: number
     <div className={`minicart${bump ? ' bump' : ''}`} role="region" aria-label={s.t('mini.cart', { n: count })}>
       <Link href={s.href('/cart')} className="mc-sum">
         <b>🛒 {s.t('mini.cart', { n: count })} · <span className="num">{s.egp(q.total)}</span></b>
-        {left !== null && freeOver ? (
+        {short ? <small className="bad-t">{s.t('mini.fix')}</small> : left !== null && freeOver ? (
           <>
             <small className={left ? '' : 'ok-t'}>{left ? s.t('free.left', { x: s.egp(Math.ceil(left)) }) : s.t('free.got')}</small>
             <i aria-hidden="true"><em style={{ width: `${Math.min(100, (goods / freeOver) * 100)}%` }} /></i>

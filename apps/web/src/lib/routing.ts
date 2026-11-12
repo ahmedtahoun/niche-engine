@@ -19,3 +19,14 @@ export function routeFor(o: { host: string; pathname: string; ids: string[]; dom
 
 export const parseDomains = (raw: string | undefined): Record<string, string> =>
   Object.fromEntries((raw ?? '').split(',').filter(Boolean).map((pair) => pair.split('=') as [string, string]));
+
+/**
+ * Language asked for in the address. ?lang= shows it and remembers it (shared links, search
+ * engines); ?hl= only shows it: the ع / EN button uses it and saves the choice itself, so its
+ * background prefetch of the other language never switches the visitor's language.
+ */
+export function langFromQuery(q: URLSearchParams): { view: 'ar' | 'en' | null; save: 'ar' | 'en' | null } {
+  const ok = (x: string | null) => (x === 'en' || x === 'ar' ? x : null);
+  const save = ok(q.get('lang'));
+  return { view: save ?? ok(q.get('hl')), save };
+}

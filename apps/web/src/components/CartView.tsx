@@ -24,15 +24,26 @@ export function Summary({ q }: { q: Quote }) {
 
 export function useQuote(niche: string, promo: string, useWallet = false) {
   const [lines, setLines, ready] = useCart(niche);
-  const [q, setQ] = useState<Quote | null>(null);
+  const [priced, setPriced] = useState<{ q: Quote; of: string } | null>(null);
+  const [removed, setRemoved] = useState(0);
   const [, start] = useTransition();
   const { lang } = useSpeak();
+  const key = JSON.stringify(lines);
   // Re-price when the language changes too: line titles come back in the customer's language.
   useEffect(() => {
     if (!ready) return;
-    start(async () => setQ(lines.length ? await quoteCart(niche, lines, promo, useWallet) : null));
-  }, [niche, lines, promo, ready, useWallet, lang]);
-  return { lines, setLines, ready, q };
+    start(async () => { const r = lines.length ? await quoteCart(niche, lines, promo, useWallet) : null; setPriced(r ? { q: r, of: key } : null); });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [niche, key, promo, ready, useWallet, lang]);
+  // A line the store no longer sells (removed coffee or size) leaves the cart, with a note.
+  useEffect(() => {
+    if (!priced || priced.of !== key) return;
+    const keep = new Set(priced.q.lines.map((l) => Number(l.key)));
+    const gone = lines.slice(0, 20).filter((_, i) => !keep.has(i)).length;
+    if (gone) { setRemoved((n) => n + gone); setLines(lines.filter((_, i) => keep.has(i) || i >= 20)); }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [priced, key]);
+  return { lines, setLines, ready, q: priced?.of === key ? priced.q : priced?.q ?? null, removed };
 }
 
 /** "Add X more for free shipping" with a progress bar, or a cheer once it is free. */
@@ -50,7 +61,7 @@ export function FreeShipBar({ goods, over }: { goods: number; over: number }) {
 export function CartView({ niche, depositAbove, deposit, cashback, freeOver }: { niche: string; depositAbove: number; deposit: number; cashback: number; freeOver?: number }) {
   const [promoInput, setPromoInput] = useState('');
   const [promo, setPromo] = useState('');
-  const { lines, setLines, ready, q } = useQuote(niche, promo);
+  const { lines, setLines, ready, q, removed } = useQuote(niche, promo);
   const s = useSpeak();
   const { t, egp } = s;
 
@@ -61,20 +72,22 @@ export function CartView({ niche, depositAbove, deposit, cashback, freeOver }: {
       <Link className="btn primary" href={s.href()}>{t('startShopping')}</Link>
     </div>
   );
-  const change = (i: number, d: number) => setLines(lines.map((l, j) => (j === i ? { ...l, qty: Math.max(1, Math.min(5, l.qty + d)) } : l)));
-  const remove = (i: number) => setLines(lines.filter((_, j) => j !== i));
+  // Priced lines carry the cart index as their key (unavailable lines are skipped in the quote).
+  const change = (key: string, d: number) => setLines(lines.map((l, j) => (j === Number(key) ? { ...l, qty: Math.max(1, Math.min(5, l.qty + d)) } : l)));
+  const remove = (key: string) => setLines(lines.filter((_, j) => j !== Number(key)));
 
   return (
     <>
       <div style={{ display: 'grid', gap: 8 }}>
-        {(q?.lines ?? []).map((l, i) => (
-          <div className="line" key={l.key}>
+        {removed > 0 && <div className="note warn" role="status">{t('cart.removed')}</div>}
+        {(q?.lines ?? []).map((l) => (
+          <div className={`line${l.left !== undefined ? ' short' : ''}`} key={l.key}>
             <div className="pimg">{l.isBundle ? <BundleArt parts={l.parts ?? []} /> : <Art kind={l.art} color={l.color} image={l.image} />}</div>
-            <div><b className="small">{l.title}</b><div className="pby">{l.by}</div></div>
+            <div><b className="small">{l.title}</b><div className="pby">{l.by}</div>{l.left !== undefined && <div className="small bad-line">{l.left ? t('cart.left', { n: l.left }) : t('cart.gone')}</div>}</div>
             <div style={{ display: 'grid', gap: 4, justifyItems: 'end' }}>
               <span className="num small">{egp(l.amount)}</span>
-              <div className="qty"><button type="button" aria-label={t('less')} onClick={() => change(i, -1)}>−</button><span className="num">{l.qty}</span><button type="button" aria-label={t('more')} onClick={() => change(i, 1)}>+</button></div>
-              <button type="button" className="small" style={{ border: 0, background: 'none', color: 'var(--bad)' }} onClick={() => remove(i)}>{t('remove')}</button>
+              <div className="qty"><button type="button" aria-label={t('less')} onClick={() => change(l.key, -1)}>−</button><span className="num">{l.qty}</span><button type="button" aria-label={t('more')} onClick={() => change(l.key, 1)}>+</button></div>
+              <button type="button" className="small" style={{ border: 0, background: 'none', color: 'var(--bad)' }} onClick={() => remove(l.key)}>{t('remove')}</button>
             </div>
           </div>
         ))}
@@ -90,7 +103,9 @@ export function CartView({ niche, depositAbove, deposit, cashback, freeOver }: {
       {q && <Summary q={q} />}
       {q && cashback > 0 && <div className="note ok">{t('cashbackNote', { x: egp(Math.floor((q.subtotal - q.bundleDiscount - q.promoDiscount) * cashback)) })}</div>}
       {q?.depositRequired && <div className="note warn">{t('depositNote', { above: egp(depositAbove), x: egp(deposit) })}</div>}
-      <Link className="btn primary block" href={s.href(`/checkout${promo ? `?promo=${encodeURIComponent(promo)}` : ''}`)}>{t('continue')}</Link>
+      {q?.lines.some((l) => l.left !== undefined)
+        ? <button type="button" className="btn primary block" disabled>{t('mini.fix')}</button>
+        : <Link className="btn primary block" href={s.href(`/checkout${promo ? `?promo=${encodeURIComponent(promo)}` : ''}`)}>{t('continue')}</Link>}
     </>
   );
 }

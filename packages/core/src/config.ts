@@ -46,6 +46,8 @@ export interface OptionAxis {
   labelEn?: string;
   /** English names of this axis's values, e.g. { "250 جم": "250 g" }. */
   valuesEn?: Record<string, string>;
+  /** Start with the first value in stock already picked (e.g. the smaller coffee bag), so the buy button is ready. */
+  preselect?: boolean;
 }
 
 /** Text in both store languages (English falls back to Arabic when missing). */
@@ -147,6 +149,8 @@ export interface NicheConfig {
   facts?: { key: string; keyEn: string; emoji: string; emojiBy?: Record<string, string> }[];
   /** 1–5 scales drawn on product pages (coffee: body, acidity), with the words at each end. */
   profileScales?: { id: string; labelAr: string; labelEn?: string; lowAr: string; highAr: string; lowEn?: string; highEn?: string }[];
+  /** "Farm to cup" steps next to the product photo. {origin} = the product's origin attribute (or originFallback), {roaster} = the seller. */
+  journey?: { title: Bilingual; originKey: string; originKeyEn: string; originFallback: Bilingual; steps: (Bilingual & { emoji: string; text: Bilingual })[] };
   /** Short questions and answers on the home page (also FAQPage data for search engines and AI answers). {shipping}, {deposit} and {depositAbove} become the fees from this config. */
   homeFaq?: { q: Bilingual; a: Bilingual }[];
   /** Shown on the empty search page. English terms should map to catalog words through searchSynonyms. */

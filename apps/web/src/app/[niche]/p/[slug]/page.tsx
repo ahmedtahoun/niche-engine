@@ -66,6 +66,23 @@ export default async function ProductPage({ params }: P) {
     const flag = Object.entries(f.emojiBy ?? {}).find(([w]) => value.includes(w))?.[1];
     return [{ key: f.key, label: s.en ? f.keyEn : f.key, value, emoji: flag ?? f.emoji }];
   });
+  // Farm-to-cup steps: under the photo on wide screens (fills the photo column), after the taste on phones.
+  const j = cfg.journey;
+  const origin = j ? attrs[s.en ? j.originKeyEn : j.originKey] || (s.en && j.originFallback.en) || j.originFallback.ar : '';
+  const fillJ = (x: string) => x.replace('{origin}', origin).replace('{roaster}', s.seller(seller));
+  const journey = j ? (
+    <section className="journey" aria-label={(s.en && j.title.en) || j.title.ar}>
+      <b className="jt">{(s.en && j.title.en) || j.title.ar}</b>
+      <ol>
+        {j.steps.map((st, i) => (
+          <li key={i}>
+            <span className="je" aria-hidden="true">{i === 1 && seller.logo ? /* eslint-disable-next-line @next/next/no-img-element */ <img src={seller.logo} alt="" /> : st.emoji}</span>
+            <span><b>{fillJ((s.en && st.en) || st.ar)}</b><span className="muted small">{(s.en && st.text.en) || st.text.ar}</span></span>
+          </li>
+        ))}
+      </ol>
+    </section>
+  ) : null;
   const freshText = !fresh ? null
     : fresh.kind === 'to_order' ? (s.en && cfg.freshness?.madeToOrderEn) || fresh.text
     : fresh.days === 0 ? s.t('roastedToday') : s.t('roastedDays', { n: fresh.days, unit: fresh.days <= 10 ? 'أيام' : 'يوم' });
@@ -81,6 +98,7 @@ export default async function ProductPage({ params }: P) {
           </div>
         ) : <div className="big"><Art kind={p.art} color={p.color} label={cfg.brand.pickSeal ? { brand: cfg.brand.nameEn.toUpperCase(), name: (p.en?.name ?? p.nameAr).replace(/ Blend$/, '') } : undefined} /></div>}
         {seal && <PickSeal text={seal} under={s.en ? cfg.brand.nameAr : cfg.brand.nameEn.toUpperCase()} logo={cfg.brand.logo} rtl={!s.en} />}
+        {journey && <div className="only-wide">{journey}</div>}
       </div>
       {(p.images?.length ?? 0) > 1 && <span className="small muted gallery-hint" style={{ textAlign: 'center' }}>{s.t('swipe', { n: p.images!.length })}</span>}
       <div style={{ display: 'grid', gap: 8 }}>
@@ -107,6 +125,7 @@ export default async function ProductPage({ params }: P) {
       </div>
       {lead && <p className="lead" style={{ margin: 0 }}>{lead}</p>}
       <TasteProfile p={p} cfg={cfg} s={s} />
+      {journey && <div className="only-narrow">{journey}</div>}
       <section id="sec-specs">
         <h2 className="h4">{s.t('sec.specs')}</h2>
         <table className="spec"><tbody>

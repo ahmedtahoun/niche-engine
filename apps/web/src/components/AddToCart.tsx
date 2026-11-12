@@ -65,7 +65,7 @@ function useAxes(variants: Variant[], axes: OptionAxis[]) {
   const fits = (v: Variant, sel: Record<string, string>, skip?: string) => axes.every((a) => a.id === skip || !sel[a.id] || v.opts?.[a.id] === sel[a.id]);
   const [sel, setSel] = useState<Record<string, string>>(() => {
     const out: Record<string, string> = {};
-    for (const a of axes) { const ok = values(a.id).filter((x) => variants.some((v) => v.opts?.[a.id] === x && v.stock > 0)); if (ok.length === 1) out[a.id] = ok[0]; }
+    for (const a of axes) { const ok = values(a.id).filter((x) => variants.some((v) => v.opts?.[a.id] === x && v.stock > 0)); if (ok.length === 1 || (a.preselect && ok.length)) out[a.id] = ok[0]; }
     return out;
   });
   const chosen = variants.find((v) => axes.every((a) => v.opts?.[a.id] === sel[a.id])) ?? null;

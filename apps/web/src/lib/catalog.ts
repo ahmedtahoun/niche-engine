@@ -225,3 +225,4 @@ export const invalidateCatalog = () => { g.__catalog = undefined; };
 
 export async function saveSeller(s: Seller) { await store().saveSeller(s); invalidateCatalog(); }
 export async function saveProduct(p: Product) { await store().saveProduct(p); invalidateCatalog(); }
+export async function deleteProduct(id: string) { await store().deleteProduct(id); invalidateCatalog(); }

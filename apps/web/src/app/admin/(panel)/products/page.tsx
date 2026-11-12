@@ -1,31 +1,32 @@
 import Link from 'next/link';
 import { catalog } from '@/lib/catalog';
 import { getNiche } from '@/lib/niches';
-import { coverDays, productStats } from '@/lib/product-stats';
+import { coverDays, marginPct, productStats } from '@/lib/product-stats';
 import { store } from '@/lib/store';
-import { approveProductAction, approveSellerAction, saveSkus, setProductStatus, setSellerStatus } from '../../actions';
+import { approveProductAction, approveSellerAction, setProductStatus, setSellerStatus } from '../../actions';
 import { EGP, NicheTabs, Pill, pct, pickNiche } from '../shared';
-import { SkuCells } from './SkuCells';
 
 export const metadata = { title: 'Products' };
 
 const LOW = 5; // bags
 const COVER_WARN = 10; // days of stock left at the 30-day pace
-const SORTS = [['sold', 'Best sellers'], ['profit', 'Most profit'], ['margin', 'Lowest margin'], ['stock', 'Restock first'], ['name', 'Name']] as const;
+const SORTS = [['sold', 'Best sellers'], ['profit', 'Profit'], ['margin', 'Margin'], ['stock', 'Restock'], ['name', 'A–Z']] as const;
 type Sort = (typeof SORTS)[number][0];
 
-export default async function Products({ searchParams }: { searchParams: Promise<{ niche?: string; show?: string; sort?: string }> }) {
+export default async function Products({ searchParams }: { searchParams: Promise<{ niche?: string; show?: string; sort?: string; q?: string; done?: string; name?: string }> }) {
   const sp = await searchParams;
   const niche = pickNiche(sp);
   const show = sp.show === 'hidden' || sp.show === 'all' ? sp.show : 'live';
   const sort: Sort = (SORTS.find(([k]) => k === sp.sort)?.[0]) ?? 'sold';
-  const href = (o: { show?: string; sort?: string }) => `/admin/products?${new URLSearchParams({ ...(niche ? { niche } : {}), show: o.show ?? show, sort: o.sort ?? sort })}`;
+  const q = (sp.q ?? '').trim();
+  const href = (o: { show?: string; sort?: string }) => `/admin/products?${new URLSearchParams({ ...(niche ? { niche } : {}), show: o.show ?? show, sort: o.sort ?? sort, ...(q ? { q } : {}) })}`;
   const cat = await catalog();
   const list = cat.products.filter((p) => !niche || p.niche === niche);
   const stats = productStats(list, await store().listOrders({ ...(niche ? { niche } : {}), limit: 5000 }));
   const catalogList = list.filter((p) => p.status !== 'review');
   const counts = { live: catalogList.filter((p) => (p.status ?? 'live') === 'live').length, hidden: catalogList.filter((p) => p.status === 'hidden').length, all: catalogList.length };
-  const shown = catalogList.filter((p) => show === 'all' || (p.status ?? 'live') === show);
+  const needle = q.toLowerCase();
+  const shown = catalogList.filter((p) => (show === 'all' || (p.status ?? 'live') === show) && (!needle || `${p.nameAr} ${p.en?.name ?? ''} ${p.slug}`.toLowerCase().includes(needle)));
   const minMargin = (p: (typeof list)[number]) => Math.min(...p.variants.map((v) => { const c = p.cost?.[v.label]; const pr = v.price ?? p.price; return c === undefined ? 1 : (pr - c) / pr; }));
   const minCover = (p: (typeof list)[number]) => Math.min(...p.variants.map((v) => v.stock === 0 ? -1 : coverDays(v.stock, stats[p.id].byVariant[v.label]?.recent.units ?? 0) ?? 9999));
   const rows = shown.map((p) => ({ p, st: stats[p.id] })).sort((a, b) =>
@@ -48,7 +49,7 @@ export default async function Products({ searchParams }: { searchParams: Promise
   return (
     <>
       <div className="adm-top">
-        <div><h1>Products</h1><p className="sub">Stock, prices, margins and sales per size. Nothing goes live without your approval.</p></div>
+        <div><h1>Products</h1><p className="sub">Click a coffee to edit its name, description, prices, stock or status.</p></div>
         <NicheTabs base="/admin/products" current={niche} />
       </div>
       {(review.length > 0 || apps.length > 0) && <section className="panel">
@@ -86,71 +87,55 @@ export default async function Products({ searchParams }: { searchParams: Promise
         </div>
       </section>}
       <div className="kpis">
-        <div className="kpi"><small>Units sold · 30 days</small><b>{tot.units.toLocaleString('en-US')}</b><span>{tot.orders} orders</span></div>
-        <div className="kpi"><small>Revenue · 30 days</small><b>{EGP(tot.revenue)}</b><span>shelf price × units</span></div>
-        <div className="kpi"><small>Gross profit · 30 days</small><b>{EGP(tot.profit)}</b><span>{tot.costed ? `${pct(tot.profit / tot.costed)} margin` : 'add buying prices'}{tot.noCost ? ` · ${tot.noCost} units without a buying price` : ''}</span></div>
-        <div className="kpi"><small>Stock value at cost</small><b>{EGP(stockValue)}</b><span>{stockUnits.toLocaleString('en-US')} bags</span></div>
-        <div className="kpi"><small>Needs restock</small><b style={{ color: lowSkus ? 'var(--a-warn)' : undefined }}>{lowSkus}</b><span>{outSkus} sold out · ≤{LOW} left or &lt;{COVER_WARN} days</span></div>
+        <div className="kpi"><small>Revenue · 30 days</small><b>{EGP(tot.revenue)}</b><span>{tot.units} bags · {tot.orders} orders</span></div>
+        <div className="kpi"><small>Profit · 30 days</small><b>{EGP(tot.profit)}</b><span>{tot.costed ? `${pct(tot.profit / tot.costed)} margin` : 'add buying prices'}{tot.noCost ? ` · ${tot.noCost} bags without a buy price` : ''}</span></div>
+        <div className="kpi"><small>Inventory</small><b>{stockUnits.toLocaleString('en-US')} bags</b><span>worth {EGP(stockValue)} at buying price</span></div>
+        <div className="kpi"><small>Needs restock</small><b style={{ color: lowSkus ? 'var(--a-warn)' : undefined }}>{lowSkus} sizes</b><span>{outSkus} sold out · ≤{LOW} left or under {COVER_WARN} days</span></div>
       </div>
-      <section className="panel">
+      {sp.done && <div className="toast">{sp.done === 'deleted' ? `Deleted “${sp.name ?? ''}”.` : `“${sp.name ?? ''}” has orders, so it was archived (hidden) to keep order history.`}</div>}
+      <section className="panel flush">
         <div className="tools">
-          <nav className="adm-tabs" aria-label="Show">
-            {(['live', 'hidden', 'all'] as const).map((k) => <Link key={k} href={href({ show: k })} aria-current={show === k ? 'true' : undefined}>{k === 'live' ? 'On sale' : k === 'hidden' ? 'Hidden' : 'All'} <span className="sub">{counts[k]}</span></Link>)}
+          <nav className="seg" aria-label="Show">
+            {(['live', 'hidden', 'all'] as const).map((k) => <Link key={k} href={href({ show: k })} aria-current={show === k ? 'true' : undefined}>{k === 'live' ? 'Active' : k === 'hidden' ? 'Hidden' : 'All'} <span className="n">{counts[k]}</span></Link>)}
           </nav>
-          <nav className="adm-tabs" aria-label="Sort">
+          <form className="search" action="/admin/products">
+            {niche && <input type="hidden" name="niche" value={niche} />}
+            <input type="hidden" name="show" value={show} /><input type="hidden" name="sort" value={sort} />
+            <input name="q" defaultValue={q} placeholder="Search coffees…" aria-label="Search products" />
+          </form>
+          <nav className="seg" aria-label="Sort">
             {SORTS.map(([k, label]) => <Link key={k} href={href({ sort: k })} aria-current={sort === k ? 'true' : undefined}>{label}</Link>)}
           </nav>
         </div>
-        <p className="sub" style={{ margin: '0 0 10px' }}>Edit stock, selling price and buying price, then Save. Margin updates as you type (red under 12%, amber under 18%). Buying prices stay in the admin.</p>
-        <div className="tbl"><table className="t crm">
-          <thead><tr>
-            <th>Product</th><th>Size</th><th>Stock</th><th>Sell price</th><th>Buy price</th><th className="r">Margin</th>
-            <th className="r">Sold 30d</th><th className="r">Sold all</th><th className="r">Revenue 30d</th><th className="r">Profit 30d</th><th className="r">Days left</th><th></th>
-          </tr></thead>
-          {rows.map(({ p, st }) => {
+        <div className="tbl"><table className="t plist">
+          <thead><tr><th>Product</th><th>Status</th><th>Inventory</th><th className="r">Price</th><th className="r">Margin</th><th className="r">Sold · 30d</th><th className="r">Profit · 30d</th><th></th></tr></thead>
+          <tbody>{rows.map(({ p, st }) => {
             const status = p.status ?? 'live';
-            const formId = `f-${p.id}`;
+            const stock = p.variants.reduce((n, v) => n + v.stock, 0);
+            const out = p.variants.filter((v) => v.stock === 0).length;
+            const low = p.variants.some((v) => v.stock > 0 && (v.stock <= LOW || ((c) => c !== null && c < COVER_WARN)(coverDays(v.stock, st.byVariant[v.label]?.recent.units ?? 0))));
+            const prices = p.variants.map((v) => v.price ?? p.price);
+            const margins = p.variants.map((v) => marginPct(v.price ?? p.price, p.cost?.[v.label])).filter((m): m is number => m !== null);
+            const m = margins.length ? Math.min(...margins) : null;
+            const edit = `/admin/products/${p.id}`;
             return (
-              <tbody key={p.id} className="prod">
-                {p.variants.map((v, i) => {
-                  const vs = st.byVariant[v.label] ?? { all: { units: 0 }, recent: { units: 0, revenue: 0, profit: 0 } };
-                  const cover = coverDays(v.stock, vs.recent.units);
-                  return (
-                    <tr key={v.label}>
-                      {i === 0 && (
-                        <td rowSpan={p.variants.length} className="pcell">
-                          <form id={formId} action={saveSkus.bind(null, p.id)} />
-                          <div className="pinfo">
-                            {p.images?.[0] ? <img className="thumb" src={p.images[0]} alt="" loading="lazy" /> : <span className="thumb none">no photo</span>}
-                            <div>
-                              <Link href={`/admin/products/${p.id}`} className="ar pname">{p.nameAr}</Link>
-                              <small>{seller(p.sellerId)?.nameEn ?? seller(p.sellerId)?.name} · <Pill kind={status === 'live' ? 'ok' : 'mute'}>{status === 'live' ? 'on sale' : status}</Pill></small>
-                            </div>
-                          </div>
-                        </td>
-                      )}
-                      <td className="ar">{v.label}</td>
-                      <SkuCells formId={formId} label={v.label} stock={v.stock} price={v.price ?? p.price} cost={p.cost?.[v.label]} low={LOW} />
-                      <td className="r">{vs.recent.units}</td>
-                      <td className="r">{vs.all.units}</td>
-                      <td className="r">{vs.recent.revenue ? EGP(vs.recent.revenue) : '—'}</td>
-                      <td className="r">{vs.recent.noCost ? <span className="sub" title="No buying price for some units">?</span> : vs.recent.profit ? EGP(vs.recent.profit) : '—'}</td>
-                      <td className="r">{v.stock === 0 ? <Pill kind="bad">sold out</Pill> : cover === null ? <span className="sub">—</span> : cover < COVER_WARN ? <Pill kind="warn">{cover}</Pill> : cover}</td>
-                      {i === 0 && (
-                        <td rowSpan={p.variants.length} className="acts-cell">
-                          <button className="mini pri" form={formId}>Save</button>
-                          <form action={setProductStatus.bind(null, p.id, status === 'live' ? 'hidden' : 'live', undefined)}><button className="mini">{status === 'live' ? 'Hide' : 'Show'}</button></form>
-                          <Link className="mini" href={`/admin/products/${p.id}`}>Details</Link>
-                        </td>
-                      )}
-                    </tr>
-                  );
-                })}
-              </tbody>
+              <tr key={p.id} className="row-link">
+                <td><Link href={edit} className="pinfo stretch">
+                  {p.images?.[0] ? <img className="thumb" src={p.images[0]} alt="" loading="lazy" /> : <span className="thumb none">—</span>}
+                  <span><b className="ar">{p.nameAr}</b><small>{p.en?.name ?? ''}</small></span>
+                </Link></td>
+                <td><Pill kind={status === 'live' ? 'ok' : 'mute'}>{status === 'live' ? 'Active' : 'Hidden'}</Pill></td>
+                <td><span className={out ? 'bad-t' : low ? 'warn-t' : ''}>{stock} in stock</span><small className="sub2">{p.variants.length} sizes{out ? ` · ${out} sold out` : low ? ' · low' : ''}</small></td>
+                <td className="r">{Math.min(...prices) === Math.max(...prices) ? EGP(prices[0]) : `${EGP(Math.min(...prices))} – ${Math.max(...prices).toLocaleString('en-US')}`}</td>
+                <td className="r">{m === null ? <span className="sub">no buy price</span> : <span className={`mg ${m < 0.12 ? 'bad' : m < 0.18 ? 'warn' : 'ok'}`}>{Math.round(m * 100)}%</span>}</td>
+                <td className="r">{st.recent.units || <span className="sub">0</span>}</td>
+                <td className="r">{st.recent.profit ? EGP(st.recent.profit) : <span className="sub">—</span>}</td>
+                <td className="r"><Link href={edit} className="mini">Edit</Link></td>
+              </tr>
             );
-          })}
+          })}</tbody>
         </table></div>
-        {!rows.length && <p className="empty">No products here.</p>}
+        {!rows.length && <p className="empty">{q ? `Nothing matches “${q}”.` : 'No products here.'}</p>}
       </section>
     </>
   );

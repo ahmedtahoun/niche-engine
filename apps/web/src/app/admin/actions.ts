@@ -7,7 +7,9 @@ import { adminChats, approveProduct, approveSeller } from '@/bot/engine';
 import { deliver } from '@/bot/transport';
 import { checkPassword, COOKIE, isAdmin } from '@/lib/admin-auth';
 import { unblock } from '@/lib/blocklist';
-import { catalog, saveProduct, saveSeller } from '@/lib/catalog';
+import { catalog, deleteProduct, saveProduct, saveSeller } from '@/lib/catalog';
+import { store } from '@/lib/store';
+import type { Product } from '@/lib/types';
 import { moveOrderTo } from '@/lib/fulfillment';
 import { getNiche } from '@/lib/niches';
 import { mutateOrder, orderById, type OrderStatus } from '@/lib/orders';
@@ -19,6 +21,7 @@ async function guard() {
   if (!(await isAdmin())) redirect('/admin/login');
 }
 const done = () => revalidatePath('/admin', 'layout');
+const listOrdersFor = (niche: string) => store().listOrders({ niche, limit: 5000 });
 const egp = (n: number) => `${Math.round(n).toLocaleString('en-US')} ج`;
 
 // ---------- sign in ----------
@@ -124,16 +127,8 @@ const num = (raw: FormDataEntryValue | null) => {
   return Number.isFinite(n) ? n : NaN;
 };
 
-/**
- * Stock, selling price and buying price (cost) per option, from the products table
- * (fields "stock:<label>", "price:<label>", "cost:<label>"). Whole numbers; a blank cost removes it.
- * The cost stays in the database and the admin only (never sent to shoppers).
- */
-export async function saveSkus(id: string, form: FormData) {
-  await guard();
-  const found = (await catalog()).productById(id);
-  if (!found) return;
-  const p = structuredClone(found);
+/** Applies stock, price and cost fields ("stock:<label>", "price:<label>", "cost:<label>") to a product copy. */
+function applySkus(p: Product, form: FormData) {
   let priced = false;
   for (const v of p.variants) {
     const stock = num(form.get(`stock:${v.label}`));
@@ -153,8 +148,55 @@ export async function saveSkus(id: string, form: FormData) {
     if (prices.length) p.price = Math.min(...prices);
     p.priceConfirmedAt = new Date().toISOString();
   }
+}
+
+const text = (form: FormData, key: string, max: number) => {
+  const v = form.get(key);
+  return v === null ? null : String(v).replace(/\s+/g, ' ').trim().slice(0, max);
+};
+
+/**
+ * The product editor's single Save: names and descriptions (Arabic and English), status,
+ * and per size the selling price, buying price and stock. Buying prices stay in the admin.
+ */
+export async function saveProductForm(id: string, form: FormData) {
+  await guard();
+  const found = (await catalog()).productById(id);
+  if (!found) return;
+  const p = structuredClone(found);
+  const nameAr = text(form, 'nameAr', 120), leadAr = text(form, 'leadAr', 600);
+  const nameEn = text(form, 'nameEn', 120), leadEn = text(form, 'leadEn', 600);
+  if (nameAr) p.nameAr = nameAr;
+  if (leadAr !== null && leadAr) p.leadAr = leadAr;
+  if (nameEn !== null || leadEn !== null) {
+    p.en = { ...(p.en ?? { name: '', lead: '', attributes: {} }), ...(nameEn ? { name: nameEn } : {}), ...(leadEn ? { lead: leadEn } : {}) };
+  }
+  const status = form.get('status');
+  if (status === 'live' || status === 'hidden') p.status = status;
+  applySkus(p, form);
   await saveProduct(p);
   done();
+}
+
+/**
+ * Deletes a product nobody has ordered. One that appears in orders is archived (hidden) instead,
+ * so order history and payouts keep working. Returns to the list either way.
+ */
+export async function deleteProductAction(id: string) {
+  await guard();
+  const cat = await catalog();
+  const p = cat.productById(id);
+  if (!p) redirect('/admin/products');
+  const ordered = (await listOrdersFor(p.niche)).some((o) => o.items.some((i) => i.productId === id));
+  let result = 'deleted';
+  if (ordered) {
+    await saveProduct({ ...structuredClone(p), status: 'hidden' });
+    result = 'archived';
+  } else {
+    try { await deleteProduct(id); } catch { await saveProduct({ ...structuredClone(p), status: 'hidden' }); result = 'archived'; }
+  }
+  done();
+  redirect(`/admin/products?${new URLSearchParams({ done: result, name: p.nameAr })}`);
 }
 
 // ---------- payouts ----------

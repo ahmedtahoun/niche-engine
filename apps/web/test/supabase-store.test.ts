@@ -151,3 +151,14 @@ test('the public key cannot call the money functions', async () => {
   const w = await fake.db.query<{ ok: boolean }>("select has_function_privilege('service_role', 'wallet_append(text, text, int, jsonb)', 'execute') as ok");
   assert.equal(w.rows[0].ok, true);
 });
+
+test('products: one never ordered can be deleted; the database refuses one that orders refer to', async () => {
+  const lone = { ...structuredClone(PRODUCTS[0]), id: 'tmp-delete-me', slug: 'tmp-delete-me' };
+  await s.saveProduct(lone);
+  await s.deleteProduct('tmp-delete-me');
+  assert.equal((await s.listProducts()).some((p) => p.id === 'tmp-delete-me'), false, 'gone');
+  const ordered = PRODUCTS[0];
+  await makeOrder({ cart: [{ kind: 'item', slug: ordered.slug, variant: ordered.variants.find((v) => v.stock > 0)!.label, qty: 1 }] });
+  await assert.rejects(() => s.deleteProduct(ordered.id), 'order history keeps the product');
+  assert.ok((await s.listProducts()).some((p) => p.id === ordered.id));
+});

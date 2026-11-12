@@ -3,9 +3,9 @@
 import { normalizeEgyptPhone } from '@niche-engine/core';
 import { catalog, publicQuote } from '@/lib/catalog';
 import { getNiche } from '@/lib/niches';
-import { applyStatus, draftOrder, getOrder, mutateOrder, ordersFor } from '@/lib/orders';
+import { applyStatus, draftOrder, findDuplicate, getOrder, mutateOrder, ordersFor } from '@/lib/orders';
 import { accountByPhone, createAccount, MIN_PASSWORD, saveAddress, signIn } from '@/lib/customers';
-import { currentCustomer, endSession, startSession } from '@/lib/current-customer';
+import { currentCustomer, endSession, isGuestOrder, rememberGuestOrder, startSession } from '@/lib/current-customer';
 import { moveOrderTo } from '@/lib/fulfillment';
 import { walletOf } from '@/lib/wallet';
 import { notifyOrder } from '@/bot/engine';
@@ -61,7 +61,8 @@ export async function placeOrder(niche: string, cart: CartLine[], form: Checkout
   let existing = false;
   if (!phone) errors.phone = s.t('err.phone');
   else if (await isBlocked(phone)) errors.phone = s.t('err.blocked');
-  else if (!me) {
+  else if (!me && form.password) {
+    // A password is optional: with one we sign in (or create the account); without one it's a guest order.
     existing = Boolean(await accountByPhone(phone));
     if (existing) {
       const r = await signIn(phone, form.password);
@@ -70,6 +71,7 @@ export async function placeOrder(niche: string, cart: CartLine[], form: Checkout
       errors.password = s.t('err.pwShort', { n: MIN_PASSWORD });
     }
   }
+  const guest = !me && !form.password;
   if (form.name.trim().length < 2) errors.name = s.t('err.name');
   if (!GOVERNORATES.includes(form.governorate)) errors.governorate = s.t('err.gov');
   if (form.area.trim().length < 2) errors.area = s.t('err.area');
@@ -78,10 +80,16 @@ export async function placeOrder(niche: string, cart: CartLine[], form: Checkout
   if (Object.keys(errors).length) return { ok: false, errors };
 
   const today = await store().listOrders({ phone: phone!, since: new Date(Date.now() - 864e5).toISOString(), limit: MAX_ORDERS_PER_PHONE_PER_DAY });
-  if (today.length >= MAX_ORDERS_PER_PHONE_PER_DAY) return { ok: false, errors: { cart: s.t('err.daily') } };
 
   const details = { name: form.name.trim().slice(0, 80), governorate: form.governorate, area: form.area.trim().slice(0, 80), address: form.address.trim().slice(0, 200), landmark: form.landmark.trim().slice(0, 120) };
-  if (!me && !existing) {
+  // Sent twice (double tap, network resend)? Hand back the first order instead of making a second.
+  const dup = findDuplicate(today, { cart, customer: { ...details, phone: phone! } });
+  if (dup) {
+    if (guest) await rememberGuestOrder(dup.id);
+    return { ok: true, id: dup.id };
+  }
+  if (today.length >= MAX_ORDERS_PER_PHONE_PER_DAY) return { ok: false, errors: { cart: s.t('err.daily') } };
+  if (!me && !guest && !existing) {
     try {
       await createAccount(phone!, details.name, form.password);
     } catch {
@@ -89,8 +97,9 @@ export async function placeOrder(niche: string, cart: CartLine[], form: Checkout
       return { ok: false, errors: { password: s.t('err.hasAccount') } };
     }
   }
-  await saveAddress(phone!, details);
-  if (!me) await startSession(phone!);
+  // A guest order never changes a saved account (someone could type another person's phone).
+  if (!guest) await saveAddress(phone!, details);
+  if (!me && !guest) await startSession(phone!);
 
   const cat = await catalog();
   // Wallet credit only for a signed-in customer, re-checked here (never trusted from the browser).
@@ -115,6 +124,7 @@ export async function placeOrder(niche: string, cart: CartLine[], form: Checkout
     if (order === 'wallet_conflict') continue;
     // With WhatsApp confirmation off, the order goes straight to the sellers.
     if (order.status === 'confirmed') await deliver(notifyOrder(order, cat));
+    if (guest) await rememberGuestOrder(order.id);
     return { ok: true, id: order.id };
   }
   return { ok: false, errors: { cart: s.t('err.wallet') } };
@@ -123,7 +133,8 @@ export async function placeOrder(niche: string, cart: CartLine[], form: Checkout
 async function ownOrder(niche: string, id: number) {
   const me = await currentCustomer();
   const o = await getOrder(niche, id);
-  return me && o && o.customer.phone === me.phone ? o : null;
+  if (!o) return null;
+  return (me && o.customer.phone === me.phone) || (await isGuestOrder(o.id)) ? o : null;
 }
 
 export async function confirmOrder(niche: string, id: number) {

@@ -9,7 +9,8 @@ import { waLink } from '@/lib/site';
 import { getOrder } from '@/lib/orders';
 import { publicQuote } from '@/lib/catalog';
 import Link from 'next/link';
-import { currentCustomer } from '@/lib/current-customer';
+import { currentCustomer, isGuestOrder } from '@/lib/current-customer';
+import { BuyAgain } from '@/components/BuyAgain';
 
 export async function generateMetadata() { return { title: (await speaker()).t('orderTitle') }; }
 export const dynamic = 'force-dynamic';
@@ -26,7 +27,8 @@ export default async function OrderPage({ params }: { params: Promise<{ niche: s
   const { t, egp } = s;
   // Orders hold a name, phone and address: only their owner may see them.
   const me = await currentCustomer();
-  if (!me || me.phone !== o.customer.phone) {
+  // A guest sees the order only in the browser that placed it (signed cookie), never by phone number.
+  if (!(me && me.phone === o.customer.phone) && !(await isGuestOrder(o.id))) {
     return (
       <main className="page narrow">
         <h1 className="title">{t('order', { id: o.id })}</h1>
@@ -58,6 +60,8 @@ export default async function OrderPage({ params }: { params: Promise<{ niche: s
         </a>
       )}
       <OrderActions niche={niche} id={o.id} status={o.status} />
+      <BuyAgain niche={niche} cart={o.cart} />
+      {!me && <p className="muted small" style={{ margin: 0 }}>{t('ord.guestNote')}</p>}
       <div style={{ display: 'grid', gap: 8 }}>
         {o.quote.lines.map((l) => (
           <div className="line" key={l.key}>

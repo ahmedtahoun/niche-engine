@@ -29,3 +29,15 @@ export function readSession(token: string | undefined, now = Date.now()): string
   const [phone, exp] = payload.split('.');
   return Number(exp) > now && /^01[0125]\d{8}$/.test(phone) ? phone : null;
 }
+
+// ---------- guest orders ----------
+// A guest (no account) can open the order they just placed, and only from that browser:
+// the cookie holds a signature of the order number. Typing a phone number never shows orders.
+export const GUEST_ORDER_DAYS = 30;
+export const guestOrderCookie = (id: number) => `ne_o${id}`;
+export const signGuestOrder = (id: number) => mac(`guest-order.${id}`);
+export function readGuestOrder(id: number, token: string | undefined): boolean {
+  if (!token) return false;
+  const want = signGuestOrder(id);
+  return token.length === want.length && timingSafeEqual(Buffer.from(token), Buffer.from(want));
+}

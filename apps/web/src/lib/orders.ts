@@ -98,3 +98,14 @@ export function applySellerPart(o: Order, sellerId: string, part: SellerPart): b
 }
 
 export const itemsOfSeller = (o: Order, sellerId: string) => o.items.filter((i) => i.sellerId === sellerId);
+
+/**
+ * The same order sent twice (a double tap, or a resend after a network drop): same cart and
+ * delivery details from the same phone within two minutes. Checkout returns the first one.
+ */
+export const DUPLICATE_WINDOW_MS = 2 * 60_000;
+export function findDuplicate(recent: Order[], o: { cart: CartLine[]; customer: Order['customer'] }, now = Date.now()): Order | null {
+  const same = (a: unknown, b: unknown) => JSON.stringify(a) === JSON.stringify(b);
+  const who = (c: Order['customer']) => [c.phone, c.name, c.governorate, c.area, c.address, c.landmark];
+  return recent.find((x) => x.status !== 'cancelled' && now - Date.parse(x.createdAt) < DUPLICATE_WINDOW_MS && same(x.cart, o.cart) && same(who(x.customer), who(o.customer))) ?? null;
+}

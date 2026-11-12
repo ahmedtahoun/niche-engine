@@ -42,13 +42,6 @@ export function CheckoutForm({ niche, governorates, initialPromo, openBeforePay,
     <form onSubmit={submit} style={{ display: 'grid', gap: 14 }} noValidate>
       <div><h1 className="title">{t('co.title')}</h1><p className="muted" style={{ margin: '4px 0 0' }}>{me ? t('co.hello', { name: me.name.split(' ')[0] }) : t('co.new')}</p></div>
       <label className="field">{t('phone')}<input value={form.phone} onChange={set('phone')} readOnly={Boolean(me)} inputMode="tel" autoComplete="tel" dir="ltr" style={{ textAlign: 'start' }} placeholder="01xxxxxxxxx" {...inv('phone')} />{err('phone')}</label>
-      {!me && (
-        <label className="field">{t('password')}
-          <input type="password" value={form.password} onChange={set('password')} autoComplete="new-password" {...inv('password')} />
-          <span className="muted small">{t('co.pwHelp')}</span>
-          {err('password')}
-        </label>
-      )}
       <label className="field">{t('name')}<input value={form.name} onChange={set('name')} autoComplete="name" {...inv('name')} />{err('name')}</label>
       <div className="two">
         <label className="field">{t('governorate')}<select value={form.governorate} onChange={set('governorate')}>{governorates.map((g) => <option key={g} value={g}>{gov(g)}</option>)}</select></label>
@@ -56,6 +49,13 @@ export function CheckoutForm({ niche, governorates, initialPromo, openBeforePay,
       </div>
       <label className="field">{t('street')}<input value={form.address} onChange={set('address')} autoComplete="street-address" {...inv('address')} />{err('address')}</label>
       <label className="field">{t('landmark')}<input value={form.landmark} onChange={set('landmark')} placeholder={t('landmarkPh')} /></label>
+      {!me && (
+        <label className="field">{t('passwordOptional')}
+          <input type="password" value={form.password} onChange={set('password')} autoComplete="current-password" {...inv('password')} />
+          <span className="muted small">{t('co.pwHelp')}</span>
+          {err('password')}
+        </label>
+      )}
       <div className="note info">{t('co.eta', { day: date(eta[form.governorate], true) })}</div>
       <fieldset style={{ border: 0, padding: 0, margin: 0, display: 'grid', gap: 8 }}>
         <legend className="h4">{t('payment')}</legend>

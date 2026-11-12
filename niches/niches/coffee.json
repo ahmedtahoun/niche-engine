@@ -63,11 +63,11 @@
     "percent": 0.1,
     "days": 30
   },
-  "shippingEgp": 100,
+  "shippingEgp": 70,
   "freeShippingOverEgp": 1500,
   "risk": {
     "depositAboveEgp": 1500,
-    "depositEgp": 100,
+    "depositEgp": 70,
     "requireWhatsappConfirm": false,
     "openBeforePay": true
   },

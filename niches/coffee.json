@@ -226,8 +226,8 @@
       "en": "Specialty coffee, from the roastery to your door ☕"
     },
     "subtitle": {
-      "ar": "قهوة مختصة من بوندز: بلندات وقهوة أحادية المصدر من إثيوبيا والبرازيل وكولومبيا. حبوب أو مطحونة على طلبك، حتى للكنكة. ادفع عند الاستلام.",
-      "en": "Specialty coffee from Bonds: blends and single origins from Ethiopia, Brazil and Colombia. Whole or ground to order, even for the kanaka. Pay on delivery."
+      "ar": "قهوة مختصة من بوندز: بلندات وقهوة أحادية المصدر من إثيوبيا والبرازيل وكولومبيا والسلفادور. حبوب كاملة طازة في أكياس مقفولة. ادفع عند الاستلام.",
+      "en": "Specialty coffee from Bonds: blends and single origins from Ethiopia, Brazil, Colombia and El Salvador. Fresh whole beans in sealed bags. Pay on delivery."
     },
     "cta": {
       "ar": "اختار قهوتك",
@@ -235,8 +235,8 @@
     },
     "badges": [
       {
-        "ar": "⚙️ مطحونة على طلبك",
-        "en": "⚙️ Ground to order"
+        "ar": "🫘 حبوب كاملة طازة",
+        "en": "🫘 Fresh whole beans"
       },
       {
         "ar": "💵 الدفع عند الاستلام",
@@ -339,6 +339,7 @@
       "values": [
         {
           "id": "kanaka",
+          "hidden": true,
           "labelAr": "كنكة (تركي)",
           "labelEn": "Kanaka (Turkish)",
           "hintAr": "ناعم جداً زي البودرة. بنطحنها بعد طلبك، وأحلى طعم في أول أسبوعين.",
@@ -347,6 +348,7 @@
         },
         {
           "id": "espresso",
+          "hidden": true,
           "labelAr": "مكنة اسبريسو",
           "labelEn": "Espresso machine",
           "hintAr": "طحنة ناعمة للاسبريسو. بنطحنها بعد طلبك.",
@@ -355,6 +357,7 @@
         },
         {
           "id": "moka",
+          "hidden": true,
           "labelAr": "موكا بوت",
           "labelEn": "Moka pot",
           "hintAr": "ناعم متوسط. بنطحنها بعد طلبك.",
@@ -363,6 +366,7 @@
         },
         {
           "id": "filter",
+          "hidden": true,
           "labelAr": "فلتر / V60",
           "labelEn": "Filter / V60",
           "hintAr": "طحنة متوسطة للفلتر والـ V60. بنطحنها بعد طلبك.",
@@ -371,6 +375,7 @@
         },
         {
           "id": "french",
+          "hidden": true,
           "labelAr": "فرنش بريس",
           "labelEn": "French press",
           "hintAr": "طحنة خشنة. بنطحنها بعد طلبك.",
@@ -381,8 +386,8 @@
           "id": "beans",
           "labelAr": "حبوب كاملة",
           "labelEn": "Whole beans",
-          "hintAr": "لو عندك مطحنة: الحبوب بتحافظ على طعمها أطول.",
-          "hintEn": "If you have a grinder: beans keep their taste longest.",
+          "hintAr": "بتوصلك حبوب كاملة في كيس مقفول، بتحافظ على ريحتها أطول. اطحن على قد الكوباية.",
+          "hintEn": "Arrives as whole beans in a sealed bag, keeping its aroma longest. Grind just enough for each cup.",
           "emoji": "🫘"
         }
       ]
@@ -448,12 +453,12 @@
     },
     {
       "q": {
-        "ar": "بتطحنوا القهوة؟",
-        "en": "Do you grind the coffee?"
+        "ar": "القهوة بتوصل حبوب ولا مطحونة؟",
+        "en": "Does the coffee come as beans or ground?"
       },
       "a": {
-        "ar": "أيوه، اختار طريقة التحضير وإحنا نطحنها بعد طلبك: كنكة، اسبريسو، موكا بوت، فلتر أو فرنش بريس. ولو عندك مطحنة اطلبها حبوب كاملة.",
-        "en": "Yes. Pick how you brew and we grind it after you order: kanaka, espresso, moka pot, filter or French press. Have a grinder? Order whole beans."
+        "ar": "حالياً بنبيع حبوب كاملة بس، لأن الحبوب بتحافظ على ريحتها وطعمها أطول. اطحن على قد الكوباية في مطحنة البيت، أو اطحنها عند أي محل بن قريب منك على طريقة تحضيرك.",
+        "en": "For now we sell whole beans only, because beans keep their aroma and taste longest. Grind just enough for each cup at home, or have a local coffee shop grind them for your brewing method."
       }
     },
     {
@@ -508,12 +513,12 @@
         }
       },
       {
-        "emoji": "⚙️",
-        "ar": "بنطحنها على طريقتك",
-        "en": "Ground your way",
+        "emoji": "🫘",
+        "ar": "حبوب كاملة",
+        "en": "Whole beans",
         "text": {
-          "ar": "بعد طلبك، من الكنكة للفرنش بريس، أو حبوب",
-          "en": "After you order, kanaka to French press, or whole beans"
+          "ar": "بتحافظ على ريحتها أطول، اطحنها قبل التحضير",
+          "en": "Keeps its aroma longest; grind just before brewing"
         }
       },
       {

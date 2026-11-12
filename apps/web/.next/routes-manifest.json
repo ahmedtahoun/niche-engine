@@ -95,6 +95,14 @@
   },
   "dynamicRoutes": [
     {
+      "page": "/admin/products/[id]",
+      "regex": "^/admin/products/([^/]+?)(?:/)?$",
+      "routeKeys": {
+        "nxtPid": "nxtPid"
+      },
+      "namedRegex": "^/admin/products/(?<nxtPid>[^/]+?)(?:/)?$"
+    },
+    {
       "page": "/[niche]",
       "regex": "^/([^/]+?)(?:/)?$",
       "routeKeys": {

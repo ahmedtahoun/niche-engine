@@ -25,7 +25,8 @@
     "pickSeal": {
       "ar": "اختيار محمصة القاهرة",
       "en": "CAIRO ROAST PICK"
-    }
+    },
+    "whatsapp": "01109200150"
   },
   "categories": [
     {
@@ -246,9 +247,9 @@
       }
     ],
     "images": [
-      "/products/coffee/chrome.webp",
+      "/products/coffee/lifestyle-bags.webp",
       "/products/coffee/ethiopia-guji.webp",
-      "/products/coffee/amber.webp"
+      "/products/coffee/chrome.webp"
     ]
   },
   "steps": [

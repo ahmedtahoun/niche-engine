@@ -24,6 +24,7 @@ cp -R apps/web/.next/static bundle/apps/web/.next/static
 cp -R niches bundle/niches
 cp deploy/cpanel/.cpanel.yml bundle/.cpanel.yml
 cp deploy/cpanel/README.md bundle/README.md
+cp deploy/cpanel/static.htaccess deploy/cpanel/next-static.htaccess bundle/
 echo "$SHA" > bundle/REVISION
 # The deploy branch is public: refuse to publish private business files (supplier costs, margins).
 if find bundle -name '*.local.*' -o -path '*/private/*' | grep -q .; then

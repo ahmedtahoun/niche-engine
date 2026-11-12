@@ -1,0 +1,4 @@
+# Next.js build files (scripts, styles): their names change with every build, so they never go stale.
+<IfModule mod_headers.c>
+  Header set Cache-Control "public, max-age=31536000, immutable"
+</IfModule>

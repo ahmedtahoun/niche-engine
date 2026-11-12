@@ -16,3 +16,13 @@ deployment:
     - /bin/mv $APP/current $APP/release-old || true
     - /bin/mv $APP/release-new $APP/current
     - /bin/touch $APP/tmp/restart.txt
+    # Photos, logos and build files also go into cairoroast.com's web folder: the web server
+    # sends files that exist there itself (fast, cached), and asks the Node app for the rest.
+    - export DOC=/home/viorowzb/cairoroast.com
+    - /bin/mkdir -p $DOC/_next
+    - /bin/cp -R ./apps/web/public/products ./apps/web/public/brands ./apps/web/public/sellers $DOC/
+    - /bin/cp -R ./apps/web/.next/static $DOC/_next/
+    - /bin/cp ./static.htaccess $DOC/products/.htaccess
+    - /bin/cp ./static.htaccess $DOC/brands/.htaccess
+    - /bin/cp ./static.htaccess $DOC/sellers/.htaccess
+    - /bin/cp ./next-static.htaccess $DOC/_next/static/.htaccess

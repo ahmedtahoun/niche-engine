@@ -45,6 +45,7 @@ jobs:
           cp -R niches bundle/niches
           cp deploy/cpanel/.cpanel.yml bundle/.cpanel.yml
           cp deploy/cpanel/README.md bundle/README.md
+          cp deploy/cpanel/static.htaccess deploy/cpanel/next-static.htaccess bundle/
           echo "$GITHUB_SHA" > bundle/REVISION
 
       - name: Publish to the deploy branch

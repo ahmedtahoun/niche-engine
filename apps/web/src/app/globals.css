@@ -300,3 +300,23 @@ details p { margin: 6px 0 0; color: var(--muted); }
 .best-list i { font-style: normal; }
 .roaster .av:has(img), .roaster-chip .av:has(img) { background: #fff; border: 1px solid var(--line); }
 .roaster .av img, .roaster-chip .av img { object-fit: contain; }
+
+/* Home: one-line how-it-works strip, and the coffee filter row */
+.steps-strip { list-style: none; margin: 0; padding: 10px 12px; display: grid; grid-template-columns: 1fr 1fr; gap: 8px 10px; border-radius: 14px; background: var(--surface); border: 1px solid var(--line); }
+.steps-strip li { display: flex; align-items: center; gap: 6px; font-size: 12.5px; line-height: 1.3; }
+.steps-strip li span { font-size: 17px; }
+@media (min-width: 700px) {
+  .steps-strip { display: flex; justify-content: space-between; padding: 12px 18px; }
+  .steps-strip li { font-size: 14px; white-space: nowrap; }
+  .steps-strip li + li::before { content: '→'; color: var(--muted); margin-inline-end: 8px; }
+  [dir="rtl"] .steps-strip li + li::before { content: '←'; }
+}
+.shop { display: grid; gap: 10px; scroll-margin-top: 80px; }
+.filters { display: flex; gap: 8px; overflow-x: auto; padding: 2px 0 4px; scrollbar-width: none; }
+.filters input { position: absolute; opacity: 0; pointer-events: none; }
+.filters label { flex: none; display: inline-flex; align-items: center; gap: 6px; min-height: 40px; padding: 8px 14px; border-radius: 999px; border: 1.5px solid var(--line); background: var(--surface); font-size: 13.5px; font-weight: 700; cursor: pointer; white-space: nowrap; }
+.filters label .n { font-size: 11px; font-weight: 700; min-width: 18px; padding: 1px 6px; border-radius: 999px; background: var(--surface-2); color: var(--muted); text-align: center; }
+.filters input:checked + label { background: var(--primary); border-color: var(--primary); color: var(--on-primary); }
+.filters input:checked + label .n { background: rgba(255, 255, 255, .22); color: inherit; }
+.filters input:focus-visible + label { outline: 2px solid var(--primary); outline-offset: 2px; }
+.fhint { display: none; margin: -2px 0 0; }

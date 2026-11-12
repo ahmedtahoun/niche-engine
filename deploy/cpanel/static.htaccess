@@ -1,0 +1,5 @@
+# Photos and logos: copied here on every deploy (.cpanel.yml) so the web server sends them
+# itself instead of the Node app. Browsers keep them for 30 days; a changed photo gets a new name.
+<IfModule mod_headers.c>
+  Header set Cache-Control "public, max-age=2592000, stale-while-revalidate=604800"
+</IfModule>

@@ -18,6 +18,7 @@ const config: NextConfig = {
   async headers() {
     return [
       { source: '/:path*', headers: security },
+      ...['products', 'brands', 'sellers'].map((dir) => ({ source: `/${dir}/:path*`, headers: [{ key: 'Cache-Control', value: 'public, max-age=2592000, stale-while-revalidate=604800' }] })),
       { source: '/admin/:path*', headers: [{ key: 'X-Robots-Tag', value: 'noindex, nofollow' }, { key: 'Cache-Control', value: 'no-store' }] },
     ];
   },

@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import { Fragment } from 'react';
 import { notFound } from 'next/navigation';
 import { BundleArt, TrustIcon } from '@/components/Art';
 import { Footer } from '@/components/Footer';
@@ -8,7 +9,7 @@ import { catalog } from '@/lib/catalog';
 import { guidesFor } from '@/lib/guides';
 import { speaker } from '@/lib/lang';
 import { getNiche } from '@/lib/niches';
-import { responsive } from '@/lib/img';
+import { CARD_SIZES, responsive } from '@/lib/img';
 import { jsonLd, origin, pageMeta, siteUrl } from '@/lib/site';
 
 type P = { params: Promise<{ niche: string }> };
@@ -32,6 +33,11 @@ export default async function Home({ params }: P) {
   const sellers = [...new Map(products.map((p) => [p.sellerId, cat.sellerOf(p)])).values()].filter((x) => x.about);
   const guides = guidesFor(cfg.id);
   const families = (cfg.tasteFamilies ?? []).filter((f) => products.some((p) => p.profile?.family === f.id));
+  // Filter chips on the home page: taste families first, then categories (only when a niche has taste families).
+  const filters = families.length ? [
+    ...families.map((f) => ({ id: f.id, emoji: f.emoji, label: (s.en && f.labelEn) || f.labelAr, hint: (s.en && f.hintEn) || f.hintAr, count: products.filter((p) => p.profile?.family === f.id).length })),
+    ...cfg.categories.map((c) => ({ id: c.id, emoji: undefined, label: s.category(c), hint: undefined, count: products.filter((p) => p.category === c.id).length })).filter((c) => c.count > 0),
+  ] : [];
   const structured = [
     { '@context': 'https://schema.org', '@type': 'OnlineStore', name: cfg.brand.nameEn, alternateName: cfg.brand.nameAr, url: siteUrl(cfg), description: cfg.brand.description?.en, ...(cfg.brand.logo ? { logo: `${origin(cfg)}${cfg.brand.icon ?? cfg.brand.logo}` } : {}), areaServed: 'EG', currenciesAccepted: 'EGP', paymentAccepted: 'Cash on delivery, InstaPay' },
     { '@context': 'https://schema.org', '@type': 'WebSite', name: cfg.brand.nameEn, url: siteUrl(cfg), inLanguage: ['ar', 'en'], potentialAction: { '@type': 'SearchAction', target: `${siteUrl(cfg, '/search')}?q={q}`, 'query-input': 'required name=q' } },
@@ -52,31 +58,15 @@ export default async function Home({ params }: P) {
           </div>
           <div className="ph-stack" aria-hidden="true">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            {cfg.hero.images.slice(0, 3).map((src, i) => <img key={src} {...responsive(src, '(min-width: 700px) 240px, 46vw')} alt="" className={`s${i}`} decoding="async" fetchPriority={i === 0 ? 'high' : 'auto'} />)}
+            {cfg.hero.images.slice(0, 3).map((src, i) => <img key={src} {...responsive(src, CARD_SIZES)} alt="" className={`s${i}`} decoding="async" fetchPriority={i === 0 ? 'high' : 'auto'} />)}
           </div>
         </section>
       )}
       {cfg.steps?.length ? (
-        <section className="steps" aria-label={s.en ? 'How it works' : 'إزاي بتطلب'}>
-          <h2 className="sec">{s.en ? 'How it works' : 'إزاي بتطلب؟'}</h2>
-          <ol>
-            {cfg.steps.map((st, i) => (
-              <li key={st.ar}><span className="em" aria-hidden="true">{st.emoji}</span><span className="n">{i + 1}</span><b>{text(st)}</b><span className="muted">{text(st.text)}</span></li>
-            ))}
-          </ol>
-        </section>
+        <ol className="steps-strip" aria-label={s.en ? 'How it works' : 'إزاي بتطلب'}>
+          {cfg.steps.map((st) => <li key={st.ar}><span aria-hidden="true">{st.emoji}</span><b>{text(st)}</b></li>)}
+        </ol>
       ) : null}
-      {hero && cfg.hero && (
-        <Link className="box-card" href={`/${cfg.id}/b/${hero.bundle.id}`}>
-          <div className="art"><BundleArt parts={hero.parts.map((p) => p.product)} /></div>
-          <div>
-            <span className="small">{text(cfg.homeEyebrow)}</span>
-            <b>{s.bundle(hero.bundle)}</b>
-            <span className="small muted">{hero.parts.map((p) => s.product(p.product).split(' — ')[0]).join(' + ')}</span>
-            <div className="price num"><b>{s.egp(hero.price)}</b><s>{s.egp(hero.fullPrice)}</s><span className="save">{s.t('bundleSave', { x: s.egp(hero.bundle.discountEgp) })}</span></div>
-          </div>
-        </Link>
-      )}
       {hero && !cfg.hero && (
         <section className="hero">
           <div className="art"><BundleArt parts={hero.parts.map((p) => p.product)} /></div>
@@ -98,21 +88,28 @@ export default async function Home({ params }: P) {
           <div><b>{s.t('how.3')}</b>{s.t('how.3s')}</div>
         </div>
       )}
-      {families.length > 0 && (
-        <section style={{ display: 'grid', gap: 10 }}>
-          <div><h2 className="sec">{s.t('shopByTaste')}</h2><span className="muted small">{s.t('shopByTasteSub')}</span></div>
-          <div className="families">
-            {families.map((f) => (
-              <Link key={f.id} className="family" href={`/${cfg.id}/search?family=${f.id}`}>
-                <b>{f.emoji ? <span className="fe" aria-hidden="true">{f.emoji}</span> : null}{(s.en && f.labelEn) || f.labelAr}</b>
-                {f.hintAr && <span className="muted">{(s.en && f.hintEn) || f.hintAr}</span>}
-                <span className="go" aria-hidden="true">←</span>
-              </Link>
+      {products.length && filters.length ? (
+        // Taste and type filters in one row; pure CSS (radio buttons), so it works before any script loads.
+        <section className="shop" id="coffees" aria-labelledby="coffees-h">
+          <style dangerouslySetInnerHTML={{ __html: filters.map((f) => `.shop:has(#f-${f.id}:checked) .grid>:not([data-f~="${f.id}"]){display:none}.shop:has(#f-${f.id}:checked) .fhint[data-for="${f.id}"]{display:block}`).join('') }} />
+          <div>
+            <h2 className="sec" id="coffees-h">{text(cfg.homeSection)}</h2>
+            <span className="muted small">{s.t('shopByTasteSub')}</span>
+          </div>
+          <div className="filters" role="radiogroup" aria-label={s.t('shopByTaste')}>
+            <input type="radio" name="shop-filter" id="f-all" defaultChecked />
+            <label htmlFor="f-all">{s.en ? 'All' : 'الكل'}<span className="n">{products.length}</span></label>
+            {filters.map((f) => (
+              <Fragment key={f.id}>
+                <input type="radio" name="shop-filter" id={`f-${f.id}`} />
+                <label htmlFor={`f-${f.id}`}>{f.emoji && <span aria-hidden="true">{f.emoji}</span>}{f.label}<span className="n">{f.count}</span></label>
+              </Fragment>
             ))}
           </div>
+          {filters.filter((f) => f.hint).map((f) => <p key={f.id} className="fhint muted small" data-for={f.id}>{f.emoji} {f.hint}</p>)}
+          <div className="grid">{products.map((p) => <ProductCard key={p.id} p={p} seller={cat.sellerOf(p)} s={s} tags={[p.profile?.family, p.category].filter(Boolean).join(' ')} />)}</div>
         </section>
-      )}
-      {products.length ? (
+      ) : products.length ? (
         <>
           <nav className="chips" aria-label={s.t('categories')}>
             {cfg.categories.map((c) => <Link key={c.id} className="chip" href={`/${cfg.id}/search?cat=${c.id}`}>{s.category(c)}</Link>)}
@@ -128,6 +125,17 @@ export default async function Home({ params }: P) {
             {cfg.categories.map((c) => <span key={c.id} className="chip">{s.category(c)}</span>)}
           </div>
         </section>
+      )}
+      {hero && cfg.hero && (
+        <Link className="box-card" href={`/${cfg.id}/b/${hero.bundle.id}`}>
+          <div className="art"><BundleArt parts={hero.parts.map((p) => p.product)} /></div>
+          <div>
+            <span className="small">{text(cfg.homeEyebrow)}</span>
+            <b>{s.bundle(hero.bundle)}</b>
+            <span className="small muted">{hero.parts.map((p) => s.product(p.product).split(' — ')[0]).join(' + ')}</span>
+            <div className="price num"><b>{s.egp(hero.price)}</b><s>{s.egp(hero.fullPrice)}</s><span className="save">{s.t('bundleSave', { x: s.egp(hero.bundle.discountEgp) })}</span></div>
+          </div>
+        </Link>
       )}
       {sellers.map((x) => (
         <section key={x.id} className="roaster" aria-label={s.t('meetRoaster')}>

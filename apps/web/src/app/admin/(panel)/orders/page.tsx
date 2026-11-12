@@ -4,7 +4,7 @@ import type { Order } from '@/lib/orders';
 import { customerKey } from '@/lib/session';
 import { store } from '@/lib/store';
 import { unblockPhone } from '../../actions';
-import { ago, EGP, NicheTabs, Pill, pct, pickNiche, STATUS } from '../shared';
+import { ago, EGP, NicheTabs, Pill, pct, pickNiche, plural, STATUS } from '../shared';
 import { OrderActions } from './OrderActions';
 
 export const metadata = { title: 'Orders' };
@@ -50,8 +50,8 @@ export default async function Orders({ searchParams }: { searchParams: Promise<{
         </div>
       </div>
       <div className="kpis">
-        <div className="kpi"><small>Today</small><b>{today.length} orders</b><span>{EGP(today.filter((o) => BOUGHT.has(o.status)).reduce((n, o) => n + o.quote.total, 0))}</span></div>
-        <div className="kpi"><small>Last 7 days</small><b>{EGP(week.reduce((n, o) => n + o.quote.total, 0))}</b><span>{week.length} orders · avg {week.length ? EGP(week.reduce((n, o) => n + o.quote.total, 0) / week.length) : '—'}</span></div>
+        <div className="kpi"><small>Today</small><b>{plural(today.length, 'order')}</b><span>{EGP(today.filter((o) => BOUGHT.has(o.status)).reduce((n, o) => n + o.quote.total, 0))}</span></div>
+        <div className="kpi"><small>Last 7 days</small><b>{EGP(week.reduce((n, o) => n + o.quote.total, 0))}</b><span>{plural(week.length, 'order')} · avg {week.length ? EGP(week.reduce((n, o) => n + o.quote.total, 0) / week.length) : '—'}</span></div>
         <div className="kpi"><small>Needs action</small><b style={{ color: action ? 'var(--a-warn)' : undefined }}>{action}</b><span>to confirm, or a seller said not available</span></div>
         <div className="kpi"><small>Delivery rate · 30 days</small><b>{done + refused ? pct(done / (done + refused)) : '—'}</b><span>{done} delivered · {refused} refused</span></div>
       </div>

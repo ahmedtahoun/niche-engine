@@ -4,7 +4,7 @@ import { allNiches } from '@/lib/niches';
 import { customerKey } from '@/lib/session';
 import { waLink } from '@/lib/site';
 import { store } from '@/lib/store';
-import { EGP, NicheTabs, pct, pickNiche } from '../shared';
+import { dayAgo, EGP, NicheTabs, pct, pickNiche } from '../shared';
 
 export const metadata = { title: 'Customers' };
 
@@ -70,7 +70,7 @@ export default async function Customers({ searchParams }: { searchParams: Promis
               <td><Link href={`/admin/customers/${c.key}`} className="stretch-link ar"><b>{c.name}</b></Link><small className="sub2"><span dir="ltr">{c.phone}</span> · <span className="ar">{c.governorate}</span>{c.refused ? <span className="bad-t"> · {c.refused} refused</span> : null}</small></td>
               <td className="r"><b>{c.orders}</b>{c.orders >= 2 && <small className="sub2">repeat</small>}</td>
               <td className="r"><b>{EGP(c.spent)}</b>{c.orders > 0 && <small className="sub2">avg {EGP(c.spent / c.orders)}</small>}</td>
-              <td>{daysSince(c.lastAt) === 0 ? 'today' : `${daysSince(c.lastAt)} days ago`}<small className="sub2">customer since {new Date(c.firstAt).toLocaleDateString('en-GB', { month: 'short', year: 'numeric' })}</small></td>
+              <td>{dayAgo(c.lastAt)}<small className="sub2">customer since {new Date(c.firstAt).toLocaleDateString('en-GB', { month: 'short', year: 'numeric' })}</small></td>
               <td><span className="ar">{c.favorite?.name ?? '—'}</span>{c.topChoice && <small className="sub2">{choice(c.topChoice.value)}</small>}</td>
               <td className="r"><a className="mini above" href={waLink(c.phone)} target="_blank" rel="noreferrer">WhatsApp</a></td>
             </tr>

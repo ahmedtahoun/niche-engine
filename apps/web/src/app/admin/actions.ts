@@ -123,6 +123,7 @@ export async function saveSellerForm(id: string, form: FormData) {
   set('pickupAddress', opt('pickupAddress', 200));
   set('instapay', opt('instapay', 60));
   set('capacity', opt('capacity', 40));
+  set('instagram', opt('instagram', 60));
   set('logo', opt('logo', 300));
   const aboutAr = text(form, 'aboutAr', 600), aboutEn = text(form, 'aboutEn', 600);
   set('about', aboutAr ? { ar: aboutAr, ...(aboutEn ? { en: aboutEn } : {}) } : undefined);

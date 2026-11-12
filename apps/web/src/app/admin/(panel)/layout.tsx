@@ -18,7 +18,8 @@ export default async function PanelLayout({ children }: { children: React.ReactN
   const attention = await store().listOrders({ needsAttention: true, limit: 1000 });
   const counts = {
     orders: new Set([...open, ...attention].map((o) => o.id)).size,
-    review: cat.products.filter((p) => p.status === 'review').length + cat.sellers.filter((s) => s.status === 'applied').length,
+    review: cat.products.filter((p) => p.status === 'review').length,
+    applied: cat.sellers.filter((s) => s.status === 'applied').length,
   };
   return (
     <div className="adm">

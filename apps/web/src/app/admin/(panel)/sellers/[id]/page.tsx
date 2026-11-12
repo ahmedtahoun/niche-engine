@@ -76,6 +76,8 @@ export default async function SellerEditor({ params, searchParams }: { params: P
               <label className="fld"><span>Contact phone</span><input name="contactPhone" defaultValue={s?.contactPhone ?? ''} dir="ltr" inputMode="tel" placeholder="01…" /></label>
               <label className="fld"><span>Governorate</span><select name="governorate" className="sel" defaultValue={s?.governorate ?? ''}><option value="">—</option>{GOVERNORATES.map((g) => <option key={g}>{g}</option>)}</select></label>
               <label className="fld"><span>Area</span><input name="area" defaultValue={s?.area ?? ''} dir="rtl" maxLength={80} /></label>
+              <label className="fld"><span>Instagram (for your review; never shown in the store)</span><input name="instagram" defaultValue={s?.instagram ?? ''} dir="ltr" maxLength={60} placeholder="@handle" /></label>
+              <div className="fld"><span>Check</span>{s?.instagram ? <a href={`https://instagram.com/${s.instagram.replace(/^@/, '')}`} target="_blank" rel="noreferrer" className="mini" style={{ textAlign: 'center', textDecoration: 'none' }}>Open their Instagram ↗</a> : <span className="sub">no Instagram given</span>}</div>
               <label className="fld" style={{ gridColumn: '1 / -1' }}><span>Pickup address (for Bosta)</span><input name="pickupAddress" defaultValue={s?.pickupAddress ?? ''} dir="rtl" maxLength={200} /></label>
             </div>
           </section>

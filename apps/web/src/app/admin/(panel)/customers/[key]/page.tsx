@@ -7,7 +7,7 @@ import { customerKey } from '@/lib/session';
 import { waLink } from '@/lib/site';
 import { store } from '@/lib/store';
 import { walletOf } from '@/lib/wallet';
-import { EGP, Pill, STATUS, pct } from '../../shared';
+import { dayAgo, EGP, Pill, STATUS, pct } from '../../shared';
 
 export const metadata = { title: 'Customer' };
 
@@ -39,7 +39,7 @@ export default async function CustomerPage({ params }: { params: Promise<{ key: 
       <div className="kpis">
         <div className="kpi"><small>Orders</small><b>{c.orders}</b><span>{c.cancelled ? `${c.cancelled} cancelled` : 'none cancelled'}</span></div>
         <div className="kpi"><small>Spent</small><b>{EGP(c.spent)}</b><span>{c.orders ? `avg ${EGP(c.spent / c.orders)} per order` : '—'}</span></div>
-        <div className="kpi"><small>Last order</small><b>{daysSince(c.lastAt) === 0 ? 'Today' : `${daysSince(c.lastAt)} days ago`}</b><span>{new Date(c.lastAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}</span></div>
+        <div className="kpi"><small>Last order</small><b style={{ textTransform: 'capitalize' }}>{dayAgo(c.lastAt)}</b><span>{new Date(c.lastAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}</span></div>
         <div className="kpi"><small>Delivery</small><b>{finished ? pct(c.delivered / finished) : '—'}</b><span>{c.delivered} delivered · {c.refused} refused</span></div>
         <div className="kpi"><small>Wallet credit</small><b>{EGP(wallet.balance)}</b><span>cashback to spend</span></div>
       </div>

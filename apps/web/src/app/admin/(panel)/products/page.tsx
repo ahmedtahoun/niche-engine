@@ -3,8 +3,8 @@ import { catalog } from '@/lib/catalog';
 import { getNiche } from '@/lib/niches';
 import { coverDays, marginPct, productStats } from '@/lib/product-stats';
 import { store } from '@/lib/store';
-import { approveProductAction, approveSellerAction, setProductStatus, setSellerStatus } from '../../actions';
-import { EGP, NicheTabs, Pill, pct, pickNiche } from '../shared';
+import { approveProductAction, setProductStatus } from '../../actions';
+import { EGP, NicheTabs, Pill, pct, pickNiche, plural } from '../shared';
 
 export const metadata = { title: 'Products' };
 
@@ -36,14 +36,15 @@ export default async function Products({ searchParams }: { searchParams: Promise
     : sort === 'stock' ? minCover(a.p) - minCover(b.p)
     : a.p.nameAr.localeCompare(b.p.nameAr, 'ar'));
   const live = catalogList.filter((p) => (p.status ?? 'live') === 'live');
-  const tot = live.reduce((t, p) => ({ units: t.units + stats[p.id].recent.units, revenue: t.revenue + stats[p.id].recent.revenue, profit: t.profit + stats[p.id].recent.profit, costed: t.costed + stats[p.id].recent.costedRevenue, noCost: t.noCost + stats[p.id].recent.noCost, orders: t.orders }), { units: 0, revenue: 0, profit: 0, costed: 0, noCost: 0, orders: new Set((await store().listOrders({ ...(niche ? { niche } : {}), since: new Date(Date.now() - 30 * 864e5).toISOString(), statuses: ['confirmed', 'accepted', 'picked', 'delivered'] })).map((o) => o.id)).size });
+  const liveIds = new Set(live.map((p) => p.id));
+  const hasCosts = live.some((p) => p.cost && Object.keys(p.cost).length);
+  const tot = live.reduce((t, p) => ({ units: t.units + stats[p.id].recent.units, revenue: t.revenue + stats[p.id].recent.revenue, profit: t.profit + stats[p.id].recent.profit, costed: t.costed + stats[p.id].recent.costedRevenue, noCost: t.noCost + stats[p.id].recent.noCost, orders: t.orders }), { units: 0, revenue: 0, profit: 0, costed: 0, noCost: 0, orders: (await store().listOrders({ ...(niche ? { niche } : {}), since: new Date(Date.now() - 30 * 864e5).toISOString(), statuses: ['confirmed', 'accepted', 'picked', 'delivered'] })).filter((o) => o.items.some((i) => liveIds.has(i.productId))).length });
   const skus = live.flatMap((p) => p.variants.map((v) => ({ p, v })));
   const stockUnits = skus.reduce((n, { v }) => n + v.stock, 0);
   const stockValue = skus.reduce((n, { p, v }) => n + v.stock * (p.cost?.[v.label] ?? 0), 0);
   const outSkus = skus.filter(({ v }) => v.stock === 0).length;
   const lowSkus = skus.filter(({ p, v }) => { const c = coverDays(v.stock, stats[p.id].byVariant[v.label]?.recent.units ?? 0); return v.stock <= LOW || (c !== null && c < COVER_WARN); }).length;
   const review = list.filter((p) => p.status === 'review');
-  const apps = cat.sellers.filter((s) => s.status === 'applied' && (!niche || s.niche === niche));
   const seller = (id: string) => cat.sellerById(id);
 
   return (
@@ -52,8 +53,8 @@ export default async function Products({ searchParams }: { searchParams: Promise
         <div><h1>Products</h1><p className="sub">Click a coffee to edit its name, description, prices, stock or status.</p></div>
         <NicheTabs base="/admin/products" current={niche} />
       </div>
-      {(review.length > 0 || apps.length > 0) && <section className="panel">
-        <h2>Review queue <Pill kind="info">{review.length + apps.length}</Pill></h2>
+      {review.length > 0 && <section className="panel">
+        <h2>Products to review <Pill kind="info">{review.length}</Pill></h2>
         <div style={{ display: 'grid', gap: 10 }}>
           {review.map((p) => {
             const cfg = getNiche(p.niche)!;
@@ -75,20 +76,11 @@ export default async function Products({ searchParams }: { searchParams: Promise
               </div>
             );
           })}
-          {apps.map((s) => (
-            <div key={s.id} className="alert" style={{ '--c': 'var(--a-accent)' } as React.CSSProperties}>
-              <div><b className="ar">Seller application: {s.name}</b><small>{s.instagram} · {getNiche(s.niche)?.brand.nameEn} · approve after a test order</small></div>
-              <div className="acts">
-                <form action={approveSellerAction.bind(null, s.id)}><button className="mini pri">Approve seller</button></form>
-                <form action={setSellerStatus.bind(null, s.id, 'declined')}><button className="mini danger">Decline</button></form>
-              </div>
-            </div>
-          ))}
         </div>
       </section>}
       <div className="kpis">
-        <div className="kpi"><small>Revenue · 30 days</small><b>{EGP(tot.revenue)}</b><span>{tot.units} bags · {tot.orders} orders</span></div>
-        <div className="kpi"><small>Profit · 30 days</small><b>{EGP(tot.profit)}</b><span>{tot.costed ? `${pct(tot.profit / tot.costed)} margin` : 'add buying prices'}{tot.noCost ? ` · ${tot.noCost} bags without a buy price` : ''}</span></div>
+        <div className="kpi"><small>Revenue · 30 days</small><b>{EGP(tot.revenue)}</b><span>{plural(tot.units, 'bag')} · {plural(tot.orders, 'order')}</span></div>
+        <div className="kpi"><small>Profit · 30 days</small><b>{EGP(tot.profit)}</b><span>{tot.costed ? `${pct(tot.profit / tot.costed)} margin` : hasCosts ? 'no sales yet' : 'add buying prices'}{tot.noCost ? ` · ${tot.noCost} bags without a buy price` : ''}</span></div>
         <div className="kpi"><small>Inventory</small><b>{stockUnits.toLocaleString('en-US')} bags</b><span>worth {EGP(stockValue)} at buying price</span></div>
         <div className="kpi"><small>Needs restock</small><b style={{ color: lowSkus ? 'var(--a-warn)' : undefined }}>{lowSkus} sizes</b><span>{outSkus} sold out · ≤{LOW} left or under {COVER_WARN} days</span></div>
       </div>

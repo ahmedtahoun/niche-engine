@@ -39,3 +39,13 @@ export function NicheTabs({ base, current, extra = '' }: { base: string; current
     </nav>
   );
 }
+
+/** "1 order", "3 orders". */
+export const plural = (n: number, one: string, many = `${one}s`) => `${n.toLocaleString('en-US')} ${n === 1 ? one : many}`;
+
+/** "today", "yesterday", "5 days ago", by Cairo calendar day. */
+export function dayAgo(iso: string, now = Date.now()) {
+  const day = (t: number) => Math.floor((t + 2 * 36e5) / 864e5); // Cairo is UTC+2
+  const d = day(now) - day(Date.parse(iso));
+  return d <= 0 ? 'today' : d === 1 ? 'yesterday' : `${d} days ago`;
+}

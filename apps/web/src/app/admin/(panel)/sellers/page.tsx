@@ -20,10 +20,11 @@ const TABS: [string, string, (s: Seller) => boolean][] = [
 export default async function Sellers({ searchParams }: { searchParams: Promise<{ niche?: string; tab?: string; q?: string; done?: string; name?: string }> }) {
   const sp = await searchParams;
   const niche = pickNiche(sp);
-  const tab = TABS.find((t) => t[0] === sp.tab) ?? TABS[0];
   const q = (sp.q ?? '').trim();
   const [cat, orders] = await Promise.all([catalog(), store().listOrders({ niche: niche ?? undefined, limit: 5000 })]);
   const list = cat.sellers.filter((s) => !niche || s.niche === niche);
+  // Applications first when there are any, so the menu badge lands on them.
+  const tab = TABS.find((t) => t[0] === sp.tab) ?? (list.some((s) => s.status === 'applied') ? TABS[1] : TABS[0]);
   const rows = list.filter((s) => tab[2](s) && matches(q, { text: `${s.name} ${s.nameEn ?? ''} ${s.ownerName ?? ''} ${s.area}`, phone: s.contactPhone }));
   const delivered = orders.filter((o) => o.status === 'delivered');
   const since = Date.now() - 30 * 864e5;
@@ -70,7 +71,7 @@ export default async function Sellers({ searchParams }: { searchParams: Promise<
                 <td><Link href={`/admin/sellers/${s.id}`} className="pinfo stretch">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   {s.logo ? <img className="thumb round" src={s.logo} alt="" /> : <span className="thumb none round">{s.name.slice(0, 1)}</span>}
-                  <span><b className="ar">{s.name}</b><small>{[s.nameEn, s.ownerName, cfg.brand.nameEn].filter(Boolean).join(' · ')}</small></span>
+                  <span><b className="ar">{s.name}</b><small>{[s.nameEn, s.ownerName, cfg.brand.nameEn, s.status === 'applied' && s.instagram ? `IG ${s.instagram}` : ''].filter(Boolean).join(' · ')}</small></span>
                 </Link></td>
                 <td><Pill kind={SSTAT[s.status][1]}>{SSTAT[s.status][0]}</Pill>{!s.telegramChatId && s.status !== 'declined' && <small className="sub2 warn-t">Telegram not linked</small>}</td>
                 <td className="r">{live}<small className="sub2">on sale</small></td>

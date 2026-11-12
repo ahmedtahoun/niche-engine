@@ -14,8 +14,12 @@
       "accent": "#C8963E"
     },
     "tagline": {
-      "ar": "قهوة مختصة طازة ☕",
-      "en": "Fresh specialty coffee ☕"
+      "ar": "قهوة مختصة من محامص مصرية ☕",
+      "en": "Specialty coffee from Egyptian roasters ☕"
+    },
+    "about": {
+      "ar": "محمصة القاهرة متجر قهوة مختصة: بنختار القهوة من محامص مصرية زي بوندز. التحميص بيتم عند المحمصة نفسها، وإحنا بنوصّلهالك مقفولة وأصلية لحد باب البيت.",
+      "en": "Cairo Roast is a specialty coffee store: we pick coffee from Egyptian roasters such as Bonds. The roasting is done at the roastery, and we deliver it sealed and original to your door."
     },
     "ogImage": "/brands/coffee/og.png",
     "description": {
@@ -64,6 +68,7 @@
     "days": 30
   },
   "shippingEgp": 70,
+  "feedCategory": "Food, Beverages & Tobacco > Beverages > Coffee",
   "freeShippingOverEgp": 1500,
   "risk": {
     "depositAboveEgp": 1500,

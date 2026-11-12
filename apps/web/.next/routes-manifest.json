@@ -287,6 +287,12 @@
       "namedRegex": "^/dev/bot(?:/)?$"
     },
     {
+      "page": "/feeds/meta-catalog.xml",
+      "regex": "^/feeds/meta\\-catalog\\.xml(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/feeds/meta\\-catalog\\.xml(?:/)?$"
+    },
+    {
       "page": "/llms.txt",
       "regex": "^/llms\\.txt(?:/)?$",
       "routeKeys": {},

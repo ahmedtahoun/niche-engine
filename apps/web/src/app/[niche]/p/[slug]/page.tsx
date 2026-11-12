@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { AddToCart } from '@/components/AddToCart';
-import { Art } from '@/components/Art';
+import { Art, PickSeal } from '@/components/Art';
 import { TasteProfile } from '@/components/Taste';
 import { bestPer100g, catalog, choicesFor, freshnessOf, priceRange } from '@/lib/catalog';
 import { etaDate } from '@/lib/eta';
@@ -59,6 +59,13 @@ export default async function ProductPage({ params }: P) {
     ...(catLabel ? [{ '@type': 'ListItem', position: 2, name: s.category(catLabel), item: siteUrl(cfg, `/search?cat=${catLabel.id}`, s.lang) }] : []),
     { '@type': 'ListItem', position: catLabel ? 3 : 2, name, item: siteUrl(cfg, `/p/${p.slug}`, s.lang) },
   ] };
+  const seal = cfg.brand.pickSeal ? (s.en && cfg.brand.pickSeal.en) || cfg.brand.pickSeal.ar : null;
+  const facts = (cfg.facts ?? []).flatMap((f) => {
+    const value = attrs[s.en ? f.keyEn : f.key];
+    if (!value) return [];
+    const flag = Object.entries(f.emojiBy ?? {}).find(([w]) => value.includes(w))?.[1];
+    return [{ key: f.key, label: s.en ? f.keyEn : f.key, value, emoji: flag ?? f.emoji }];
+  });
   const freshText = !fresh ? null
     : fresh.kind === 'to_order' ? (s.en && cfg.freshness?.madeToOrderEn) || fresh.text
     : fresh.days === 0 ? s.t('roastedToday') : s.t('roastedDays', { n: fresh.days, unit: fresh.days <= 10 ? 'أيام' : 'يوم' });
@@ -66,32 +73,40 @@ export default async function ProductPage({ params }: P) {
   return (
     <main className="page product">
       <script type="application/ld+json" dangerouslySetInnerHTML={jsonLd([productLd, breadcrumb, ...(faq.length ? [{ '@context': 'https://schema.org', '@type': 'FAQPage', mainEntity: faq.map(([q, a]) => ({ '@type': 'Question', name: q, acceptedAnswer: { '@type': 'Answer', text: a } })) }] : [])])} />
-      {p.images?.length ? (
-        <>
+      <div className="pmedia">
+        {p.images?.length ? (
           <div className="gallery" aria-label={s.t('photos')}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
             {p.images.map((src, i) => <img key={src} {...responsive(src, '(min-width: 900px) 50vw, 100vw')} alt={s.t('photoN', { name, n: i + 1 })} loading={i ? 'lazy' : 'eager'} decoding="async" />)}
           </div>
-          {p.images.length > 1 && <span className="small muted gallery-hint" style={{ textAlign: 'center' }}>{s.t('swipe', { n: p.images.length })}</span>}
-        </>
-      ) : <div className="big"><Art kind={p.art} color={p.color} /></div>}
-      <div style={{ display: 'grid', gap: 6 }}>
+        ) : <div className="big"><Art kind={p.art} color={p.color} label={cfg.brand.pickSeal ? { brand: cfg.brand.nameEn.toUpperCase(), name: (p.en?.name ?? p.nameAr).replace(/ Blend$/, '') } : undefined} /></div>}
+        {seal && <PickSeal text={seal} under={s.en ? cfg.brand.nameAr : cfg.brand.nameEn.toUpperCase()} logo={cfg.brand.logo} rtl={!s.en} />}
+      </div>
+      {(p.images?.length ?? 0) > 1 && <span className="small muted gallery-hint" style={{ textAlign: 'center' }}>{s.t('swipe', { n: p.images!.length })}</span>}
+      <div style={{ display: 'grid', gap: 8 }}>
         <h1 className="title">{name}</h1>
-        <div className="muted">{/* eslint-disable-next-line @next/next/no-img-element */}{seller.logo && <img className="slogo" src={seller.logo} alt="" />}{s.t('by', { name: '' })}<b>{s.seller(seller)}</b> · <span style={{ color: 'var(--ok)', fontWeight: 700 }}>{s.t('verified')}</span> · {seller.rating ? `⭐ ${seller.rating}` : s.t('newSeller')}</div>
+        <a className="roaster-chip" href="#sec-roaster">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <span className="av" aria-hidden="true">{seller.logo ? <img src={seller.logo} alt="" /> : s.seller(seller).slice(0, 1)}</span>
+          <span>{s.t('by', { name: '' })}<b>{s.seller(seller)}</b></span>
+          <span className="muted small">· {seller.rating ? `⭐ ${seller.rating}` : s.t('partnerOf', { brand: s.brand(cfg) })}</span>
+        </a>
         <div className="pprice num" style={{ fontSize: 21 }}>{range.min !== range.max ? s.t('from', { price: s.egp(range.min) }) : s.egp(range.min)}</div>
         {per100 && <div className="per100 num">{s.t('per100', { x: s.egp(per100) })}</div>}
         {freshText && <div className="small" style={{ color: 'var(--ok)', fontWeight: 700 }}>{freshText}</div>}
       </div>
+      {facts.length > 0 && (
+        <ul className="facts" aria-label={s.t('facts')}>
+          {facts.map((f) => <li key={f.key} className="fact"><i aria-hidden="true">{f.emoji}</i><span className="small muted">{f.label}</span><b>{f.value}</b></li>)}
+        </ul>
+      )}
+      <AddToCart niche={niche} slug={p.slug} price={p.price} variants={p.variants} finder={finder} axes={cfg.optionAxes} choices={choices} />
       <div className="eta">
         <div><b>{s.t('eta.cairo', { day: s.date(etaDate('القاهرة'), true) })}</b> {s.t('eta.cairoArea')}</div>
-        <span>{s.t('eta.fees', { fee: s.egp(cfg.shippingEgp) })}{cfg.risk.openBeforePay ? s.t('eta.open') : ''}</span>
+        <span>{s.t('eta.fees', { fee: s.egp(cfg.shippingEgp) })}</span>
       </div>
-      <nav className="jump" aria-label={s.t('sections')}>
-        <a href="#sec-sizes">{finder === 'size' ? s.t('sec.size') : s.t('sec.options')}</a><a href="#sec-specs">{s.t('sec.specs')}</a><a href="#sec-revs">{s.t('sec.reviews')}</a>{faq.length > 0 && <a href="#sec-faq">{s.t('sec.faq')}</a>}
-      </nav>
       {lead && <p className="lead" style={{ margin: 0 }}>{lead}</p>}
       <TasteProfile p={p} cfg={cfg} s={s} />
-      <AddToCart niche={niche} slug={p.slug} price={p.price} variants={p.variants} finder={finder} axes={cfg.optionAxes} choices={choices} />
       <section id="sec-specs">
         <h2 className="h4">{s.t('sec.specs')}</h2>
         <table className="spec"><tbody>
@@ -108,18 +123,30 @@ export default async function ProductPage({ params }: P) {
           </tbody></table>
         </section>
       )}
-      <section id="sec-revs" style={{ display: 'grid', gap: 8 }}>
-        <h2 className="h4">{s.t('reviewsN', { n: p.reviews.length })}</h2>
-        {p.reviews.length ? p.reviews.map((r, i) => (
-          <div className="rev" key={i}><div className="tags"><b>{r.name}</b>{r.tags.map((t) => <span className="tag" key={t}>{t}</span>)}</div>{r.text}</div>
-        )) : <span className="muted">{s.t('noReviews')}</span>}
-      </section>
+      {p.reviews.length > 0 && (
+        <section id="sec-revs" style={{ display: 'grid', gap: 8 }}>
+          <h2 className="h4">{s.t('reviewsN', { n: p.reviews.length })}</h2>
+          {p.reviews.map((r, i) => (
+            <div className="rev" key={i}><div className="tags"><b>{r.name}</b>{r.tags.map((t) => <span className="tag" key={t}>{t}</span>)}</div>{r.text}</div>
+          ))}
+        </section>
+      )}
       {faq.length > 0 && (
         <section id="sec-faq">
           <h2 className="h4">{s.t('faq')}</h2>
           {faq.map(([q, a]) => <details key={q}><summary>{q}</summary><p>{a}</p></details>)}
         </section>
       )}
+      <section id="sec-roaster" className="roaster" aria-label={s.t('meetRoaster')}>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <div className="av">{seller.logo ? <img src={seller.logo} alt="" /> : s.seller(seller).slice(0, 1)}</div>
+        <div>
+          <span className="small muted">{s.t('meetRoaster')}</span>
+          <b style={{ display: 'block' }}>{s.seller(seller)}</b>
+          {seller.about && <p>{(s.en && seller.about.en) || seller.about.ar}</p>}
+          {seller.instagram && <a className="small" style={{ color: 'var(--primary)', fontWeight: 700 }} href={`https://instagram.com/${seller.instagram}`} rel="noopener" target="_blank">{s.t('instagram')} ↗</a>}
+        </div>
+      </section>
     </main>
   );
 }

@@ -63,7 +63,7 @@ export interface Choice {
   labelAr: string;
   labelEn?: string;
   categories: string[];
-  values: { id: string; labelAr: string; labelEn?: string; hintAr?: string; hintEn?: string }[];
+  values: { id: string; labelAr: string; labelEn?: string; hintAr?: string; hintEn?: string; emoji?: string }[];
 }
 
 /** Fresh products: a date attribute, and how old a product may get before it is hidden. */
@@ -93,6 +93,8 @@ export interface NicheConfig {
     ogImage?: string;
     /** One-paragraph description for search engines and AI answers. */
     description?: Bilingual;
+    /** Round stamp on product photos, e.g. "Cairo Roast pick" (drawn with the logo). */
+    pickSeal?: Bilingual;
   };
   categories: { id: string; labelAr: string; labelEn?: string }[];
   attributes: {
@@ -140,7 +142,9 @@ export interface NicheConfig {
   homeEyebrow?: Bilingual;
   homeSection?: Bilingual;
   /** Taste families customers shop by (coffee: "chocolate and nuts", "fruity"...). Products point to one. */
-  tasteFamilies?: { id: string; labelAr: string; labelEn?: string; hintAr?: string; hintEn?: string; emoji?: string }[];
+  tasteFamilies?: { id: string; labelAr: string; labelEn?: string; hintAr?: string; hintEn?: string; emoji?: string; /** Choice value ids this family tastes best in (coffee: brew methods). */ bestIn?: string[] }[];
+  /** Product attributes shown as icon tiles under the title (key = the Arabic attribute name). emojiBy picks an emoji from the value, e.g. a flag per country. */
+  facts?: { key: string; keyEn: string; emoji: string; emojiBy?: Record<string, string> }[];
   /** 1–5 scales drawn on product pages (coffee: body, acidity), with the words at each end. */
   profileScales?: { id: string; labelAr: string; labelEn?: string; lowAr: string; highAr: string; lowEn?: string; highEn?: string }[];
   /** Shown on the empty search page. English terms should map to catalog words through searchSynonyms. */

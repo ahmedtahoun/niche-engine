@@ -13,7 +13,7 @@ const SHAPES: Record<Exclude<ArtKind, 'kit' | 'coffee'>, string> = {
 };
 
 /** A stand-up coffee pouch (kraft, valve, zip) with a label in the coffee's color: 100 × 100 grid. */
-function CoffeeBag({ color }: { color: string }) {
+function CoffeeBag({ color, label }: { color: string; label?: { brand: string; name: string } }) {
   return (
     <g>
       <path d="M23 17 L77 17 L81 91 Q50 96 19 91 Z" fill="#CFAF86" stroke="rgba(0,0,0,.22)" strokeWidth="1.2" />
@@ -21,17 +21,26 @@ function CoffeeBag({ color }: { color: string }) {
       <path d="M22 30 L78 30" stroke="#A9865C" strokeWidth="1.4" strokeDasharray="2.5 2" />
       <circle cx="66" cy="37" r="3.2" fill="#A9865C" />
       <rect x="29" y="45" width="42" height="36" rx="4" fill={color} />
+      <g transform={label ? 'translate(50 79) scale(.86) translate(-50 -77)' : undefined}>
       <path d="M43 77 V60 C43 55 46 52 50 49 C54 52 57 55 57 60 V77" fill="none" stroke="#F3E9D8" strokeWidth="1.8" />
       <ellipse cx="50" cy="66.5" rx="3.6" ry="5.4" fill="#F3E9D8" transform="rotate(-24 50 66.5)" />
       <path d="M50 61.5 C48 63.5 52 65 50 67 C48 69 52 70 50 72" fill="none" stroke={color} strokeWidth="1" transform="rotate(-24 50 66.5)" />
+      </g>
+      {label && (
+        <>
+          <text x="50" y="40.5" textAnchor="middle" fontSize="3.6" fontWeight="700" letterSpacing=".6" fill="#5A3A22">{label.brand}</text>
+          <text x="50" y="52" textAnchor="middle" fontSize="4.4" fontWeight="700" fill="#F3E9D8">{label.name}</text>
+        </>
+      )}
     </g>
   );
 }
 
-const Shape = ({ kind, color }: { kind: Exclude<ArtKind, 'kit'>; color: string }) =>
-  kind === 'coffee' ? <CoffeeBag color={color} /> : <path d={SHAPES[kind]} fill={color} fillRule="evenodd" stroke="rgba(0,0,0,.22)" strokeWidth="1.2" />;
+const Shape = ({ kind, color, label }: { kind: Exclude<ArtKind, 'kit'>; color: string; label?: { brand: string; name: string } }) =>
+  kind === 'coffee' ? <CoffeeBag color={color} label={label} /> : <path d={SHAPES[kind]} fill={color} fillRule="evenodd" stroke="rgba(0,0,0,.22)" strokeWidth="1.2" />;
 
-export function Art({ kind, color, kitColors, image, alt = '' }: { kind: ArtKind; color: string; kitColors?: string[]; image?: string; alt?: string }) {
+/** label: brand and product name printed on the drawn coffee bag (product pages without a photo). */
+export function Art({ kind, color, kitColors, image, alt = '', label }: { kind: ArtKind; color: string; kitColors?: string[]; image?: string; alt?: string; label?: { brand: string; name: string } }) {
   // eslint-disable-next-line @next/next/no-img-element
   // Cards, cart lines and bundle parts: small photo on phones.
   if (image) return <img className="photo" {...responsive(image, '(min-width: 700px) 240px, 46vw')} alt={alt} loading="lazy" decoding="async" />;
@@ -47,7 +56,31 @@ export function Art({ kind, color, kitColors, image, alt = '' }: { kind: ArtKind
   }
   return (
     <svg viewBox="0 0 100 100" aria-hidden="true">
-      <Shape kind={kind} color={color} />
+      <Shape kind={kind} color={color} label={label} />
+    </svg>
+  );
+}
+
+/** Round curator's stamp for product photos: the brand mark in the middle, the pick line over the top, the brand name upright along the bottom. */
+export function PickSeal({ text, under, logo, rtl }: { text: string; under: string; logo?: string; rtl: boolean }) {
+  return (
+    <svg className="pick-seal" viewBox="0 0 120 120" role="img" aria-label={text}>
+      <defs>
+        <path id="seal-top" d="M19 60 A41 41 0 0 1 101 60" />
+        <path id="seal-bottom" d="M11.5 60 A48.5 48.5 0 0 0 108.5 60" />
+      </defs>
+      <circle cx="60" cy="60" r="57" fill="var(--base)" />
+      <circle cx="60" cy="60" r="53" fill="none" stroke="var(--primary)" strokeWidth="2.2" />
+      <circle cx="60" cy="60" r="30" fill="none" stroke="var(--primary)" strokeWidth="1" strokeDasharray="2 2.4" />
+      <text fontSize={rtl ? 12 : 10.5} fontWeight="800" letterSpacing={rtl ? 0 : 1.2} fill="var(--primary)" direction={rtl ? 'rtl' : 'ltr'}>
+        <textPath href="#seal-top" startOffset="50%" textAnchor="middle">{text}</textPath>
+      </text>
+      <text fontSize={rtl ? 9 : 10} fontWeight="700" letterSpacing={rtl ? 1.4 : 0} fill="var(--ink, #24160F)" direction={rtl ? 'ltr' : 'rtl'}>
+        <textPath href="#seal-bottom" startOffset="50%" textAnchor="middle">{under}</textPath>
+      </text>
+      <text x="10" y="63.5" fontSize="8" fill="var(--primary)" textAnchor="middle">✦</text>
+      <text x="110" y="63.5" fontSize="8" fill="var(--primary)" textAnchor="middle">✦</text>
+      {logo && <image href={logo} x="45" y="40" width="30" height="36" />}
     </svg>
   );
 }

@@ -73,7 +73,10 @@ export default async function Home({ params }: P) {
       ) : null}
       {hero && !cfg.hero && (
         <section className="hero">
-          <div className="art"><BundleArt parts={hero.parts.map((p) => p.product)} /></div>
+          <div className={`art${hero.bundle.image ? ' has-photo' : ''}`}>{hero.bundle.image
+            // eslint-disable-next-line @next/next/no-img-element
+            ? <img className="photo" {...responsive(hero.bundle.image, CARD_SIZES)} alt={s.bundle(hero.bundle)} loading="lazy" decoding="async" />
+            : <BundleArt parts={hero.parts.map((p) => p.product)} />}</div>
           <div>
             <span className="small" style={{ opacity: 0.85 }}>{text(cfg.homeEyebrow)}</span>
             <h2>{s.bundle(hero.bundle)}</h2>
@@ -132,7 +135,10 @@ export default async function Home({ params }: P) {
       )}
       {hero && cfg.hero && (
         <Link className="box-card" href={s.href(`/b/${hero.bundle.id}`)}>
-          <div className="art"><BundleArt parts={hero.parts.map((p) => p.product)} /></div>
+          <div className={`art${hero.bundle.image ? ' has-photo' : ''}`}>{hero.bundle.image
+            // eslint-disable-next-line @next/next/no-img-element
+            ? <img className="photo" {...responsive(hero.bundle.image, CARD_SIZES)} alt={s.bundle(hero.bundle)} loading="lazy" decoding="async" />
+            : <BundleArt parts={hero.parts.map((p) => p.product)} />}</div>
           <div>
             <span className="small">{text(cfg.homeEyebrow)}</span>
             <b>{s.bundle(hero.bundle)}</b>

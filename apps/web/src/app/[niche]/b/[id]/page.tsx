@@ -2,9 +2,23 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { AddBundle } from '@/components/AddToCart';
 import { Art, BundleArt } from '@/components/Art';
+import { PAGE_SIZES, responsive } from '@/lib/img';
 import { catalog, choicesFor, priceOf, resolveVariant } from '@/lib/catalog';
 import { speaker } from '@/lib/lang';
 import { getNiche } from '@/lib/niches';
+import { pageMeta } from '@/lib/site';
+import type { Metadata } from 'next';
+
+export async function generateMetadata({ params }: { params: Promise<{ niche: string; id: string }> }): Promise<Metadata> {
+  const { niche, id } = await params;
+  const cfg = getNiche(niche);
+  const bv = cfg && (await catalog()).bundleView(cfg, id);
+  if (!cfg || !bv) return {};
+  const s = await speaker(cfg);
+  const title = s.bundle(bv.bundle);
+  const description = `${bv.parts.map((p) => s.product(p.product)).join(' + ')} · ${s.egp(bv.price)} ${s.en ? 'instead of' : 'بدل'} ${s.egp(bv.fullPrice)}`;
+  return pageMeta(cfg, s.lang, `/b/${id}`, { title, description, ...(bv.bundle.image ? { image: bv.bundle.image } : {}) });
+}
 
 export default async function BundlePage({ params }: { params: Promise<{ niche: string; id: string }> }) {
   const { niche, id } = await params;
@@ -20,7 +34,12 @@ export default async function BundlePage({ params }: { params: Promise<{ niche: 
   const choices = [...new Map(bv.parts.flatMap((pt) => choicesFor(cfg, pt.product)).map((c) => [c.id, c])).values()];
   return (
     <main className="page narrow">
-      <div className="big" style={{ aspectRatio: '1 / .7' }}><BundleArt parts={bv.parts.map((p) => p.product)} /></div>
+      <div className="big" style={{ aspectRatio: '1 / .7' }}>
+        {bv.bundle.image
+          // eslint-disable-next-line @next/next/no-img-element
+          ? <img className="photo" {...responsive(bv.bundle.image, PAGE_SIZES)} alt={s.bundle(bv.bundle)} fetchPriority="high" decoding="async" />
+          : <BundleArt parts={bv.parts.map((p) => p.product)} />}
+      </div>
       <h1 className="title">{s.bundle(bv.bundle)}</h1>
       <div className="price num"><b style={{ color: 'var(--primary)' }}>{egp(bv.price)}</b><s className="muted">{egp(bv.fullPrice)}</s><span className="muted">{s.t('bundleSave', { x: egp(bv.bundle.discountEgp) })}</span></div>
       <div style={{ display: 'grid', gap: 8 }}>

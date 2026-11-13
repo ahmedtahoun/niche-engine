@@ -27,6 +27,8 @@ export interface Bundle {
   parts: BundlePart[];
   /** Discount in EGP, funded by the platform out of its commission. */
   discountEgp: number;
+  /** Photo of the bundle (e.g. /products/coffee/discovery-box.webp); without it a drawing is shown. */
+  image?: string;
 }
 
 export interface Promo {

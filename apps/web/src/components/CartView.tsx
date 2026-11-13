@@ -82,7 +82,7 @@ export function CartView({ niche, depositAbove, deposit, cashback, freeOver }: {
         {removed > 0 && <div className="note warn" role="status">{t('cart.removed')}</div>}
         {(q?.lines ?? []).map((l) => (
           <div className={`line${l.left !== undefined ? ' short' : ''}`} key={l.key}>
-            <div className="pimg">{l.isBundle ? <BundleArt parts={l.parts ?? []} /> : <Art kind={l.art} color={l.color} image={l.image} />}</div>
+            <div className="pimg">{l.isBundle && !l.image ? <BundleArt parts={l.parts ?? []} /> : <Art kind={l.art} color={l.color} image={l.image} alt={l.title} />}</div>
             <div><b className="small">{l.title}</b><div className="pby">{l.by}</div>{l.left !== undefined && <div className="small bad-line">{l.left ? t('cart.left', { n: l.left }) : t('cart.gone')}</div>}</div>
             <div style={{ display: 'grid', gap: 4, justifyItems: 'end' }}>
               <span className="num small">{egp(l.amount)}</span>

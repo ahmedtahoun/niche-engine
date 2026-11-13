@@ -6,6 +6,7 @@ import { redirect } from 'next/navigation';
 import { revalidatePath } from 'next/cache';
 import { adminChats, approveProduct, approveSeller, notifyOrder } from '@/bot/engine';
 import { deliver } from '@/bot/transport';
+import { orderAlert } from '@/bot/alerts';
 import { checkPassword, COOKIE, isAdmin } from '@/lib/admin-auth';
 import { ensureCustomer } from '@/lib/customers';
 import { unblock } from '@/lib/blocklist';
@@ -63,12 +64,13 @@ export async function confirmForSellers(id: number) {
   if (!before) return;
   if (before.status === 'awaiting_confirm') {
     const moved = await moveOrderTo(id, 'confirmed', ['awaiting_confirm']);
-    if (moved) await deliver(notifyOrder(moved.order, await catalog()));
+    if (moved) await deliver([...moved.messages, ...notifyOrder(moved.order, await catalog())]);
   }
   const pending = Object.entries((await orderById(id))?.sellerState ?? {}).filter(([, part]) => part === 'pending').map(([sid]) => sid);
   for (const sid of pending) {
     const saved = await mutateOrder(id, (x) => applySellerPart(x, sid, 'accepted'));
     if (saved && bostaEnabled()) queueShipment(id, sid);
+    if (saved && saved.status === 'accepted') await deliver(orderAlert(saved, 'accepted', 'اتأكد من الأدمن'));
   }
   done();
 }
@@ -362,7 +364,7 @@ export async function createManualOrder(input: ManualOrderInput): Promise<Manual
   }), null);
   if (order === 'wallet_conflict') return { ok: false, error: 'Please try again.' };
   await takeStock(order);
-  await deliver(notifyOrder(order, cat));
+  await deliver([...notifyOrder(order, cat), ...orderAlert(order, 'new')]);
   done();
   return { ok: true, id: order.id };
 }

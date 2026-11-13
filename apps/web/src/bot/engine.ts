@@ -15,6 +15,7 @@ import { mainDomain } from '../lib/telegram-setup.ts';
 import { store } from '../lib/store/index.ts';
 import type { Product, Seller } from '../lib/types.ts';
 import type { Button, Incoming, Outgoing } from './types.ts';
+import { adminAlerts, adminChats, orderAlert } from './alerts.ts';
 
 export const MENU = [['📦 طلبات مفتوحة', '➕ منتج جديد'], ['📊 أرقامي', '💰 فلوسي'], ['🔎 مراجعة الأسعار']];
 
@@ -69,8 +70,7 @@ export async function handle(m: Incoming): Promise<Outgoing[]> {
 
 // ---------- admin alerts ----------
 /** Telegram chats that get the team alerts: ADMIN_TELEGRAM_CHAT_IDS="123,456" (send /myid to the bot to find yours). */
-export const adminChats = () => (process.env.ADMIN_TELEGRAM_CHAT_IDS ?? '').split(',').map((x) => Number(x.trim())).filter((x) => Number.isSafeInteger(x) && x !== 0);
-const adminAlerts = (texts: string[]) => texts.flatMap((text) => adminChats().map((chatId) => ({ chatId, text })));
+export { adminChats } from './alerts.ts';
 const whoIs = (m: Incoming) => `${m.user?.name ?? 'بدون اسم'}${m.user?.username ? ` (@${m.user.username})` : ''} · ${m.chatId}`;
 const adminLink = (path: string) => { const d = mainDomain(); return d ? `\nhttps://${d}${path}` : ''; };
 
@@ -457,10 +457,12 @@ async function orderButton(seller: Seller, k: string, orderId: number, cat: Cata
   if (!current || !(seller.id in current.sellerState)) return [msg(id, 'الطلب ده مش موجود.')];
   const part = k === 'acc' ? 'accepted' : k === 'rej' ? 'rejected' : 'handed';
   const o = await mutateOrder(orderId, (x) => applySellerPart(x, seller.id, part));
+  const who = seller.nameEn ?? seller.name;
   if (k === 'acc') {
     if (!o) return [msg(id, `الطلب #${orderId} اتعامل معاه قبل كده.`)];
     queueShipment(o.id, seller.id);
     return [
+      ...orderAlert(o, 'accepted', who),
       msg(id, `البوليصة جاية في الرسالة الجاية 📄\nاطبعها والزقها على كيس ${getNiche(o.niche)?.brand.nameAr} 🛍️\nمندوب بوسطة جاي بكرة من 12 لـ 4.\nبيانات العميل على البوليصة بس، وممنوع استخدامها لأي حاجة غير الشحن.`, [row(['📦 سلمت للمندوب', `hand:${o.id}`])]),
     ];
   }
@@ -477,10 +479,10 @@ async function orderButton(seller: Seller, k: string, orderId: number, cat: Cata
         out.push(msg(id, `خفينا "${p.nameAr} · ${it.variant}" لحد ما يرجع متاح.`, [row(['رجع متاح (5 قطع)', `stk:${p.id}:${vi}:5`])]));
       }
     }
-    return [msg(id, `تمام. فريقنا هيكلم العميل بخصوص الطلب #${o.id}.\nالرفض بيأثر على ترتيبك، فحدّث المخزون أول بأول.`), ...out];
+    return [msg(id, `تمام. فريقنا هيكلم العميل بخصوص الطلب #${o.id}.\nالرفض بيأثر على ترتيبك، فحدّث المخزون أول بأول.`), ...out, ...orderAlert(o, 'rejected', who)];
   }
   if (!o) return [msg(id, `لازم تقبل الطلب #${orderId} الأول.`)];
-  return [msg(id, `تمام 👌 الطلب #${o.id} مع بوسطة. هنبلغك أول ما يتسلم.`)];
+  return [msg(id, `تمام 👌 الطلب #${o.id} مع بوسطة. هنبلغك أول ما يتسلم.`), ...(o.status === 'picked' ? orderAlert(o, 'picked', who) : [])];
 }
 
 async function openOrders(seller: Seller): Promise<Outgoing[]> {

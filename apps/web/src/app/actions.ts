@@ -1,5 +1,6 @@
 'use server';
 
+import { orderAlert } from '@/bot/alerts';
 import { normalizeEgyptPhone } from '@niche-engine/core';
 import { catalog, publicQuote } from '@/lib/catalog';
 import { getNiche } from '@/lib/niches';
@@ -129,7 +130,7 @@ export async function placeOrder(niche: string, cart: CartLine[], form: Checkout
     if (order === 'wallet_conflict') continue;
     // With WhatsApp confirmation off, the order goes straight to the sellers.
     await takeStock(order);
-    if (order.status === 'confirmed') await deliver(notifyOrder(order, cat));
+    await deliver([...(order.status === 'confirmed' ? notifyOrder(order, cat) : []), ...orderAlert(order, 'new')]);
     if (guest) await rememberGuestOrder(order.id);
     return { ok: true, id: order.id };
   }

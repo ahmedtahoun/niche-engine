@@ -3,6 +3,7 @@
 // Pattern: change the order with mutateOrder() (safe against concurrent changes),
 // then do the side effects (wallet, refusals, messages) once the change is saved.
 // Side effects are safe to repeat: the database keeps one cashback/refund/refusal per order.
+import { orderAlert, type OrderEvent } from '../bot/alerts.ts';
 import { returnStock } from './stock.ts';
 import type { Outgoing } from '../bot/types.ts';
 import { deliver } from '../bot/transport.ts';
@@ -100,7 +101,8 @@ export async function afterMove(o: Order, to: OrderStatus, cat?: Catalog): Promi
   if (to === 'delivered') await grantCashback(o);
   if (to === 'refused' || to === 'cancelled') { await refundSpend(o); await returnStock(o); }
   const c = cat ?? (await catalog());
-  const out: Outgoing[] = [];
+  // The team chat hears about every step (delivered, refused, cancelled, with the courier…).
+  const out: Outgoing[] = ['picked', 'delivered', 'refused', 'cancelled', 'confirmed'].includes(to) ? orderAlert(o, to as OrderEvent) : [];
   for (const sid of Object.keys(o.sellerState)) {
     const chat = c.sellerById(sid)?.telegramChatId;
     if (!chat) continue;

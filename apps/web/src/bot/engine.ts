@@ -78,7 +78,7 @@ async function route(m: Incoming, ctx: Ctx): Promise<Outgoing[]> {
   const text = m.text?.trim() ?? '';
   const seller = ctx.cat.sellerByChat(m.chatId);
 
-  if (text === '/myid') return [msg(m.chatId, `رقم المحادثة بتاعتك: ${m.chatId}\n(للفريق: حطه في ADMIN_TELEGRAM_CHAT_IDS عشان توصلك التنبيهات)`)];
+  if (text === '/myid') return [msg(m.chatId, `رقم المحادثة بتاعتك: ${m.chatId}\n(الأدمن: حطه في ADMIN_TELEGRAM_CHAT_IDS · فريق الطلبات: في TEAM_TELEGRAM_CHAT_IDS)`)];
   if (text.startsWith('/start')) ctx.alerts.push(`👋 حد فتح بوت البائعين: ${whoIs(m)}${seller ? `\nبائع مسجل: ${seller.name} (${seller.status})` : '\nجديد، لسه ماقدمش'}`);
   if (text === '/cancel' || text === 'إلغاء') {
     ctx.session = null;

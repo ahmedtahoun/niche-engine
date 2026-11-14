@@ -1,5 +1,7 @@
 import { telegramStatus, webhookUrl } from '@/lib/telegram-setup';
 import { adminChats } from '@/bot/engine';
+import { teamEntries } from '@/bot/alerts';
+import { getNiche } from '@/lib/niches';
 import { connectTelegram, testAdminAlert } from '../../actions';
 import { Pill } from '../shared';
 
@@ -34,10 +36,14 @@ export default async function TelegramPage({ searchParams }: { searchParams: Pro
         )}
         <div style={{ display: 'grid', gap: 6, borderTop: '1px solid var(--a-line)', paddingTop: 12 }}>
           <b>Team alerts</b>
-          <span className="sub">A Telegram message to you each time someone taps start, begins or finishes a seller application, or submits a product.</span>
-          {adminChats().length
-            ? <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}><Pill kind="ok">On · {adminChats().length} chat{adminChats().length > 1 ? 's' : ''}</Pill><form action={testAdminAlert}><button className="mini">Send a test alert</button></form></div>
-            : <span><Pill kind="warn">Off</Pill> <span className="sub">Send <b>/myid</b> to the bot, then add <code>ADMIN_TELEGRAM_CHAT_IDS</code> = that number in the hosting settings (several: separate with commas) and restart.</span></span>}
+          <span className="sub"><b>Admins</b> (<code>ADMIN_TELEGRAM_CHAT_IDS</code>) get everything: orders and each step after, abandoned carts, and the seller bot (applications, new products). The <b>order team</b> (<code>TEAM_TELEGRAM_CHAT_IDS</code>) gets orders and abandoned carts only; write <code>coffee:NUMBER</code> to limit someone to Cairo Roast. Each person sends <b>/myid</b> to the bot to get their number.</span>
+          {adminChats().length || teamEntries().length
+            ? <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+                <Pill kind={adminChats().length ? 'ok' : 'warn'}>Admins · {adminChats().length}</Pill>
+                <Pill kind={teamEntries().length ? 'ok' : 'mute'}>Order team · {teamEntries().length}{teamEntries().some((t) => t.niche) ? ` (${[...new Set(teamEntries().map((t) => t.niche ? getNiche(t.niche)?.brand.nameEn ?? t.niche : 'all stores'))].join(', ')})` : ''}</Pill>
+                <form action={testAdminAlert}><button className="mini">Send a test alert</button></form>
+              </div>
+            : <span><Pill kind="warn">Off</Pill> <span className="sub">Send <b>/myid</b> to the bot, then add <code>ADMIN_TELEGRAM_CHAT_IDS</code> = that number in the hosting settings and restart.</span></span>}
         </div>
         {s.bot && <p className="sub" style={{ margin: 0 }}>Test it: open <a href={`https://t.me/${s.bot.username}`} target="_blank" rel="noreferrer">t.me/{s.bot.username}</a> and send /start.</p>}
       </section>

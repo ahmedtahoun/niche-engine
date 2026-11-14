@@ -46,3 +46,27 @@ test('team chat numbers: English or Arabic comma, spaces, Arabic digits; junk ig
   assert.deepEqual(parseChatIds('abc,,0'), []);
   assert.deepEqual(parseChatIds(undefined), []);
 });
+
+test('roles: the order team gets orders (for its store) but never seller-bot alerts', async () => {
+  const { adminAlerts, orderChats, teamEntries } = await import('../src/bot/alerts.ts');
+  const saved = [process.env.ADMIN_TELEGRAM_CHAT_IDS, process.env.TEAM_TELEGRAM_CHAT_IDS];
+  try {
+    process.env.ADMIN_TELEGRAM_CHAT_IDS = '5770925631';
+    process.env.TEAM_TELEGRAM_CHAT_IDS = 'coffee:1982483835، 333 umrah:444 5770925631';
+    assert.deepEqual(teamEntries(), [{ chatId: 1982483835, niche: 'coffee' }, { chatId: 333 }, { chatId: 444, niche: 'umrah' }, { chatId: 5770925631 }]);
+    // Cairo Roast orders: the admin, the Cairo Roast member and the all-stores member; once each.
+    assert.deepEqual(orderAlert(o, 'new').map((m) => m.chatId), [5770925631, 1982483835, 333]);
+    assert.deepEqual(orderAlert(o, 'picked').map((m) => m.chatId), [5770925631, 1982483835, 333]);
+    assert.deepEqual(orderChats('umrah'), [5770925631, 333, 444]);
+    // Seller bot (applications, products): admins only.
+    assert.deepEqual(adminAlerts(['👋 بائع جديد']).map((m) => m.chatId), [5770925631]);
+    // An order team without admins still gets orders.
+    process.env.ADMIN_TELEGRAM_CHAT_IDS = '';
+    process.env.TEAM_TELEGRAM_CHAT_IDS = 'coffee:1982483835';
+    assert.deepEqual(orderAlert(o, 'new').map((m) => m.chatId), [1982483835]);
+    assert.deepEqual(adminAlerts(['x']), []);
+  } finally {
+    [process.env.ADMIN_TELEGRAM_CHAT_IDS, process.env.TEAM_TELEGRAM_CHAT_IDS] = saved;
+    if (saved[1] === undefined) delete process.env.TEAM_TELEGRAM_CHAT_IDS;
+  }
+});

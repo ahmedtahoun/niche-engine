@@ -7,7 +7,7 @@
 // The reminder links to /cart?d=<token>, which refills that cart on any device.
 import { createHmac, timingSafeEqual } from 'node:crypto';
 import type { NicheConfig } from '@niche-engine/core';
-import { adminAlerts, adminChats } from '../bot/alerts.ts';
+import { orderAlerts, orderChats } from '../bot/alerts.ts';
 import { deliver } from '../bot/transport.ts';
 import { catalog } from './catalog.ts';
 import { allNiches, getNiche } from './niches.ts';
@@ -55,7 +55,7 @@ export const sendLink = (cfg: NicheConfig, d: Draft) => `${cfg.brand.domain ? `h
 
 /** Team alert for one abandoned draft. */
 export async function abandonedAlert(d: Draft, cfg: NicheConfig, now = new Date()) {
-  if (!adminChats().length) return [];
+  if (!orderChats(d.niche).length) return [];
   const mins = Math.round((now.getTime() - new Date(d.updatedAt).getTime()) / 60_000);
   const items = await draftItems({ ...d, lang: 'ar' }, cfg);
   const text = [
@@ -67,7 +67,7 @@ export async function abandonedAlert(d: Draft, cfg: NicheConfig, now = new Date(
     'ابعتله رسالة واحدة بس من رقم واتساب البيزنس: الزرار بيفتح الرسالة جاهزة.',
   ].join('\n');
   const admin = cfg.brand.domain ? `https://${cfg.brand.domain}/admin/carts` : null;
-  return adminAlerts([text]).map((o) => ({
+  return orderAlerts(d.niche, [text]).map((o) => ({
     ...o,
     buttons: [[{ text: '💬 ابعت التذكير على واتساب', data: '', url: sendLink(cfg, d) }], ...(admin ? [[{ text: 'السلات المتروكة في الأدمن', data: '', url: admin }]] : [])],
   }));

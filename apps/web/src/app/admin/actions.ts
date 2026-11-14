@@ -5,6 +5,7 @@ import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { revalidatePath } from 'next/cache';
 import { adminChats, approveProduct, approveSeller, notifyOrder } from '@/bot/engine';
+import { teamEntries } from '@/bot/alerts';
 import { deliver } from '@/bot/transport';
 import { orderAlert } from '@/bot/alerts';
 import { checkPassword, COOKIE, isAdmin } from '@/lib/admin-auth';
@@ -15,7 +16,7 @@ import { store } from '@/lib/store';
 import { RIBBONS, type CartLine, type Product } from '@/lib/types';
 import { moveOrderTo, queueShipment } from '@/lib/fulfillment';
 import { bostaEnabled } from '@/lib/bosta';
-import { getNiche } from '@/lib/niches';
+import { allNiches, getNiche } from '@/lib/niches';
 import { applySellerPart, draftOrder, mutateOrder, ORDER_SOURCES, orderById, ordersFor, type OrderSource, type OrderStatus } from '@/lib/orders';
 import { GOVERNORATES } from '@/lib/eta';
 import { takeStock } from '@/lib/stock';
@@ -421,9 +422,17 @@ export async function connectTelegram() {
 
 export async function testAdminAlert() {
   await guard();
-  const chats = adminChats();
-  await deliver(chats.map((chatId) => ({ chatId, text: '✅ تنبيهات سكينة شغالة. هيوصلك هنا كل ما حد يفتح بوت البائعين أو يقدّم أو يبعت منتج.' })));
-  redirect(`/admin/telegram?ok=${chats.length ? 1 : 0}&result=${encodeURIComponent(chats.length ? `Test alert sent to ${chats.length} chat(s)` : 'ADMIN_TELEGRAM_CHAT_IDS is not set')}`);
+  const admins = adminChats();
+  // Order team members who are not admins, with the stores they follow.
+  const team = new Map<number, Set<string>>();
+  for (const t of teamEntries()) if (!admins.includes(t.chatId)) team.set(t.chatId, (team.get(t.chatId) ?? new Set()).add(t.niche ?? '*'));
+  const storeNames = (ns: Set<string>) => (ns.has('*') ? Object.values(allNiches()) : [...ns].map((n) => getNiche(n)).filter((c) => c !== null)).map((c) => c!.brand.nameAr).join(' و');
+  await deliver([
+    ...admins.map((chatId) => ({ chatId, text: '✅ تنبيهات الأدمن شغالة. هيوصلك هنا كل طلب جديد وكل خطوة بعده، والسلات المتروكة، وأي حد يقدّم أو يبعت منتج في بوت البائعين.' })),
+    ...[...team].map(([chatId, ns]) => ({ chatId, text: `✅ تنبيهات الطلبات شغالة · ${storeNames(ns)}\nهيوصلك هنا كل طلب جديد وكل خطوة بعده، والسلات المتروكة علشان تتابع مع العميل.` })),
+  ]);
+  const n = admins.length + team.size;
+  redirect(`/admin/telegram?ok=${n ? 1 : 0}&result=${encodeURIComponent(n ? `Test alert sent: ${admins.length} admin chat(s), ${team.size} order-team chat(s)` : 'ADMIN_TELEGRAM_CHAT_IDS is not set')}`);
 }
 
 // ---------- abandoned checkouts (Carts) ----------

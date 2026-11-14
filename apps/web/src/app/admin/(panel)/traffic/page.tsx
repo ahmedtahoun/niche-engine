@@ -2,12 +2,15 @@ import Link from 'next/link';
 import { allNiches } from '@/lib/niches';
 import { store } from '@/lib/store';
 import { cairoDay, type SiteStats } from '@/lib/traffic';
+import { AutoRefresh } from '../AutoRefresh';
 import { Bars, DailyChart } from '../charts';
 import { NicheTabs, pct, pickNiche } from '../shared';
 
 export const metadata = { title: 'Traffic' };
 
 const PERIODS = [7, 30, 90] as const;
+/** "Right now" = opened a page in the last few minutes. */
+const LIVE_MIN = 5;
 const SOURCE: Record<string, string> = {
   direct: 'Direct / typed', google: 'Google', bing: 'Bing', chatgpt: 'ChatGPT', perplexity: 'Perplexity', gemini: 'Gemini', copilot: 'Copilot',
   facebook: 'Facebook', instagram: 'Instagram', tiktok: 'TikTok', whatsapp: 'WhatsApp', x: 'X', youtube: 'YouTube', duckduckgo: 'DuckDuckGo', other: 'Other',
@@ -45,7 +48,15 @@ export default async function Traffic({ searchParams }: { searchParams: Promise<
   const ids = niche ? [niche] : Object.keys(allNiches());
   let stats: SiteStats | null = null;
   let error = '';
-  try { stats = merge(await Promise.all(ids.map((id) => store().siteStats(id, since)))); } catch (e) { error = (e as Error).message; }
+  // "Right now": anyone who opened a page in the last 5 minutes (same visits table, no extra tracking).
+  let live: SiteStats | null = null;
+  try {
+    const fiveMin = new Date(Date.now() - LIVE_MIN * 60_000).toISOString();
+    [stats, live] = await Promise.all([
+      Promise.all(ids.map((id) => store().siteStats(id, since))).then(merge),
+      Promise.all(ids.map((id) => store().siteStats(id, fiveMin))).then(merge),
+    ]);
+  } catch (e) { error = (e as Error).message; }
   const missing = error ? await store().missingMigrations().catch(() => []) : [];
   const href = (x: { days?: number }) => `/admin/traffic?${new URLSearchParams({ ...(niche ? { niche } : {}), days: String(x.days ?? days) })}`;
 
@@ -79,6 +90,17 @@ export default async function Traffic({ searchParams }: { searchParams: Promise<
         </section>
       ) : (
         <>
+          <section className="panel live">
+            <h2><span><span className={`live-dot${live?.funnel.visitors ? ' on' : ''}`} aria-hidden="true" /> Right now <span className="sub">people with the store open in the last {LIVE_MIN} minutes</span></span><AutoRefresh seconds={30} /></h2>
+            {live?.funnel.visitors ? (
+              <div className="live-grid">
+                <div className="live-n"><b>{live.funnel.visitors}</b><span>{live.funnel.visitors === 1 ? 'visitor' : 'visitors'}{live.funnel.checkout ? ` · ${live.funnel.checkout} on checkout` : live.funnel.cart ? ` · ${live.funnel.cart} added to cart` : ''}</span></div>
+                <div><small>On these pages</small><Bars rows={live.pages.slice(0, 5).map((x) => ({ label: <span dir="ltr">{pageLabel(x.path)}</span>, value: Number(x.views) }))} /></div>
+                <div><small>Came from</small><Bars rows={live.sources.slice(0, 5).map((x) => ({ label: sourceLabel(x.source), value: Number(x.visitors) }))} /></div>
+              </div>
+            ) : <p className="empty">Nobody in the last {LIVE_MIN} minutes. Right after you post or start an ad, watch it here.</p>}
+          </section>
+
           <div className="hero-kpis">
             <div className="hk"><div className="hk-top"><small>Visitors today</small></div><b>{today.value.toLocaleString('en-US')}</b><span>{today.views.toLocaleString('en-US')} pages viewed</span></div>
             <div className="hk"><div className="hk-top"><small>Visits, {days} days</small></div><b>{visits.toLocaleString('en-US')}</b><span>unique visitors per day, added up</span></div>

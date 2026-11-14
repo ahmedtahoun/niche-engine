@@ -16,7 +16,10 @@ export default async function PanelLayout({ children }: { children: React.ReactN
   await seedDemoOrders();
   const [cat, open] = await Promise.all([catalog(), store().listOrders({ statuses: ['confirmed'], limit: 1000 })]);
   const attention = await store().listOrders({ needsAttention: true, limit: 1000 });
+  // Carts waiting for a reminder (none until migration 0006 is run).
+  const due = await store().listDrafts({ statuses: ['alerted'], updatedAfter: new Date(Date.now() - 2 * 864e5).toISOString(), limit: 100 }).catch(() => []);
   const counts = {
+    carts: due.length,
     orders: new Set([...open, ...attention].map((o) => o.id)).size,
     review: cat.products.filter((p) => p.status === 'review').length,
     applied: cat.sellers.filter((s) => s.status === 'applied').length,

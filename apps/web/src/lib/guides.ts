@@ -12,6 +12,8 @@ export interface Guide {
   short: { ar: string; en: string };
   sections: { h: { ar: string; en: string }; p: { ar: string; en: string } }[];
   faq: { q: { ar: string; en: string }; a: { ar: string; en: string } }[];
+  /** Live price table from the catalog (every coffee: sizes, prices, price per 100 g). */
+  priceTable?: boolean;
   /** Products to suggest under the guide. */
   related?: { family?: string; category?: string };
   updated: string;
@@ -142,6 +144,138 @@ const COFFEE: Guide[] = [
     ],
     related: { category: 'blends' },
     updated: '2026-11-12',
+  },
+  {
+    slug: 'espresso-beans-home',
+    emoji: '☕',
+    title: { ar: 'أنهي بن ينفع لمكنة الاسبريسو في البيت؟', en: 'Which coffee beans suit a home espresso machine?' },
+    description: { ar: 'إزاي تختار حبوب الاسبريسو المناسبة لمكنة البيت، والطحنة والكمية الصح لأول شوت.', en: 'How to choose beans for a home espresso machine, plus the grind and dose for a good first shot.' },
+    short: {
+      ar: 'لمكنة الاسبريسو في البيت ابدأ ببلند بنكهات الشوكولاتة والكراميل وقوام غني وحموضة خفيفة: بيطلع شوت ناعم وحلو سادة أو مع اللبن. اطحن البن ناعم قبل التحضير مباشرة.',
+      en: 'For a home espresso machine, start with a blend with chocolate and caramel notes, a rich body and low acidity: it makes a smooth, sweet shot on its own or with milk. Grind fine just before brewing.',
+    },
+    sections: [
+      { h: { ar: 'ليه البلند مناسب للاسبريسو؟', en: 'Why blends suit espresso' }, p: { ar: 'الاسبريسو بيركّز الطعم، فأي حموضة عالية بتبان أقوى. البلندات بقوام غني ونكهات شوكولاتة ومكسرات بتدي شوت متوازن وكريمة حلوة، وبتمشي كويس مع اللاتيه والكابتشينو.', en: 'Espresso concentrates flavour, so high acidity tastes stronger. Blends with a rich body and chocolate or nut notes give a balanced shot with sweet crema, and work well in lattes and cappuccinos.' } },
+      { h: { ar: 'وينفع قهوة أحادية المصدر؟', en: 'Can I use a single origin?' }, p: { ar: 'أيوه، لو بتحب الشوت بطعم فواكه وأخف. ابدأ بقهوة قوامها متوسط وحموضتها ناعمة، وخلي الشوت أطول شوية لو طلع حامض.', en: 'Yes, if you enjoy a lighter, fruitier shot. Start with a medium-bodied coffee with gentle acidity, and pull the shot a little longer if it tastes sour.' } },
+      { h: { ar: 'الكمية والطحنة لأول شوت', en: 'Dose and grind for your first shot' }, p: { ar: 'قاعدة بداية شائعة: حوالي 18 جم بن مطحون ناعم يطلع حوالي 36 جم قهوة في 25–30 ثانية. لو الشوت طلع مر اطحن أخشن شوية، ولو طلع حامض أو بسرعة اطحن أنعم.', en: 'A common starting point: about 18 g of finely ground coffee giving about 36 g of espresso in 25–30 seconds. If it tastes bitter, grind slightly coarser; if sour or fast, grind finer.' } },
+      { h: { ar: 'اطحن قبل التحضير', en: 'Grind right before brewing' }, p: { ar: 'البن المطحون بيفقد ريحته بسرعة. إحنا بنبعت حبوب كاملة في أكياس مقفولة، فاطحن كمية الشوت بس قبل ما تحضّره، واحفظ الباقي مقفول بعيد عن الشمس والحرارة.', en: 'Ground coffee loses its aroma quickly. We send whole beans in sealed bags, so grind only what each shot needs and keep the rest sealed, away from sun and heat.' } },
+    ],
+    faq: [
+      { q: { ar: 'إيه أحسن بن للاسبريسو باللبن؟', en: 'What coffee is best for espresso with milk?' }, a: { ar: 'بلند بقوام غني ونكهات شوكولاتة وكراميل، لأن الطعم ده بيفضل واضح بعد ما تضيف اللبن.', en: 'A rich-bodied blend with chocolate and caramel notes, since those flavours stay clear after you add milk.' } },
+      { q: { ar: 'محتاج مطحنة لمكنة الاسبريسو؟', en: 'Do I need a grinder for espresso?' }, a: { ar: 'أيوه، الاسبريسو محتاج طحنة ناعمة ومظبوطة، وأحسن نتيجة بتيجي من حبوب بتتطحن قبل الشوت مباشرة.', en: 'Yes. Espresso needs a fine, consistent grind, and the best results come from beans ground right before each shot.' } },
+      { q: { ar: 'الشوت طالع مر، أعمل إيه؟', en: 'My shot tastes bitter. What should I change?' }, a: { ar: 'اطحن أخشن شوية أو قلل وقت الشوت. المرارة غالباً معناها إن القهوة استخلصت أكتر من اللازم.', en: 'Grind a little coarser or shorten the shot. Bitterness usually means the coffee was over-extracted.' } },
+    ],
+    related: { family: 'chocolate' },
+    updated: '2026-11-14',
+  },
+  {
+    slug: 'v60-pour-over',
+    emoji: '💧',
+    title: { ar: 'طريقة عمل القهوة في V60 خطوة بخطوة', en: 'How to brew coffee in a V60, step by step' },
+    description: { ar: 'الكمية والطحنة ودرجة المية والوقت لكوباية V60 مظبوطة، وأنهي قهوة تختارها.', en: 'Dose, grind, water temperature and timing for a good V60 cup, and which coffee to choose.' },
+    short: {
+      ar: 'لكوباية V60: حوالي 15 جم بن مطحون وسط لناعم مع 250 مل مية سخنة (حوالي 92–96 درجة)، صب على مراحل في 2:30–3:30 دقيقة. القهوة أحادية المصدر بنكهات الفواكه بتبان أحلى في الـ V60.',
+      en: 'For one V60 cup: about 15 g of medium-fine coffee with 250 ml of hot water (about 92–96 °C), poured in stages over 2:30–3:30 minutes. Fruity single origins shine in a V60.',
+    },
+    sections: [
+      { h: { ar: 'اللي محتاجه', en: 'What you need' }, p: { ar: 'V60 وفلتر ورق، ميزان، غلاية (ويفضل بزبونة رفيعة)، مطحنة، وبن طازة. الميزان بيخليك تكرر نفس الطعم كل مرة.', en: 'A V60 and paper filter, a scale, a kettle (ideally gooseneck), a grinder and fresh beans. The scale lets you repeat the same cup every time.' } },
+      { h: { ar: 'الخطوات', en: 'The steps' }, p: { ar: 'اغسل الفلتر بمية سخنة وارمي المية. حط 15 جم بن مطحون، وصب حوالي 30–40 مل مية واستنى 30–40 ثانية (التزهير). كمّل الصب بالراحة في دواير لحد 250 مل. القهوة المفروض تخلص تنزل في 2:30–3:30 دقيقة.', en: 'Rinse the filter with hot water and discard it. Add 15 g of ground coffee, pour about 30–40 ml of water and wait 30–40 seconds (the bloom). Keep pouring slowly in circles up to 250 ml. It should finish draining in 2:30–3:30 minutes.' } },
+      { h: { ar: 'ظبط الطعم', en: 'Adjusting the taste' }, p: { ar: 'لو الكوباية حامضة أو خفيفة والمية نزلت بسرعة، اطحن أنعم. لو مرة أو تقيلة والمية نزلت ببطء، اطحن أخشن. غيّر حاجة واحدة بس كل مرة.', en: 'If the cup is sour or thin and drained fast, grind finer. If it is bitter or heavy and drained slowly, grind coarser. Change one thing at a time.' } },
+      { h: { ar: 'أنهي قهوة؟', en: 'Which coffee?' }, p: { ar: 'الـ V60 بيبيّن تفاصيل القهوة، فالقهوة أحادية المصدر بنكهات الفواكه والشاي والزهور بتطلع أوضح فيه. لو بتحب الطعم الأتقل، البلندات بتنفع برضه بطحنة أخشن شوية.', en: 'A V60 shows a coffee’s detail, so single origins with fruit, tea or floral notes taste clearest. If you prefer a heavier cup, blends work too with a slightly coarser grind.' } },
+    ],
+    faq: [
+      { q: { ar: 'نسبة البن للمية في V60 كام؟', en: 'What is the coffee-to-water ratio for V60?' }, a: { ar: 'نقطة بداية شائعة 1 لـ 15 لـ 1 لـ 17، يعني 15 جم بن لحوالي 225–255 مل مية.', en: 'A common starting point is 1:15 to 1:17, so 15 g of coffee to about 225–255 ml of water.' } },
+      { q: { ar: 'ينفع أستخدم مية مغلية على طول؟', en: 'Can I use water straight off the boil?' }, a: { ar: 'سيبها 30 ثانية تقريباً بعد الغليان علشان تبقى حوالي 92–96 درجة.', en: 'Let it rest about 30 seconds after boiling so it is around 92–96 °C.' } },
+      { q: { ar: 'الطحنة المناسبة للـ V60 إيه؟', en: 'What grind suits a V60?' }, a: { ar: 'وسط لناعم، أخشن من الاسبريسو وأنعم من الفرنش بريس، قريبة من ملح الطعام.', en: 'Medium-fine: coarser than espresso and finer than French press, close to table salt.' } },
+    ],
+    related: { family: 'fruity' },
+    updated: '2026-11-14',
+  },
+  {
+    slug: 'french-press',
+    emoji: '🫖',
+    title: { ar: 'طريقة عمل القهوة في الفرنش بريس', en: 'How to make coffee in a French press' },
+    description: { ar: 'الكمية والطحنة والوقت لفرنش بريس من غير تفل في الكوباية، وأنهي بن يناسبه.', en: 'Dose, grind and timing for a French press without sludge in the cup, and which beans suit it.' },
+    short: {
+      ar: 'في الفرنش بريس استخدم بن مطحون خشن، حوالي 30 جم لـ 500 مل مية سخنة، سيبه 4 دقايق ودوس المكبس بالراحة. بيطلع كوباية بقوام غني، وبيناسب نكهات الشوكولاتة والمكسرات والفواكه.',
+      en: 'For a French press use a coarse grind, about 30 g of coffee to 500 ml of hot water, steep 4 minutes and press gently. It makes a full-bodied cup that suits chocolate, nutty and fruity coffees.',
+    },
+    sections: [
+      { h: { ar: 'الخطوات', en: 'The steps' }, p: { ar: 'سخّن الفرنش بريس بمية سخنة وارميها. حط 30 جم بن مطحون خشن، وصب 500 مل مية حوالي 93–96 درجة، قلّب بالراحة وغطيه. بعد 4 دقايق دوس المكبس ببطء وصب القهوة كلها على طول علشان متكملش استخلاص.', en: 'Warm the press with hot water and discard it. Add 30 g of coarse coffee, pour 500 ml of water at about 93–96 °C, stir gently and cover. After 4 minutes press slowly and pour all the coffee out so it stops brewing.' } },
+      { h: { ar: 'ليه الطحنة الخشنة؟', en: 'Why a coarse grind?' }, p: { ar: 'الفلتر المعدني بيعدّي الحبيبات الصغيرة، فالطحنة الناعمة بتعمل تفل ومرارة. الطحنة الخشنة زي فتافيت البقسماط بتدي كوباية نضيفة.', en: 'The metal mesh lets fine particles through, so a fine grind gives sludge and bitterness. A coarse grind, like breadcrumbs, gives a cleaner cup.' } },
+      { h: { ar: 'أنهي قهوة؟', en: 'Which coffee?' }, p: { ar: 'الفرنش بريس بيحافظ على زيوت القهوة فبيدي قوام تقيل. البلندات بنكهات الشوكولاتة بتطلع ناعمة ودافية، والقهوة أحادية المصدر بنكهات الفواكه بتطلع غنية ومختلفة.', en: 'A French press keeps the coffee’s oils, so the body is heavy. Chocolatey blends taste smooth and warm; fruity single origins taste rich and distinctive.' } },
+    ],
+    faq: [
+      { q: { ar: 'القهوة طالعة مرة في الفرنش بريس، ليه؟', en: 'Why is my French press coffee bitter?' }, a: { ar: 'غالباً الطحنة ناعمة أو القهوة فضلت في الإبريق بعد ما ضغطت. اطحن أخشن وصبها كلها بعد 4 دقايق.', en: 'Usually the grind is too fine or the coffee stayed in the press after pressing. Grind coarser and pour it all out after 4 minutes.' } },
+      { q: { ar: 'نسبة البن للمية كام؟', en: 'What ratio should I use?' }, a: { ar: 'حوالي 1 لـ 15 لـ 1 لـ 17: يعني 30 جم بن لـ 450–500 مل مية.', en: 'About 1:15 to 1:17: 30 g of coffee to 450–500 ml of water.' } },
+    ],
+    related: { family: 'chocolate' },
+    updated: '2026-11-14',
+  },
+  {
+    slug: 'roast-levels',
+    emoji: '🔥',
+    title: { ar: 'الفرق بين التحميص الفاتح والوسط والغامق', en: 'Light, medium and dark roast: what is the difference?' },
+    description: { ar: 'درجة التحميص بتغيّر الطعم والحموضة والقوام. اعرف تختار أنهي درجة على ذوقك.', en: 'Roast level changes flavour, acidity and body. How to pick the one you will enjoy.' },
+    short: {
+      ar: 'التحميص الفاتح بيبيّن طعم البن الطبيعي: حموضة أعلى ونكهات فواكه وزهور. الوسط متوازن بنكهات كراميل وشوكولاتة. الغامق أتقل وأمرّ بطعم محروق أو مدخن وحموضة قليلة.',
+      en: 'Light roasts show the bean’s own flavour: brighter acidity, fruit and floral notes. Medium roasts are balanced, with caramel and chocolate. Dark roasts are heavier and more bitter, with roasty or smoky notes and little acidity.',
+    },
+    sections: [
+      { h: { ar: 'التحميص الفاتح', en: 'Light roast' }, p: { ar: 'بيتوقف بدري، فبيفضل طعم المنشأ واضح: فواكه، شاي، زهور. بيبان أحلى في الفلتر والـ V60.', en: 'Stopped early, so the origin’s flavour stays clear: fruit, tea, flowers. It shines in filter and V60.' } },
+      { h: { ar: 'التحميص الوسط', en: 'Medium roast' }, p: { ar: 'حلاوة أكتر وحموضة أهدى: كراميل وشوكولاتة ومكسرات. سهل يتحب، وبيمشي مع الاسبريسو والفرنش بريس والكنكة.', en: 'More sweetness and calmer acidity: caramel, chocolate, nuts. Easy to enjoy, and suits espresso, French press and the kanaka.' } },
+      { h: { ar: 'التحميص الغامق', en: 'Dark roast' }, p: { ar: 'طعم التحميص نفسه بيغلب على طعم البن: مرارة ودخان وقوام تقيل. ناس كتير بتحبه باللبن، بس بيخفي تفاصيل المنشأ.', en: 'The roast itself dominates: bitterness, smoke and a heavy body. Many people like it with milk, but it hides the origin’s detail.' } },
+      { h: { ar: 'يعني أختار إيه؟', en: 'So which should I choose?' }, p: { ar: 'اختار بالطعم مش باللون: لو بتحب الشوكولاتة والمكسرات اختار نكهات زيها، ولو بتحب الفواكه والشاي جرّب قهوة أحادية المصدر. النكهات المكتوبة على الكيس بتقولك أكتر من لون الحبوب.', en: 'Choose by taste, not colour: if you like chocolate and nuts, pick those notes; if you like fruit and tea, try a single origin. The notes on the bag tell you more than the colour of the beans.' } },
+    ],
+    faq: [
+      { q: { ar: 'التحميص الغامق فيه كافيين أكتر؟', en: 'Does dark roast have more caffeine?' }, a: { ar: 'لأ تقريباً. الفرق في الكافيين بين درجات التحميص صغير، والطعم القوي مش معناه كافيين أعلى.', en: 'Not really. The caffeine difference between roast levels is small, and a stronger taste does not mean more caffeine.' } },
+      { q: { ar: 'أنهي تحميص للقهوة التركي؟', en: 'Which roast for Turkish coffee?' }, a: { ar: 'الوسط لحد الغامق شوية بيدي الطعم المعتاد في الكنكة، والقهوة بنكهات الشوكولاتة بتطلع ناعمة ومن غير مرارة زيادة.', en: 'Medium to slightly darker gives the familiar kanaka taste; chocolatey coffees come out smooth without extra bitterness.' } },
+    ],
+    related: { category: 'blends' },
+    updated: '2026-11-14',
+  },
+  {
+    slug: 'specialty-coffee-prices-egypt',
+    emoji: '🏷️',
+    title: { ar: 'سعر البن المختص في مصر: إزاي تقارن صح؟', en: 'Specialty coffee prices in Egypt: how to compare properly' },
+    description: { ar: 'أسعار القهوة المختصة النهارده لكل حجم ولكل 100 جم، وإيه اللي بيفرق في السعر.', en: 'Today’s specialty coffee prices per bag and per 100 g, and what makes one coffee cost more than another.' },
+    short: {
+      ar: 'قارن السعر لكل 100 جم مش سعر الكيس. البلندات غالباً أرخص من القهوة أحادية المصدر، والمنشأ والندرة وطريقة المعالجة بيرفعوا السعر. الجدول تحت فيه أسعار محمصة القاهرة الحالية لكل قهوة.',
+      en: 'Compare the price per 100 g, not per bag. Blends usually cost less than single origins, and origin, rarity and processing push the price up. The table below lists Cairo Roast’s current price for every coffee.',
+    },
+    sections: [
+      { h: { ar: 'ليه القهوة أحادية المصدر أغلى؟', en: 'Why single origins cost more' }, p: { ar: 'جاية من منطقة واحدة معروفة، كميتها محدودة، وبتتختار علشان طعمها المميز. البلند بيخلط أكتر من بن علشان طعم ثابت ومتوازن، وده غالباً بيخلي سعره أقل.', en: 'They come from one known region, in limited amounts, chosen for a distinctive taste. A blend mixes several coffees for a steady, balanced flavour, which usually keeps the price lower.' } },
+      { h: { ar: 'السعر لكل 100 جم', en: 'Price per 100 g' }, p: { ar: 'اقسم سعر الكيس على وزنه واضربه في 100. ده بيخليك تقارن بين أكياس 250 جم و1 كجم، وبين محل ومحل، بشكل عادل.', en: 'Divide the bag price by its weight and multiply by 100. That lets you compare 250 g and 1 kg bags, and one shop with another, fairly.' } },
+      { h: { ar: 'إيه اللي يستاهل تدفع فيه؟', en: 'What is worth paying for' }, p: { ar: 'تاريخ تحميص حديث أو كيس مقفول بصمام، منشأ ونكهات مكتوبة بوضوح، وحبوب كاملة لو عندك مطحنة. ده أهم من الاسم أو شكل الكيس.', en: 'A recent roast or a sealed valve bag, a clearly stated origin and tasting notes, and whole beans if you have a grinder. These matter more than the name or the packaging.' } },
+    ],
+    faq: [
+      { q: { ar: 'سعر كيلو البن المختص في مصر كام؟', en: 'How much does a kilo of specialty coffee cost in Egypt?' }, a: { ar: 'بيختلف حسب المنشأ والنوع. الجدول في الصفحة دي فيه أسعار الكيلو والـ 250 جم الحالية لكل قهوة عندنا.', en: 'It depends on origin and type. The table on this page shows our current 250 g and 1 kg prices for every coffee.' } },
+      { q: { ar: 'الكيلو أوفر من 250 جم؟', en: 'Is a kilo cheaper than 250 g bags?' }, a: { ar: 'قارن السعر لكل 100 جم في الجدول. ولو هتشرب الكيلو في شهر تقريباً، بيفضل طازة لو حفظته مقفول.', en: 'Compare the price per 100 g in the table. If you will finish the kilo in about a month, it stays fresh when kept sealed.' } },
+    ],
+    priceTable: true,
+    updated: '2026-11-14',
+  },
+  {
+    slug: 'ethiopian-coffee',
+    emoji: '🇪🇹',
+    title: { ar: 'القهوة الإثيوبي: طعمها إيه وتختار أنهي نوع؟', en: 'Ethiopian coffee: what it tastes like and which to choose' },
+    description: { ar: 'ليه القهوة الإثيوبي مشهورة، والفرق بين جوجي وليمو، والمعالجة الطبيعية بتعمل إيه في الطعم.', en: 'Why Ethiopian coffee is famous, the difference between Guji and Limu, and what natural processing does to the taste.' },
+    short: {
+      ar: 'إثيوبيا موطن البن العربي، وقهوتها معروفة بنكهات الفواكه والزهور والشاي. جوجي غالباً أخف بنكهات توت وزهور ومشمش، وليمو بنكهات شوكولاتة داكنة وشاي أسود وبرتقال.',
+      en: 'Ethiopia is the home of arabica coffee, and its coffees are known for fruit, floral and tea notes. Guji tends to be lighter with berry, floral and apricot notes; Limu brings dark chocolate, black tea and orange.',
+    },
+    sections: [
+      { h: { ar: 'ليه القهوة الإثيوبي مختلفة؟', en: 'Why Ethiopian coffee is different' }, p: { ar: 'البن بيتزرع في إثيوبيا من مئات السنين، وفيه أصناف محلية كتير بتتسمى "هيرلوم". الارتفاع العالي والتنوع ده بيدوا نكهات فواكه وزهور مش بتلاقيها في مناطق تانية بنفس الوضوح.', en: 'Coffee has grown in Ethiopia for centuries, with many local varieties known as "heirloom". High altitude and that diversity give fruit and floral notes rarely found as clearly elsewhere.' } },
+      { h: { ar: 'جوجي ولا ليمو؟', en: 'Guji or Limu?' }, p: { ar: 'جوجي (من هامبيلا) بنكهات توت وزهور ومشمش وزهر البرتقال وقوام رقيق: اختارها لو بتحب الطعم الفاكهي الواضح. ليمو بنكهات شوكولاتة داكنة وشاي أسود وسكر بني ولمسة برتقال: أنسب لو عايز فواكه مع حلاوة وقوام أتقل.', en: 'Guji (from Hambela) brings berries, florals, apricot and orange blossom with a delicate body: choose it for a clear fruity cup. Limu brings dark chocolate, black tea, brown sugar and a touch of orange: better if you want fruit with sweetness and more body.' } },
+      { h: { ar: 'المعالجة الطبيعية', en: 'Natural processing' }, p: { ar: 'في المعالجة الطبيعية حبة البن بتنشف جوه الثمرة، فبتاخد حلاوة ونكهات فواكه أوضح. القهوتين الإثيوبي عندنا معالجتهم طبيعية.', en: 'In natural processing the bean dries inside the coffee cherry, picking up more sweetness and fruit. Both of our Ethiopian coffees are natural process.' } },
+      { h: { ar: 'تحضّرها إزاي؟', en: 'How to brew it' }, p: { ar: 'الـ V60 والفلتر بيبيّنوا نكهات الفواكه أحسن حاجة، والفرنش بريس بيدي قوام أغنى. في الاسبريسو بتطلع شوت فاكهي ومختلف.', en: 'V60 and filter show the fruit best; a French press gives a richer body. As espresso it makes a fruity, distinctive shot.' } },
+    ],
+    faq: [
+      { q: { ar: 'القهوة الإثيوبي حامضة؟', en: 'Is Ethiopian coffee sour?' }, a: { ar: 'فيها حموضة منعشة زي الفواكه، مش حمضان. لو حسيتها حامضة زيادة، اطحن أنعم شوية أو جرّب ليمو لأنها أحلى وأتقل.', en: 'It has a bright, fruit-like acidity, not sourness. If it tastes too sharp, grind a little finer or try Limu, which is sweeter and fuller.' } },
+      { q: { ar: 'ينفع القهوة الإثيوبي في الكنكة؟', en: 'Can I use Ethiopian coffee in a kanaka?' }, a: { ar: 'ينفع، بس هتطلع أخف وأكتر فاكهية من القهوة التركي المعتادة. لو بتحب الطعم التقليدي اختار بلند بنكهات شوكولاتة.', en: 'Yes, but it will taste lighter and fruitier than usual Turkish coffee. For the traditional taste, choose a chocolatey blend.' } },
+    ],
+    related: { family: 'fruity' },
+    updated: '2026-11-14',
   },
 ];
 

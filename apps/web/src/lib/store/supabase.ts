@@ -9,7 +9,20 @@ import {
   accountPatchToRow, accountToRow, itemRows, orderToRow, productToRow, rowToAccount, rowToOrder, rowToProduct, rowToSeller, rowToWallet, sellerToRow,
   type CustomerRow, type OrderRow, type ProductRow, type SellerRow, type WalletRow,
 } from './rows.ts';
-import type { AppendResult, NewOrder, NewWalletEntry, OrderFilter, Store } from './types.ts';
+import { randomBytes } from 'node:crypto';
+import type { SiteEvent, SiteStats } from '../traffic.ts';
+import type { AppendResult, Draft, DraftInput, NewOrder, NewWalletEntry, OrderFilter, Store } from './types.ts';
+
+interface DraftRow {
+  id: number; niche: string; phone: string; name: string; governorate: string; cart: Draft['cart']; total: number | string; lang: string; token: string;
+  status: Draft['status']; order_id: number | null; created_at: string; updated_at: string; alerted_at: string | null; reminded_at: string | null;
+}
+const rowToDraft = (r: DraftRow): Draft => ({
+  id: Number(r.id), niche: r.niche, phone: r.phone, name: r.name, governorate: r.governorate, cart: r.cart, total: Number(r.total), lang: r.lang === 'en' ? 'en' : 'ar', token: r.token,
+  status: r.status, createdAt: new Date(r.created_at).toISOString(), updatedAt: new Date(r.updated_at).toISOString(),
+  ...(r.order_id ? { orderId: Number(r.order_id) } : {}), ...(r.alerted_at ? { alertedAt: new Date(r.alerted_at).toISOString() } : {}), ...(r.reminded_at ? { remindedAt: new Date(r.reminded_at).toISOString() } : {}),
+});
+const draftFields = (d: DraftInput) => ({ niche: d.niche, phone: d.phone, name: d.name, governorate: d.governorate, cart: d.cart, total: d.total, lang: d.lang });
 
 const walletEntryArg = (e: NewWalletEntry) => ({
   amount: e.amount, kind: e.kind, order_id: e.orderId ?? null, note: e.note ?? null, expires_at: e.expiresAt ?? null, created_at: e.createdAt ?? null,
@@ -131,6 +144,45 @@ export class SupabaseStore implements Store {
     return rows.length > 0;
   }
 
+  // ---------- traffic ----------
+  async addSiteEvent(e: SiteEvent) {
+    await req('site_events', { method: 'POST', prefer: 'return=minimal', body: { niche: e.niche, visitor: e.visitor, kind: e.kind, path: e.path, source: e.source, device: e.device, lang: e.lang, ...(e.at ? { at: e.at } : {}) } });
+  }
+  siteStats(niche: string, sinceIso: string) { return rpc<SiteStats>('site_stats', { p_niche: niche, p_since: sinceIso }); }
+
+  // ---------- abandoned checkouts ----------
+  async saveDraft(d: DraftInput) {
+    const now = new Date().toISOString();
+    const [live] = await req<DraftRow[]>(`checkout_drafts?select=*&niche=eq.${v(d.niche)}&phone=eq.${v(d.phone)}&status=in.${list(['open', 'alerted'])}&order=updated_at.desc&limit=1`);
+    const rows = live
+      ? await req<DraftRow[]>(`checkout_drafts?id=eq.${live.id}`, { method: 'PATCH', prefer: 'return=representation', body: { ...draftFields(d), updated_at: now } })
+      : await req<DraftRow[]>('checkout_drafts', { method: 'POST', prefer: 'return=representation', body: { ...draftFields(d), token: randomBytes(12).toString('base64url'), status: 'open', created_at: now, updated_at: now } });
+    return rowToDraft(rows[0]);
+  }
+  async listDrafts(f: { niche?: string; phone?: string; statuses?: Draft['status'][]; updatedBefore?: string; updatedAfter?: string; limit: number }) {
+    const q = [
+      f.niche ? `niche=eq.${v(f.niche)}` : '', f.phone ? `phone=eq.${v(f.phone)}` : '', f.statuses ? `status=in.${list(f.statuses)}` : '',
+      f.updatedBefore ? `updated_at=lt.${v(f.updatedBefore)}` : '', f.updatedAfter ? `updated_at=gte.${v(f.updatedAfter)}` : '',
+    ].filter(Boolean).join('&');
+    return (await req<DraftRow[]>(`checkout_drafts?select=*${q ? `&${q}` : ''}&order=updated_at.desc&limit=${Math.max(1, Math.min(1000, f.limit))}`)).map(rowToDraft);
+  }
+  async draftByToken(token: string) {
+    if (!/^[A-Za-z0-9_-]{8,40}$/.test(token)) return null;
+    const [r] = await req<DraftRow[]>(`checkout_drafts?select=*&token=eq.${v(token)}&limit=1`);
+    return r ? rowToDraft(r) : null;
+  }
+  async updateDraft(id: number, patch: Partial<Pick<Draft, 'status' | 'orderId' | 'alertedAt' | 'remindedAt'>>) {
+    const body = {
+      ...(patch.status ? { status: patch.status } : {}), ...(patch.orderId !== undefined ? { order_id: patch.orderId } : {}),
+      ...(patch.alertedAt ? { alerted_at: patch.alertedAt } : {}), ...(patch.remindedAt ? { reminded_at: patch.remindedAt } : {}),
+    };
+    await req(`checkout_drafts?id=eq.${id}`, { method: 'PATCH', prefer: 'return=minimal', body });
+  }
+
+  // ---------- small settings ----------
+  async getKv(key: string) { const [r] = await req<{ value: string }[]>(`site_kv?select=value&key=eq.${v(key)}`); return r?.value ?? null; }
+  async setKv(key: string, value: string) { await upsert('site_kv', [{ key, value, updated_at: new Date().toISOString() }], 'key'); }
+
   // ---------- operations ----------
   async syncNiches(rows: { id: string; status: string; config: unknown }[]) {
     await upsert('niches', rows.map((r) => ({ ...r, updated_at: new Date().toISOString() })), 'id');
@@ -139,7 +191,7 @@ export class SupabaseStore implements Store {
     try { await req('niches?select=id&limit=1'); return true; } catch { return false; }
   }
   async missingMigrations() {
-    const checks: [string, string][] = [['0002_database_first.sql', 'wallets?select=version&limit=1'], ['0003_product_photos.sql', 'products?select=images&limit=1'], ['0004_seller_profile.sql', 'sellers?select=owner_name&limit=1'], ['0005_english_and_taste.sql', 'products?select=en,profile&limit=1']];
+    const checks: [string, string][] = [['0002_database_first.sql', 'wallets?select=version&limit=1'], ['0003_product_photos.sql', 'products?select=images&limit=1'], ['0004_seller_profile.sql', 'sellers?select=owner_name&limit=1'], ['0005_english_and_taste.sql', 'products?select=en,profile&limit=1'], ['0006_traffic_and_carts.sql', 'checkout_drafts?select=id&limit=1']];
     const missing: string[] = [];
     for (const [file, probe] of checks) await req(probe).catch(() => missing.push(file));
     return missing;

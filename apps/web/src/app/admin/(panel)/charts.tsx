@@ -52,3 +52,23 @@ export function Bars({ rows }: { rows: { label: React.ReactNode; value: number; 
     </div>
   );
 }
+
+/** One value per day (e.g. visitors), same look as the revenue chart; hover a bar for its numbers. */
+export function DailyChart({ daily, tip }: { daily: { date: string; value: number }[]; tip: (d: { date: string; value: number }, label: string) => string }) {
+  const max = Math.max(1, ...daily.map((d) => d.value));
+  const nice = (() => { const p = 10 ** Math.floor(Math.log10(max)); return Math.ceil(max / p) * p; })();
+  const label = (iso: string) => new Date(`${iso}T12:00:00Z`).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
+  return (
+    <div className="rchart">
+      <div className="rgrid">{[1, 0.5, 0].map((f) => <span key={f}>{Math.round(nice * f).toLocaleString('en-US')}</span>)}</div>
+      <div className="rbars">
+        {daily.map((d) => (
+          <div key={d.date} className="rcol" title={tip(d, label(d.date))}>
+            <i style={{ height: `${(d.value / nice) * 100}%` }} className={d.value ? '' : 'zero'} />
+          </div>
+        ))}
+      </div>
+      <div className="rx"><span>{label(daily[0].date)}</span><span>{label(daily[Math.floor(daily.length / 2)].date)}</span><span>Today</span></div>
+    </div>
+  );
+}

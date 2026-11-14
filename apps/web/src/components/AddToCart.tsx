@@ -8,7 +8,8 @@ import { waLink } from '@/lib/site';
 import { addLine } from './cart-store';
 import { useSpeak } from './I18n';
 import { track } from './Pixel';
-import { reportCartEvent } from '@/app/actions';
+import { trackSite } from './SiteTracker';
+import { sendMetaEvent } from './background';
 import { newEventId } from '@/lib/meta-ids';
 import type { CartLine } from '@/lib/types';
 
@@ -124,10 +125,11 @@ export function AddToCart({ niche, slug, productId, notify, price, variants, fin
     const n = onAdded ? qty : 1;
     const line: CartLine = { kind: 'item', slug, variant, qty: n, ...(choices.length ? { choice: Object.fromEntries(choices.map((c) => [c.id, picked[c.id]])) } : {}) };
     addLine(niche, line);
+    trackSite('cart');
     if (productId) {
       const eid = newEventId('atc');
       track('AddToCart', { content_ids: [productId], content_type: 'product_group', value: shown * n, num_items: n }, eid);
-      void reportCartEvent(niche, 'AddToCart', eid, [line]).catch(() => {});
+      sendMetaEvent(niche, 'AddToCart', eid, [line]);
     }
     if (onAdded) onAdded();
     else if (go) router.push(s.href(`/checkout`));
@@ -270,10 +272,11 @@ export function AddBundle({ niche, id, variants, label, choices = [], productIds
         <button type="button" className="btn primary block" disabled={!variant || Boolean(choiceMissing)} onClick={() => {
           const line: CartLine = { kind: 'bundle', id, variant: variant === '-' ? '' : variant, qty: 1, ...(choices.length ? { choice: Object.fromEntries(choices.map((c) => [c.id, picked[c.id]])) } : {}) };
           addLine(niche, line);
+          trackSite('cart');
           if (productIds?.length) {
             const eid = newEventId('atc');
             track('AddToCart', { content_ids: productIds, content_type: 'product_group', content_name: id, num_items: 1, ...(price ? { value: price } : {}) }, eid);
-            void reportCartEvent(niche, 'AddToCart', eid, [line]).catch(() => {});
+            sendMetaEvent(niche, 'AddToCart', eid, [line]);
           }
           router.push(s.href(`/cart`));
         }}>

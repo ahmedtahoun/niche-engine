@@ -8,7 +8,9 @@ import { HeaderNav, TabBar } from '@/components/TabBar';
 import { CampaignTracker } from '@/components/Campaign';
 import { MetaPixel } from '@/components/Pixel';
 import { CartSync } from '@/components/CartView';
+import { SiteTracker } from '@/components/SiteTracker';
 import { pixelIdFor } from '@/lib/meta';
+import { verificationFor } from '@/lib/seo';
 import { speak, voiceOf } from '@/lib/i18n';
 import { speaker } from '@/lib/lang';
 import { getNiche } from '@/lib/niches';
@@ -22,7 +24,8 @@ export async function generateMetadata({ params }: P): Promise<Metadata> {
   const cfg = getNiche((await params).niche);
   if (!cfg) return {};
   const name = (await speaker(cfg)).brand(cfg);
-  return { title: { default: name, template: `%s · ${name}` }, ...(cfg.brand.icon ? { icons: { icon: cfg.brand.icon, apple: cfg.brand.icon } } : {}) };
+  const verification = verificationFor(cfg.id);
+  return { title: { default: name, template: `%s · ${name}` }, ...(cfg.brand.icon ? { icons: { icon: cfg.brand.icon, apple: cfg.brand.icon } } : {}), ...(verification ? { verification } : {}) };
 }
 
 export default async function NicheLayout({ children, params }: P & { children: React.ReactNode }) {
@@ -63,6 +66,7 @@ export default async function NicheLayout({ children, params }: P & { children: 
         <TabBar niche={cfg.id} />
         <CampaignTracker />
         <CartSync niche={cfg.id} />
+        <SiteTracker niche={cfg.id} />
         {pixel && <MetaPixel id={pixel} />}
       </div>
     </LangProvider>

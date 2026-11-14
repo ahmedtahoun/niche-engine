@@ -3,6 +3,8 @@
 // restart, or run as several processes, safely.
 //
 // Two implementations: SupabaseStore (production) and MemoryStore (local demo + tests).
+import type { SiteEvent, SiteStats } from '../traffic.ts';
+import type { CartLine } from '../types.ts';
 import type { Account } from '../customers.ts';
 import type { Order, OrderStatus } from '../orders.ts';
 import type { Product, Seller } from '../types.ts';
@@ -24,6 +26,29 @@ export interface OrderFilter {
 export type NewOrder = Omit<Order, 'id' | 'createdAt' | 'version'>;
 export type NewWalletEntry = Omit<WalletEntry, 'id' | 'createdAt'> & { createdAt?: string };
 export type AppendResult = 'ok' | 'conflict' | 'duplicate';
+
+export type DraftStatus = 'open' | 'alerted' | 'reminded' | 'ordered' | 'dismissed';
+
+/** A checkout someone started (valid phone typed). Cart lines hold only slugs, sizes and quantities. */
+export interface Draft {
+  id: number;
+  niche: string;
+  phone: string;
+  name: string;
+  governorate: string;
+  cart: CartLine[];
+  total: number;
+  lang: 'ar' | 'en';
+  /** Unguessable id for the "back to your cart" link. */
+  token: string;
+  status: DraftStatus;
+  orderId?: number;
+  createdAt: string;
+  updatedAt: string;
+  alertedAt?: string;
+  remindedAt?: string;
+}
+export type DraftInput = Pick<Draft, 'niche' | 'phone' | 'name' | 'governorate' | 'cart' | 'total' | 'lang'>;
 
 export interface Store {
   readonly kind: 'supabase' | 'memory';
@@ -78,6 +103,22 @@ export interface Store {
   setBotSession(chatId: number, state: unknown | null): Promise<void>;
   /** True the first time an update id is seen, false for Telegram's retries. */
   claimTelegramUpdate(updateId: number): Promise<boolean>;
+
+  // ---------- traffic (admin → Traffic) ----------
+  addSiteEvent(e: SiteEvent): Promise<void>;
+  siteStats(niche: string, sinceIso: string): Promise<SiteStats>;
+
+  // ---------- abandoned checkouts (admin → Carts) ----------
+  /** Saves the phone's live draft (open or alerted) for this niche, or starts a new one. */
+  saveDraft(d: DraftInput): Promise<Draft>;
+  /** updatedBefore is exclusive, updatedAfter inclusive; newest first. */
+  listDrafts(f: { niche?: string; phone?: string; statuses?: DraftStatus[]; updatedBefore?: string; updatedAfter?: string; limit: number }): Promise<Draft[]>;
+  draftByToken(token: string): Promise<Draft | null>;
+  updateDraft(id: number, patch: Partial<Pick<Draft, 'status' | 'orderId' | 'alertedAt' | 'remindedAt'>>): Promise<void>;
+
+  // ---------- small settings kept between restarts ----------
+  getKv(key: string): Promise<string | null>;
+  setKv(key: string, value: string): Promise<void>;
 
   // ---------- operations ----------
   /** Writes the niche settings (sellers and orders reference them). */

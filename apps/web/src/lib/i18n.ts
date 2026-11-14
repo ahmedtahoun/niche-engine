@@ -184,6 +184,7 @@ const D = {
   useWallet: { ar: 'استخدم رصيد محفظتك ({x})', en: 'Use your wallet balance ({x})' },
   walletExpires: { ar: '{x} منه بينتهي {day} · ', en: '{x} of it expires {day} · ' },
   walletNoShip: { ar: 'الرصيد مبيدفعش الشحن', en: "Credit doesn't pay for shipping" },
+  'co.waNote': { ar: 'لو وقفت قبل ما تكمل الطلب، ممكن نبعتلك رسالة واحدة على واتساب نساعدك.', en: 'If you stop before ordering, we may send you one WhatsApp message to help.' },
   'co.pwLink': { ar: 'اعمل حساب تتابع منه طلباتك (اختياري)', en: 'Create an account to track orders (optional)' },
   'co.privacy': { ar: 'بياناتك بتتبعت لشركة الشحن والبائع عشان التوصيل. وعشان نقيس إعلاناتنا، بنبعت لميتا (فيسبوك) رقمك واسمك الأول ومحافظتك بشكل مشفّر بس. مش بنبيع بياناتك لحد.', en: 'Your details go to the courier and the seller for delivery. To measure our ads, we also send Meta (Facebook) your phone, first name and governorate in hashed (scrambled) form only. We never sell your data.' },
   placing: { ar: 'جاري الطلب…', en: 'Placing order…' },
@@ -257,6 +258,7 @@ const D = {
   // footer
   'ft.open': { ar: 'افتح الشحنة قبل ما تدفع', arF: 'افتحي الشحنة قبل ما تدفعي', en: 'Open the parcel before you pay' },
   'ft.exchange': { ar: 'استبدال مجاني خلال 14 يوم', en: 'Free exchange within 14 days' },
+  'ft.crN': { ar: 'سجل تجاري رقم {n}', en: 'Commercial register no. {n}' },
   'ft.cr': { ar: 'سجل تجاري مسجل في مصر', en: 'Registered business in Egypt' },
   'ft.wa': { ar: 'واتساب خدمة العملاء', en: 'Customer service WhatsApp' },
   'wa.button': { ar: 'كلمنا على واتساب', en: 'Chat with us on WhatsApp' },

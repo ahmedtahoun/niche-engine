@@ -10,7 +10,7 @@ export function Footer({ cfg, s }: { cfg: NicheConfig; s: Speaker }) {
       {cfg.brand.about && <p className="about small">{(s.en && cfg.brand.about.en) || cfg.brand.about.ar}</p>}
       <div className="trust">
         <div>{s.t('ft.exchange')}</div>
-        <div>{s.t('ft.cr')}</div>
+        <div>{cfg.brand.crNumber ? s.t('ft.crN', { n: cfg.brand.crNumber }) : s.t('ft.cr')}</div>
       </div>
       {cfg.brand.whatsapp && <div className="row"><span>{s.t('ft.wa')}</span><a className="num" dir="ltr" href={waLink(cfg.brand.whatsapp, s.t('wa.hello', { brand: s.brand(cfg) }))} rel="noopener" target="_blank" style={{ color: 'var(--primary)', fontWeight: 700 }}>{cfg.brand.whatsapp.replace(/^(\d{4})(\d{3})(\d{4})$/, '$1 $2 $3')}</a></div>}
       <div className="row"><span>{s.t('ft.hours')}</span><span>{s.t('ft.hoursText')}</span></div>

@@ -17,7 +17,7 @@ Supabase is the only place data lives. Every request reads and writes it; nothin
 
 ## 1. Supabase (once)
 
-1. Supabase → **SQL Editor** → run `supabase/migrations/0001_init.sql`, then `0002_database_first.sql`, then `0003_product_photos.sql`, then `0004_seller_profile.sql`, then `0005_english_and_taste.sql` (in that order; each once). `/api/health` shows `"migrations":"ok"` when none is missing.
+1. Supabase → **SQL Editor** → run `supabase/migrations/0001_init.sql`, then `0002_database_first.sql`, then `0003_product_photos.sql`, then `0004_seller_profile.sql`, then `0005_english_and_taste.sql`, then `0006_traffic_and_carts.sql` (in that order; each once). `/api/health` shows `"migrations":"ok"` when none is missing.
 2. **Project Settings → API Keys**: copy the project URL and the **secret** key (`sb_secret_…` or the legacy `service_role`). The secret key goes only into cPanel (step 4), never into the code or a chat.
 
 ## 2. Connect cPanel to GitHub (once)
@@ -93,6 +93,10 @@ As in `DEPLOY.md` step 5, using `https://sakinaeg.com/api/telegram` and `https:/
 **Team alerts:** send `/myid` to the bot, add `ADMIN_TELEGRAM_CHAT_IDS` = that number in the Node app's environment variables (several people: separate with commas), restart. You then get a Telegram message each time someone taps start, begins or finishes a seller application, or submits a product. `/admin/telegram` has a test button.
 
 **Meta Pixel (for ads):** the pixel id is already in `niches/coffee.json` (`brand.metaPixelId`), so the browser pixel works as soon as the site is deployed. For the server copy of each event (Conversions API), in Meta Events Manager open the pixel → Settings → Conversions API → Generate access token, add `META_CAPI_TOKEN` = that token in the Node app's environment variables, restart. To check it, also add `META_TEST_EVENT_CODE` from Events Manager → Test events, browse, add to cart, and place an order: PageView, ViewContent, AddToCart, InitiateCheckout, Purchase and Contact (WhatsApp / phone taps) arrive, each counted once (browser and server share an event id). Then remove the test code and restart. Product ids match the catalog feed (`/feeds/meta-catalog.xml`). Phone, first name and governorate go to Meta only as SHA-256 hashes; the checkout privacy line says so.
+
+**Traffic and abandoned carts:** run `supabase/migrations/0006_traffic_and_carts.sql` once in the Supabase SQL editor (until then both admin pages say so, and the store works as before). Admin → **Traffic** shows visitors per day, sources, top pages and the funnel; no cookies, bots and your own admin visits are left out. Admin → **Abandoned carts** lists checkouts with a phone but no order; an hour after someone leaves (between 10:00 and 21:30 Cairo time), the team chat in `ADMIN_TELEGRAM_CHAT_IDS` gets one alert with a "send on WhatsApp" button that opens the reminder ready to send from your WhatsApp Business number. Optional: add `CRON_SECRET` and a cPanel cron job every 15 minutes: `curl -s "https://cairoroast.com/api/cron?key=<CRON_SECRET>" > /dev/null` (site visits already run the check; the cron covers quiet hours).
+
+**Search engines:** in Google Search Console add a **Domain** property for `cairoroast.com` and verify it with the DNS TXT record at Namecheap (no code needed), then submit `https://cairoroast.com/sitemap.xml`. In Bing Webmaster Tools choose **Import from Google Search Console** (Bing feeds ChatGPT search and Copilot). If you prefer verification tags, set `GOOGLE_SITE_VERIFICATION` / `BING_SITE_VERIFICATION` instead. IndexNow needs nothing: after each deploy the site sends every public page to Bing once, and again whenever a product is saved in admin.
 
 ## 8. Keep an eye on it (free)
 

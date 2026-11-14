@@ -191,3 +191,45 @@ test('guest and admin orders: a phone without an account gets a customer record 
   assert.equal(await signIn(phone, 'secret12'), 'ok');
   await assert.rejects(createAccount(phone, 'x', 'other123'));
 });
+
+test('traffic: the database site_stats() gives the same numbers as the in-memory summary', async () => {
+  const ev = (visitor: string, kind: 'view' | 'cart' | 'checkout' | 'order', path: string, source = 'direct', device: 'mobile' | 'desktop' = 'mobile') => s.addSiteEvent({ niche: 'coffee', visitor, kind, path, source, device, lang: 'ar' });
+  await ev('a', 'view', '/', 'facebook ads'); await ev('a', 'view', '/p/bonds-chrome', 'facebook ads'); await ev('a', 'cart', '/p/bonds-chrome'); await ev('a', 'checkout', '/checkout'); await ev('a', 'order', '/checkout');
+  await ev('b', 'view', '/', 'google', 'desktop'); await ev('b', 'view', '/guide/turkish-coffee-kanaka', 'google', 'desktop');
+  await ev('c', 'view', '/p/bonds-amber', 'chatgpt');
+  const st = await s.siteStats('coffee', new Date(Date.now() - 864e5).toISOString());
+  assert.equal(st.daily.length, 1);
+  assert.equal(Number(st.daily[0].visitors), 3);
+  assert.equal(Number(st.daily[0].views), 5);
+  assert.deepEqual(Object.fromEntries(Object.entries(st.funnel).map(([k, v]) => [k, Number(v)])), { visitors: 3, product: 2, cart: 1, checkout: 1, order: 1 });
+  assert.deepEqual(st.sources.map((x) => x.source), ['chatgpt', 'facebook ads', 'google']);
+  assert.deepEqual(st.pages[0], { path: '/', views: 2 });
+  assert.deepEqual(st.devices.map((x) => [x.device, Number(x.visitors)]), [['mobile', 2], ['desktop', 1]]);
+  assert.equal(Number((await s.siteStats('umrah', new Date(Date.now() - 864e5).toISOString())).funnel.visitors), 0);
+});
+
+test('abandoned checkouts in the database: one live draft per phone, token lookup, status changes, kv', async () => {
+  const cart = [{ kind: 'item' as const, slug: 'bonds-chrome', variant: '250 جم', qty: 1 }];
+  const a = await s.saveDraft({ niche: 'coffee', phone: '01005550000', name: 'Mona', governorate: 'القاهرة', cart, total: 295, lang: 'ar' });
+  const b = await s.saveDraft({ niche: 'coffee', phone: '01005550000', name: 'Mona Ali', governorate: 'القاهرة', cart, total: 295, lang: 'en' });
+  assert.equal(a.id, b.id);
+  assert.equal(b.name, 'Mona Ali');
+  assert.equal(b.lang, 'en');
+  assert.deepEqual((await s.draftByToken(a.token))?.cart, cart);
+  assert.equal(await s.draftByToken('bad token!'), null);
+  await s.updateDraft(a.id, { status: 'alerted', alertedAt: new Date().toISOString() });
+  const listed = await s.listDrafts({ niche: 'coffee', statuses: ['alerted'], updatedAfter: new Date(Date.now() - 3600_000).toISOString(), limit: 10 });
+  assert.deepEqual(listed.map((d) => d.id), [a.id]);
+  assert.equal((await s.listDrafts({ niche: 'coffee', statuses: ['open'], limit: 10 })).length, 0);
+  assert.equal((await s.listDrafts({ phone: '01005550000', updatedBefore: new Date(Date.now() - 3600_000).toISOString(), limit: 10 })).length, 0);
+  await s.updateDraft(a.id, { status: 'ordered', orderId: 1001 });
+  const done = (await s.draftByToken(a.token))!;
+  assert.equal(done.status, 'ordered');
+  assert.equal(done.orderId, 1001);
+  assert.ok(done.alertedAt);
+  assert.deepEqual(await s.missingMigrations(), []);
+  assert.equal(await s.getKv('indexnow:coffee'), null);
+  await s.setKv('indexnow:coffee', 'abc1234');
+  await s.setKv('indexnow:coffee', 'def5678');
+  assert.equal(await s.getKv('indexnow:coffee'), 'def5678');
+});

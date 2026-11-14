@@ -104,6 +104,8 @@ export interface NicheConfig {
     whatsapp?: string;
     /** Meta Pixel id for this niche's site (public; shown in the page). META_PIXEL_IDS can override it. */
     metaPixelId?: string;
+    /** Commercial register number: shown in the footer and in the store's structured data. */
+    crNumber?: string;
     /** One or two lines on who we are, in the footer (e.g. a store that picks from roasters, not a roastery). */
     about?: Bilingual;
     /** Round stamp on product photos, e.g. "Cairo Roast pick" (drawn with the logo). */

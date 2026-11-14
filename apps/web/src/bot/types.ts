@@ -19,6 +19,8 @@ export interface Incoming {
 export interface Button {
   text: string;
   data: string;
+  /** A link button (opens the URL) instead of a bot action; `data` is then ignored. */
+  url?: string;
 }
 
 export interface Outgoing {

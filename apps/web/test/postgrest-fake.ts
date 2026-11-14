@@ -12,7 +12,7 @@ export async function startFakeSupabase(): Promise<{ db: PGlite; fetch: typeof f
   const db = new PGlite();
   await db.exec('create role anon; create role authenticated; create role service_role;');
   const dir = join(import.meta.dirname, '..', '..', '..', 'supabase', 'migrations');
-  for (const f of ['0001_init.sql', '0002_database_first.sql', '0003_product_photos.sql', '0004_seller_profile.sql', '0005_english_and_taste.sql']) await db.exec(readFileSync(join(dir, f), 'utf8'));
+  for (const f of ['0001_init.sql', '0002_database_first.sql', '0003_product_photos.sql', '0004_seller_profile.sql', '0005_english_and_taste.sql', '0006_traffic_and_carts.sql']) await db.exec(readFileSync(join(dir, f), 'utf8'));
 
   const types = new Map<string, Map<string, string>>();
   async function columns(table: string) {

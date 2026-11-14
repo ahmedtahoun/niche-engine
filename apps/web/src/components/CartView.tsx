@@ -1,8 +1,8 @@
 'use client';
 import Link from 'next/link';
-import { useEffect, useState, useTransition } from 'react';
+import { useEffect, useRef, useState, useTransition } from 'react';
 import { quoteCart } from '@/app/actions';
-import type { Quote } from '@/lib/types';
+import type { CartLine, Quote } from '@/lib/types';
 import { Art, BundleArt } from './Art';
 import { useCart } from './cart-store';
 import { useSpeak } from './I18n';
@@ -51,7 +51,23 @@ export function useQuote(niche: string, promo: string, useWallet = false) {
  * removed, size gone). So the cart badge always equals what the cart page shows, also after a reload.
  */
 export function CartSync({ niche }: { niche: string }) {
-  useQuote(niche, '');
+  const [lines, setLines, ready] = useCart(niche);
+  const key = JSON.stringify(lines);
+  useEffect(() => {
+    if (!ready || !lines.length) return;
+    // A plain fetch, not a server action: it must never hold up a tap on a link.
+    const ctl = new AbortController();
+    fetch('/api/ev', { method: 'POST', body: JSON.stringify({ k: 'keep', n: niche, cart: lines }), signal: ctl.signal })
+      .then((r) => r.json() as Promise<{ keep: number[] | null }>)
+      .then(({ keep }) => {
+        if (!keep) return;
+        const ok = new Set(keep);
+        if (lines.slice(0, 20).some((_, i) => !ok.has(i))) setLines(lines.filter((_, i) => ok.has(i) || i >= 20));
+      })
+      .catch(() => {});
+    return () => ctl.abort();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [niche, key, ready]);
   return null;
 }
 
@@ -75,10 +91,18 @@ export function FreeShipBar({ goods, over, hint }: { goods: number; over: number
   );
 }
 
-export function CartView({ niche, depositAbove, deposit, cashback, freeOver, freeHint, initialPromo = '' }: { niche: string; depositAbove: number; deposit: number; cashback: number; freeOver?: number; freeHint?: FreeHint; initialPromo?: string }) {
+export function CartView({ niche, depositAbove, deposit, cashback, freeOver, freeHint, initialPromo = '', restore }: { niche: string; depositAbove: number; deposit: number; cashback: number; freeOver?: number; freeHint?: FreeHint; initialPromo?: string; restore?: CartLine[] }) {
   const [promoInput, setPromoInput] = useState(initialPromo);
   const [promo, setPromo] = useState(initialPromo);
   const { lines, setLines, ready, q, removed } = useQuote(niche, promo);
+  // Reminder link (/cart?d=…): refill the cart when it is empty here (another phone, or cleared).
+  const restored = useRef(false);
+  useEffect(() => {
+    if (!ready || restored.current || !restore?.length) return;
+    restored.current = true;
+    if (!lines.length) setLines(restore);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ready]);
   const s = useSpeak();
   const { t, egp } = s;
 

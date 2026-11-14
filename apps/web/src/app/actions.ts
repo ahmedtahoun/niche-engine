@@ -18,6 +18,8 @@ import { allow, clientIp } from '@/lib/rate-limit';
 import { store } from '@/lib/store';
 import { purchaseEventId, sendEvent, type MetaEvent } from '@/lib/meta';
 import { validEventId } from '@/lib/meta-ids';
+import { markDraftOrdered } from '@/lib/abandoned';
+import { cleanSource, isBot, visitorId } from '@/lib/traffic';
 import { speak, voiceOf } from '@/lib/i18n';
 import { siteUrl } from '@/lib/site';
 import { after } from 'next/server';
@@ -139,9 +141,41 @@ export async function placeOrder(niche: string, cart: CartLine[], form: Checkout
     await deliver([...(order.status === 'confirmed' ? notifyOrder(order, cat) : []), ...orderAlert(order, 'new')]);
     if (guest) await rememberGuestOrder(order.id);
     await reportPurchase(niche, order.id, q, { phone: phone!, name: details.name, governorate: details.governorate });
+    await afterOrder(niche, order.id, phone!, form.utm);
     return { ok: true, id: order.id };
   }
   return { ok: false, errors: { cart: s.t('err.wallet') } };
+}
+
+/** Funnel step for admin → Traffic, and closes the phone's abandoned-checkout draft. Never fails the order. */
+async function afterOrder(niche: string, orderId: number, phone: string, utm: unknown) {
+  const [h, ip] = await Promise.all([headers(), clientIp()]);
+  const ua = h.get('user-agent') ?? '';
+  const source = cleanSource(cleanUtm(utm)?.source);
+  after(async () => {
+    try {
+      if (!isBot(ua)) await store().addSiteEvent({ niche, kind: 'order', path: '/checkout', visitor: visitorId(ip, ua, process.env.SESSION_SECRET ?? ''), source, device: /Mobi|Android|iPhone/i.test(ua) ? 'mobile' : 'desktop', lang: (await getLang()) === 'en' ? 'en' : 'ar' });
+      await markDraftOrdered(niche, phone, orderId);
+    } catch { /* migration 0006 not run yet */ }
+  });
+}
+
+/**
+ * Checkout draft: saved once a valid phone is typed, so the team can remind someone who leaves
+ * without ordering (admin → Carts). Prices come from the catalog; blocked phones are ignored.
+ */
+export async function saveCheckoutDraft(niche: string, cart: CartLine[], f: { phone: string; name: string; governorate: string; promoCode?: string }): Promise<void> {
+  const cfg = getNiche(niche);
+  const me = await currentCustomer();
+  const phone = me?.phone ?? normalizeEgyptPhone(String(f.phone ?? ''));
+  if (!cfg || !phone || !Array.isArray(cart) || !cart.length) return;
+  if (!allow(`draft:${await clientIp()}`, 30, 10 * 60_000) || (await isBlocked(phone))) return;
+  const q = (await catalog()).quote(cfg, cart.slice(0, 20), { promoCode: f.promoCode || undefined, isFirstOrder: false, walletBalance: 0, useWallet: false });
+  if (!q.items.length) return;
+  const lines = cart.slice(0, 20).filter((_, i) => q.lines.some((l) => Number(l.key) === i));
+  try {
+    await store().saveDraft({ niche, phone, name: String(f.name ?? '').trim().slice(0, 80), governorate: GOVERNORATES.includes(f.governorate) ? f.governorate : '', cart: lines, total: q.total, lang: (await getLang()) === 'en' ? 'en' : 'ar' });
+  } catch { /* migration 0006 not run yet */ }
 }
 
 /** Request details Meta uses to match an event to an ad click (Meta's own cookies, IP, browser). */

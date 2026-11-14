@@ -22,6 +22,7 @@ import { takeStock } from '@/lib/stock';
 import { markPaid, paidThisCycle, sellerCycle } from '@/lib/payouts';
 import { allow, clientIp } from '@/lib/rate-limit';
 import { connectWebhook } from '@/lib/telegram-setup';
+import { reminderWaLink } from '@/lib/abandoned';
 
 async function guard() {
   if (!(await isAdmin())) redirect('/admin/login');
@@ -423,4 +424,23 @@ export async function testAdminAlert() {
   const chats = adminChats();
   await deliver(chats.map((chatId) => ({ chatId, text: '✅ تنبيهات سكينة شغالة. هيوصلك هنا كل ما حد يفتح بوت البائعين أو يقدّم أو يبعت منتج.' })));
   redirect(`/admin/telegram?ok=${chats.length ? 1 : 0}&result=${encodeURIComponent(chats.length ? `Test alert sent to ${chats.length} chat(s)` : 'ADMIN_TELEGRAM_CHAT_IDS is not set')}`);
+}
+
+// ---------- abandoned checkouts (Carts) ----------
+/** "Send on WhatsApp": marks the cart as reminded, then opens WhatsApp with the message ready. */
+export async function sendCartReminder(token: string) {
+  await guard();
+  const d = await store().draftByToken(token);
+  const cfg = d && getNiche(d.niche);
+  if (!d || !cfg) return;
+  if (d.status === 'open' || d.status === 'alerted') await store().updateDraft(d.id, { status: 'reminded', remindedAt: new Date().toISOString() });
+  revalidatePath('/admin/carts');
+  redirect(await reminderWaLink(d, cfg));
+}
+
+export async function dismissCart(token: string) {
+  await guard();
+  const d = await store().draftByToken(token);
+  if (d && d.status !== 'ordered') await store().updateDraft(d.id, { status: 'dismissed' });
+  revalidatePath('/admin/carts');
 }

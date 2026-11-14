@@ -2,11 +2,13 @@
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useEffect, useRef, useState, useTransition } from 'react';
-import { placeOrder, reportCartEvent, type CheckoutForm as Form } from '@/app/actions';
+import { placeOrder, type CheckoutForm as Form } from '@/app/actions';
+import { sendDraft, sendMetaEvent } from './background';
 import { newEventId, purchaseEventId } from '@/lib/meta-ids';
 import type { Quote } from '@/lib/types';
 import { savedCampaign } from './Campaign';
 import { track } from './Pixel';
+import { trackSite } from './SiteTracker';
 
 const pixelData = (q: Quote) => ({ content_ids: [...new Set(q.items.map((i) => i.productId))], content_type: 'product_group' as const, value: q.total, num_items: q.items.reduce((a, i) => a + i.qty, 0) });
 import { writeCart } from './cart-store';
@@ -44,9 +46,20 @@ export function CheckoutForm({ niche, governorates, initialPromo, openBeforePay,
     // Value before shipping (goods after discounts), as Meta reads checkout value.
     const eid = newEventId('ic');
     track('InitiateCheckout', { ...pixelData(q), value: q.subtotal - q.bundleDiscount - q.promoDiscount }, eid);
-    void reportCartEvent(niche, 'InitiateCheckout', eid, lines, form.promoCode).catch(() => {});
+    sendMetaEvent(niche, 'InitiateCheckout', eid, lines, form.promoCode);
+    trackSite('checkout');
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [q]);
+  // Abandoned-checkout draft: saved about a second after a valid phone is typed (and on later changes),
+  // so the team can send one WhatsApp reminder if the order is never placed.
+  const draftKey = JSON.stringify([form.phone, form.name, form.governorate, form.promoCode, lines]);
+  useEffect(() => {
+    const digits = form.phone.replace(/[٠-٩]/g, (c) => String(c.charCodeAt(0) - 0x0660)).replace(/\D/g, '');
+    if (!lines.length || !/^(20|0020)?0?1[0125]\d{8}$/.test(digits)) return;
+    const id = setTimeout(() => sendDraft(niche, lines, { phone: form.phone, name: form.name, governorate: form.governorate, promo: form.promoCode }), 1200);
+    return () => clearTimeout(id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [draftKey]);
   const set = (k: keyof Form) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => setForm({ ...form, [k]: e.target.value });
 
   if (ready && !lines.length) return <div className="box" style={{ textAlign: 'center' }}><b>{t('cartEmpty')}</b><Link className="btn primary" href={s.href()}>{t('startShopping')}</Link></div>;
@@ -69,7 +82,7 @@ export function CheckoutForm({ niche, governorates, initialPromo, openBeforePay,
   return (
     <form onSubmit={submit} style={{ display: 'grid', gap: 14 }} noValidate>
       <div><h1 className="title">{t('co.title')}</h1><p className="muted" style={{ margin: '4px 0 0' }}>{me ? t('co.hello', { name: me.name.split(' ')[0] }) : t('co.new')}</p></div>
-      <label className="field">{t('phone')}<input value={form.phone} onChange={set('phone')} readOnly={Boolean(me)} inputMode="tel" autoComplete="tel" dir="ltr" style={{ textAlign: 'start' }} placeholder="01xxxxxxxxx" {...inv('phone')} />{err('phone')}</label>
+      <label className="field">{t('phone')}<input value={form.phone} onChange={set('phone')} readOnly={Boolean(me)} inputMode="tel" autoComplete="tel" dir="ltr" style={{ textAlign: 'start' }} placeholder="01xxxxxxxxx" {...inv('phone')} />{err('phone')}{!me && <span className="muted small">{t('co.waNote')}</span>}</label>
       <label className="field">{t('name')}<input value={form.name} onChange={set('name')} autoComplete="name" {...inv('name')} />{err('name')}</label>
       <div className="two">
         <label className="field">{t('governorate')}<select value={form.governorate} onChange={set('governorate')}>{governorates.map((g) => <option key={g} value={g}>{gov(g)}</option>)}</select></label>

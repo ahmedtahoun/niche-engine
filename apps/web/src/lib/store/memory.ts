@@ -6,7 +6,9 @@ import type { Account } from '../customers.ts';
 import type { Order } from '../orders.ts';
 import type { Product, Seller } from '../types.ts';
 import type { WalletEntry } from '../wallet.ts';
-import type { AppendResult, NewOrder, NewWalletEntry, OrderFilter, Store } from './types.ts';
+import { randomBytes } from 'node:crypto';
+import { summarize, type SiteEvent } from '../traffic.ts';
+import type { AppendResult, Draft, DraftInput, NewOrder, NewWalletEntry, OrderFilter, Store } from './types.ts';
 
 const copy = <T>(x: T): T => structuredClone(x);
 const ONCE_PER_ORDER = new Set(['cashback', 'refund', 'spend']);
@@ -27,6 +29,10 @@ export class MemoryStore implements Store {
   private payouts = new Map<string, { amount: number; paidAt: string }>();
   private botSessions = new Map<number, unknown>();
   private telegramUpdates = new Set<number>();
+  private siteEvents: SiteEvent[] = [];
+  private drafts: Draft[] = [];
+  private nextDraftId = 1;
+  private kv = new Map<string, string>();
 
   constructor(seed: { sellers?: Seller[]; products?: Product[] } = {}) {
     this.sellers = copy(seed.sellers ?? []);
@@ -126,6 +132,35 @@ export class MemoryStore implements Store {
   async getBotSession<T>(chatId: number) { const s = this.botSessions.get(chatId); return (s === undefined ? null : copy(s)) as T | null; }
   async setBotSession(chatId: number, state: unknown | null) { if (state === null) this.botSessions.delete(chatId); else this.botSessions.set(chatId, copy(state)); }
   async claimTelegramUpdate(updateId: number) { if (this.telegramUpdates.has(updateId)) return false; this.telegramUpdates.add(updateId); return true; }
+
+  // ---------- traffic ----------
+  async addSiteEvent(e: SiteEvent) { this.siteEvents.push({ ...copy(e), at: e.at ?? new Date().toISOString() }); }
+  async siteStats(niche: string, sinceIso: string) { return summarize(this.siteEvents.filter((e) => e.niche === niche && (e.at ?? '') >= sinceIso)); }
+
+  // ---------- abandoned checkouts ----------
+  async saveDraft(d: DraftInput) {
+    const now = new Date().toISOString();
+    const live = this.drafts.find((x) => x.niche === d.niche && x.phone === d.phone && (x.status === 'open' || x.status === 'alerted'));
+    if (live) { Object.assign(live, copy(d), { updatedAt: now }); return copy(live); }
+    const draft: Draft = { ...copy(d), id: this.nextDraftId++, token: randomBytes(12).toString('base64url'), status: 'open', createdAt: now, updatedAt: now };
+    this.drafts.push(draft);
+    return copy(draft);
+  }
+  async listDrafts(f: { niche?: string; phone?: string; statuses?: Draft['status'][]; updatedBefore?: string; updatedAfter?: string; limit: number }) {
+    return copy(this.drafts
+      .filter((d) => (!f.niche || d.niche === f.niche) && (!f.phone || d.phone === f.phone) && (!f.statuses || f.statuses.includes(d.status))
+        && (!f.updatedBefore || d.updatedAt < f.updatedBefore) && (!f.updatedAfter || d.updatedAt >= f.updatedAfter))
+      .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt)).slice(0, f.limit));
+  }
+  async draftByToken(token: string) { const d = this.drafts.find((x) => x.token === token); return d ? copy(d) : null; }
+  async updateDraft(id: number, patch: Partial<Pick<Draft, 'status' | 'orderId' | 'alertedAt' | 'remindedAt'>>) {
+    const d = this.drafts.find((x) => x.id === id);
+    if (d) Object.assign(d, copy(patch));
+  }
+
+  // ---------- small settings ----------
+  async getKv(key: string) { return this.kv.get(key) ?? null; }
+  async setKv(key: string, value: string) { this.kv.set(key, value); }
 
   // ---------- operations ----------
   async syncNiches() {}

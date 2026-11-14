@@ -2,13 +2,15 @@
 import Link from 'next/link';
 import { usePathname, useSearchParams } from 'next/navigation';
 
-export function Nav({ counts }: { counts: { orders: number; review: number; applied: number } }) {
+export function Nav({ counts }: { counts: { orders: number; review: number; applied: number; carts?: number } }) {
   const path = usePathname();
   const niche = useSearchParams().get('niche');
   const q = niche ? `?niche=${niche}` : '';
   const items: [string, string, number?][] = [
     ['/admin', 'Overview'],
     ['/admin/orders', 'Orders', counts.orders],
+    ['/admin/carts', 'Abandoned carts', counts.carts],
+    ['/admin/traffic', 'Traffic'],
     ['/admin/customers', 'Customers'],
     ['/admin/sellers', 'Sellers', counts.applied],
     ['/admin/products', 'Products', counts.review],

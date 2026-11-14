@@ -257,6 +257,16 @@ export function catalog(): Promise<Catalog> {
 export const invalidateCatalog = () => { g.__catalog = undefined; };
 
 export async function saveSeller(s: Seller) { await store().saveSeller(s); invalidateCatalog(); }
-export async function saveProduct(p: Product) { await store().saveProduct(p); invalidateCatalog(); }
+export async function saveProduct(p: Product) {
+  await store().saveProduct(p);
+  invalidateCatalog();
+  // Tell search engines the page changed (IndexNow; production only, never blocks or fails the save).
+  void import('./seo.ts').then(async ({ submitIndexNow }) => {
+    const { getNiche } = await import('./niches.ts');
+    const { siteUrl } = await import('./site.ts');
+    const cfg = getNiche(p.niche);
+    if (cfg) await submitIndexNow(cfg, [siteUrl(cfg, `/p/${p.slug}`, 'ar'), siteUrl(cfg, `/p/${p.slug}`, 'en')]);
+  }).catch(() => {});
+}
 export async function deleteSeller(id: string) { await store().deleteSeller(id); invalidateCatalog(); }
 export async function deleteProduct(id: string) { await store().deleteProduct(id); invalidateCatalog(); }

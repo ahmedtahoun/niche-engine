@@ -275,3 +275,16 @@ a.above { text-decoration: none; }
 .live-n b { display: block; font-size: 40px; line-height: 1; font-weight: 700; font-variant-numeric: tabular-nums; }
 .live-n span { color: var(--a-muted); font-size: 13px; }
 @media (max-width: 900px) { .live-grid { grid-template-columns: 1fr; } }
+
+/* New-order alerts (OrderAlerts) */
+.alerts-switch { display: grid; gap: 8px; margin-top: 14px; }
+.alerts-sum { display: grid; gap: 4px; font-size: 12.5px; }
+.alerts-sum a { color: var(--a-ink); text-decoration: none; padding: 4px 8px; border-radius: 8px; background: var(--a-accent-soft); font-weight: 600; }
+.order-toasts { position: fixed; top: 16px; right: 16px; z-index: 50; display: grid; gap: 10px; width: min(340px, calc(100vw - 32px)); }
+.order-toast { display: flex; gap: 8px; align-items: flex-start; background: var(--a-surface); border: 1px solid var(--a-line); border-inline-start: 4px solid var(--a-accent); border-radius: 12px; padding: 12px 12px 12px 14px; box-shadow: 0 10px 30px rgba(24, 33, 30, .16); animation: toast-in .2s ease; }
+.order-toast a { flex: 1; display: grid; gap: 2px; color: var(--a-ink); text-decoration: none; font-size: 13px; }
+.order-toast a b { font-size: 14px; }
+.order-toast a span { color: var(--a-muted); }
+.order-toast button { border: 0; background: none; font-size: 20px; line-height: 1; color: var(--a-muted); cursor: pointer; padding: 0 4px; }
+@keyframes toast-in { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) { .order-toast { animation: none; } }

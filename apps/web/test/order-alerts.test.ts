@@ -36,3 +36,13 @@ test('no team chat set: no alerts', () => {
   assert.deepEqual(orderAlert(o, 'new'), []);
   process.env.ADMIN_TELEGRAM_CHAT_IDS = saved;
 });
+
+test('team chat numbers: English or Arabic comma, spaces, Arabic digits; junk ignored', async () => {
+  const { parseChatIds } = await import('../src/bot/alerts.ts');
+  assert.deepEqual(parseChatIds('5770925631،1982483835'), [5770925631, 1982483835]);
+  assert.deepEqual(parseChatIds('5770925631, 1982483835'), [5770925631, 1982483835]);
+  assert.deepEqual(parseChatIds(' 5770925631 ; -100123 '), [5770925631, -100123]);
+  assert.deepEqual(parseChatIds('٥٧٧٠٩٢٥٦٣١'), [5770925631]);
+  assert.deepEqual(parseChatIds('abc,,0'), []);
+  assert.deepEqual(parseChatIds(undefined), []);
+});

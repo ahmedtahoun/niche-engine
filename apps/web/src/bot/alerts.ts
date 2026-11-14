@@ -4,7 +4,13 @@ import { getNiche } from '../lib/niches.ts';
 import { utmLabel, type Order } from '../lib/orders.ts';
 import type { Outgoing } from './types.ts';
 
-export const adminChats = () => (process.env.ADMIN_TELEGRAM_CHAT_IDS ?? '').split(',').map((x) => Number(x.trim())).filter((x) => Number.isSafeInteger(x) && x !== 0);
+/** Team chat numbers. Separated by English or Arabic commas (، from an Arabic keyboard), semicolons or spaces; Arabic digits work too. */
+export const parseChatIds = (raw: string | undefined) => (raw ?? '')
+  .replace(/[٠-٩]/g, (c) => String(c.charCodeAt(0) - 0x0660))
+  .split(/[\s,،;]+/)
+  .map((x) => Number(x.trim()))
+  .filter((x) => Number.isSafeInteger(x) && x !== 0);
+export const adminChats = () => parseChatIds(process.env.ADMIN_TELEGRAM_CHAT_IDS);
 export const adminAlerts = (texts: string[]): Outgoing[] => texts.flatMap((text) => adminChats().map((chatId) => ({ chatId, text })));
 
 export type OrderEvent = 'new' | 'confirmed' | 'accepted' | 'rejected' | 'picked' | 'delivered' | 'refused' | 'cancelled';

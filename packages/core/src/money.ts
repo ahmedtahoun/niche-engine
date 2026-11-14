@@ -11,6 +11,8 @@ export interface Line {
   qty: number;
   /** Wholesale price agreed with the seller: the seller gets exactly this and the platform keeps the rest (no commission rate). */
   unitCost?: number;
+  /** Part of a bundle (bundle prices already carry a discount). */
+  inBundle?: boolean;
 }
 
 export interface CartInput {
@@ -63,7 +65,11 @@ export function cartTotals(input: CartInput, cfg: NicheConfig): CartTotals {
   let promoDiscount = 0;
   let promoRejected: string | undefined;
   if (input.promo) {
-    const r = promoDiscountFor(input.promo, afterBundles, shipping, input.isFirstOrder);
+    // Codes that skip bundles apply to the items bought on their own only.
+    const base = input.promo.excludeBundles ? subtotalOf(input.lines.filter((l) => !l.inBundle)) : afterBundles;
+    const r = input.promo.excludeBundles && base === 0 && input.promo.kind !== 'free_shipping'
+      ? { amount: 0, rejected: 'bundles_excluded' }
+      : promoDiscountFor(input.promo, base, shipping, input.isFirstOrder);
     promoDiscount = r.amount;
     promoRejected = r.rejected;
   }

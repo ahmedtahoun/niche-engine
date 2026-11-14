@@ -16,7 +16,9 @@ import { GOVERNORATES } from '@/lib/eta';
 import { isBlocked } from '@/lib/blocklist';
 import { allow, clientIp } from '@/lib/rate-limit';
 import { store } from '@/lib/store';
-import { sendPurchase } from '@/lib/meta';
+import { purchaseEventId, sendEvent, type MetaEvent } from '@/lib/meta';
+import { validEventId } from '@/lib/meta-ids';
+import { speak, voiceOf } from '@/lib/i18n';
 import { siteUrl } from '@/lib/site';
 import { after } from 'next/server';
 import { cookies, headers } from 'next/headers';
@@ -136,22 +138,47 @@ export async function placeOrder(niche: string, cart: CartLine[], form: Checkout
     await takeStock(order);
     await deliver([...(order.status === 'confirmed' ? notifyOrder(order, cat) : []), ...orderAlert(order, 'new')]);
     if (guest) await rememberGuestOrder(order.id);
-    await reportPurchase(niche, order.id, q);
+    await reportPurchase(niche, order.id, q, { phone: phone!, name: details.name, governorate: details.governorate });
     return { ok: true, id: order.id };
   }
   return { ok: false, errors: { cart: s.t('err.wallet') } };
 }
 
+/** Request details Meta uses to match an event to an ad click (Meta's own cookies, IP, browser). */
+async function metaContext(cfg: NonNullable<ReturnType<typeof getNiche>>, path: string) {
+  const [h, jar, ip] = await Promise.all([headers(), cookies(), clientIp()]);
+  return { url: siteUrl(cfg, path), ip, userAgent: h.get('user-agent') ?? undefined, fbp: jar.get('_fbp')?.value, fbc: jar.get('_fbc')?.value };
+}
+
 /** Meta Conversions API: the purchase, sent after the reply so the customer never waits for Meta. */
-async function reportPurchase(niche: string, orderId: number, q: Quote) {
+async function reportPurchase(niche: string, orderId: number, q: Quote, customer: { phone: string; name: string; governorate: string }) {
   const cfg = getNiche(niche);
   if (!cfg) return;
-  const [h, jar, ip] = await Promise.all([headers(), cookies(), clientIp()]);
-  const event = {
-    orderId, value: q.total, productIds: q.items.map((i) => i.productId), numItems: q.items.reduce((a, i) => a + i.qty, 0),
-    url: siteUrl(cfg, '/checkout'), ip, userAgent: h.get('user-agent') ?? undefined, fbp: jar.get('_fbp')?.value, fbc: jar.get('_fbc')?.value,
+  const event: MetaEvent = {
+    name: 'Purchase', eventId: purchaseEventId(orderId), orderId, value: q.total, productIds: q.items.map((i) => i.productId), numItems: q.items.reduce((a, i) => a + i.qty, 0),
+    customer: { phone: customer.phone, firstName: customer.name, city: speak('en', voiceOf(cfg)).gov(customer.governorate) },
+    ...(await metaContext(cfg, '/checkout')),
   };
-  after(() => sendPurchase(niche, event));
+  after(() => sendEvent(niche, cfg.brand.metaPixelId, event));
+}
+
+/**
+ * The server copy of a browser AddToCart / InitiateCheckout (same event id). Prices come from the
+ * catalog, never from the browser. A signed-in customer's phone, name and governorate go hashed.
+ */
+export async function reportCartEvent(niche: string, kind: 'AddToCart' | 'InitiateCheckout', eventId: string, cart: CartLine[], promoCode = ''): Promise<void> {
+  const cfg = getNiche(niche);
+  if (!cfg || !validEventId(eventId) || !Array.isArray(cart) || !cart.length) return;
+  if (!allow(`meta:${await clientIp()}`, 60, 10 * 60_000)) return;
+  const me = await currentCustomer();
+  const q = (await catalog()).quote(cfg, cart.slice(0, 20), { promoCode: promoCode || undefined, isFirstOrder: false, walletBalance: 0, useWallet: false });
+  if (!q.items.length) return;
+  const event: MetaEvent = {
+    name: kind, eventId, value: q.subtotal - q.bundleDiscount - q.promoDiscount, productIds: q.items.map((i) => i.productId), numItems: q.items.reduce((a, i) => a + i.qty, 0),
+    ...(me ? { customer: { phone: me.phone, firstName: me.name, city: me.governorate ? speak('en', voiceOf(cfg)).gov(me.governorate) : undefined } } : {}),
+    ...(await metaContext(cfg, kind === 'AddToCart' ? '/' : '/checkout')),
+  };
+  after(() => sendEvent(niche, cfg.brand.metaPixelId, event));
 }
 
 async function ownOrder(niche: string, id: number) {

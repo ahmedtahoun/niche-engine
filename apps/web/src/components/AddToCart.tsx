@@ -4,9 +4,13 @@ import { useEffect, useState } from 'react';
 import type { Choice, OptionAxis } from '@niche-engine/core';
 import type { Variant } from '@/lib/types';
 import { gramsOf } from '@/lib/weights';
+import { waLink } from '@/lib/site';
 import { addLine } from './cart-store';
 import { useSpeak } from './I18n';
 import { track } from './Pixel';
+import { reportCartEvent } from '@/app/actions';
+import { newEventId } from '@/lib/meta-ids';
+import type { CartLine } from '@/lib/types';
 
 const HEIGHTS: [string, number][] = [['150–155', 1], ['156–162', 2], ['163–168', 3], ['169+', 4]];
 const WEIGHTS: [string, number][] = [['< 65', 0], ['65–85', 0], ['85+', 1]];
@@ -90,7 +94,7 @@ function useAxes(variants: Variant[], axes: OptionAxis[]) {
   return { values, sel, setSel, chosen, ok, missing };
 }
 
-export function AddToCart({ niche, slug, productId, price, variants, finder, axes = [], choices = [], freeOver, onAdded, detailsHref }: { niche: string; slug: string; /** For the Meta Pixel (matches the catalog feed). */ productId?: string; price: number; variants: Variant[]; finder: 'size' | null; axes?: OptionAxis[]; choices?: Choice[]; freeOver?: number; /** Quick-add sheet: a quantity stepper and one add button; called after adding. */ onAdded?: () => void; detailsHref?: string }) {
+export function AddToCart({ niche, slug, productId, notify, price, variants, finder, axes = [], choices = [], freeOver, onAdded, detailsHref }: { niche: string; slug: string; /** For the Meta Pixel (matches the catalog feed). */ productId?: string; /** WhatsApp "tell me when it's back" for sold-out sizes. */ notify?: { whatsapp: string; name: string }; price: number; variants: Variant[]; finder: 'size' | null; axes?: OptionAxis[]; choices?: Choice[]; freeOver?: number; /** Quick-add sheet: a quantity stepper and one add button; called after adding. */ onAdded?: () => void; detailsHref?: string }) {
   const router = useRouter();
   const s = useSpeak();
   const t = s.t;
@@ -118,8 +122,13 @@ export function AddToCart({ niche, slug, productId, price, variants, finder, axe
   const add = (go: boolean) => {
     if (!variant) return;
     const n = onAdded ? qty : 1;
-    addLine(niche, { kind: 'item', slug, variant, qty: n, ...(choices.length ? { choice: Object.fromEntries(choices.map((c) => [c.id, picked[c.id]])) } : {}) });
-    if (productId) track('AddToCart', { content_ids: [productId], content_type: 'product_group', value: shown * n, num_items: n });
+    const line: CartLine = { kind: 'item', slug, variant, qty: n, ...(choices.length ? { choice: Object.fromEntries(choices.map((c) => [c.id, picked[c.id]])) } : {}) };
+    addLine(niche, line);
+    if (productId) {
+      const eid = newEventId('atc');
+      track('AddToCart', { content_ids: [productId], content_type: 'product_group', value: shown * n, num_items: n }, eid);
+      void reportCartEvent(niche, 'AddToCart', eid, [line]).catch(() => {});
+    }
     if (onAdded) onAdded();
     else if (go) router.push(s.href(`/checkout`));
     else setAdded(true);
@@ -159,6 +168,9 @@ export function AddToCart({ niche, slug, productId, price, variants, finder, axe
                   : freeOver && big.v.price! >= freeOver ? t('bigFree', { big: axisValue(a, big.x) }) : null;
                 return text ? <button type="button" className="nudge" onClick={() => ax.setSel({ ...ax.sel, [a.id]: big.x })}>{text}{freeOver && big.v.price! >= freeOver && save > 0 && Number.isInteger(n) ? ` · 🚚` : ''}</button> : null;
               })()}
+              {notify && ax.values(a.id).filter((x) => !variants.some((y) => y.opts?.[a.id] === x && y.stock > 0)).map((x) => (
+                <a key={x} className="notify-wa small" href={waLink(notify.whatsapp, t('out.waSizeText', { name: notify.name, size: axisValue(a, x) }))} target="_blank" rel="noopener">{t('out.waSize', { size: axisValue(a, x) })}</a>
+              ))}
             </div>
           ))
         ) : twoStep ? (
@@ -202,6 +214,11 @@ export function AddToCart({ niche, slug, productId, price, variants, finder, axe
             </div>
           </>
         )}
+        {(() => {
+          // Price per 100 g of the size picked (not the cheapest size, which may be sold out).
+          const g = chosen ? gramsOf(chosen.opts?.weight ?? chosen.label) : null;
+          return g && chosen ? <div className="per100 num">{t('per100', { x: s.egp(Math.round(((chosen.price ?? price) / g) * 100)) })}</div> : null;
+        })()}
         {choices.length > 0 && <ChoicePicker niche={niche} choices={choices} picked={picked} setPicked={setPicked} />}
       </section>
       {onAdded ? (
@@ -250,7 +267,16 @@ export function AddBundle({ niche, id, variants, label, choices = [], productIds
       )}
       {choices.length > 0 && <section style={{ display: 'grid', gap: 12 }}><ChoicePicker niche={niche} choices={choices} picked={picked} setPicked={setPicked} /></section>}
       <div className="sticky">
-        <button type="button" className="btn primary block" disabled={!variant || Boolean(choiceMissing)} onClick={() => { addLine(niche, { kind: 'bundle', id, variant: variant === '-' ? '' : variant, qty: 1, ...(choices.length ? { choice: Object.fromEntries(choices.map((c) => [c.id, picked[c.id]])) } : {}) }); if (productIds?.length) track('AddToCart', { content_ids: productIds, content_type: 'product_group', content_name: id, ...(price ? { value: price } : {}) }); router.push(s.href(`/cart`)); }}>
+        <button type="button" className="btn primary block" disabled={!variant || Boolean(choiceMissing)} onClick={() => {
+          const line: CartLine = { kind: 'bundle', id, variant: variant === '-' ? '' : variant, qty: 1, ...(choices.length ? { choice: Object.fromEntries(choices.map((c) => [c.id, picked[c.id]])) } : {}) };
+          addLine(niche, line);
+          if (productIds?.length) {
+            const eid = newEventId('atc');
+            track('AddToCart', { content_ids: productIds, content_type: 'product_group', content_name: id, num_items: 1, ...(price ? { value: price } : {}) }, eid);
+            void reportCartEvent(niche, 'AddToCart', eid, [line]).catch(() => {});
+          }
+          router.push(s.href(`/cart`));
+        }}>
           {!variant ? s.t('pickX', { x: label }) : choiceMissing ? s.choice(choiceMissing) : s.t('addBundle')}
         </button>
       </div>

@@ -2,8 +2,8 @@
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useEffect, useRef, useState, useTransition } from 'react';
-import { placeOrder, type CheckoutForm as Form } from '@/app/actions';
-import { purchaseEventId } from '@/lib/meta';
+import { placeOrder, reportCartEvent, type CheckoutForm as Form } from '@/app/actions';
+import { newEventId, purchaseEventId } from '@/lib/meta-ids';
 import type { Quote } from '@/lib/types';
 import { savedCampaign } from './Campaign';
 import { track } from './Pixel';
@@ -25,6 +25,9 @@ export function CheckoutForm({ niche, governorates, initialPromo, openBeforePay,
   const { t, egp, gov, date } = s;
   const [form, setForm] = useState<Form>({ phone: me?.phone ?? '', name: me?.name ?? '', governorate: me?.governorate || governorates[0], area: me?.area ?? '', address: me?.address ?? '', landmark: me?.landmark ?? '', payment: 'cod', promoCode: initialPromo, password: '', useWallet: Boolean(wallet && wallet.balance > 0) });
   const [errors, setErrors] = useState<Record<string, string>>({});
+  // The optional password stays behind a link; it opens by itself if the server asks for it (e.g. the phone has an account).
+  const [showPw, setShowPw] = useState(false);
+  useEffect(() => { if (errors.password) setShowPw(true); }, [errors.password]);
   const [pending, start] = useTransition();
   const { lines, ready, q } = useQuote(niche, form.promoCode, form.useWallet);
   // The governorate picked on a product page ("arrives … to") is the starting choice here, and the other way round.
@@ -38,7 +41,11 @@ export function CheckoutForm({ niche, governorates, initialPromo, openBeforePay,
   useEffect(() => {
     if (!q || started.current || !q.items.length) return;
     started.current = true;
-    track('InitiateCheckout', pixelData(q));
+    // Value before shipping (goods after discounts), as Meta reads checkout value.
+    const eid = newEventId('ic');
+    track('InitiateCheckout', { ...pixelData(q), value: q.subtotal - q.bundleDiscount - q.promoDiscount }, eid);
+    void reportCartEvent(niche, 'InitiateCheckout', eid, lines, form.promoCode).catch(() => {});
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [q]);
   const set = (k: keyof Form) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => setForm({ ...form, [k]: e.target.value });
 
@@ -70,7 +77,10 @@ export function CheckoutForm({ niche, governorates, initialPromo, openBeforePay,
       </div>
       <label className="field">{t('street')}<input value={form.address} onChange={set('address')} autoComplete="street-address" {...inv('address')} />{err('address')}</label>
       <label className="field">{t('landmark')}<input value={form.landmark} onChange={set('landmark')} placeholder={t('landmarkPh')} /></label>
-      {!me && (
+      {!me && !showPw && (
+        <button type="button" className="linkish small" onClick={() => setShowPw(true)}>{t('co.pwLink')}</button>
+      )}
+      {!me && showPw && (
         <label className="field">{t('passwordOptional')}
           <input type="password" value={form.password} onChange={set('password')} autoComplete="current-password" {...inv('password')} />
           <span className="muted small">{t('co.pwHelp')}</span>
@@ -90,6 +100,10 @@ export function CheckoutForm({ niche, governorates, initialPromo, openBeforePay,
           <div><b>{t('useWallet', { x: egp(wallet.balance) })}</b><span className="muted">{wallet.nextExpiry ? t('walletExpires', { x: egp(wallet.nextExpiry.amount), day: date(wallet.nextExpiry.at) }) : ''}{t('walletNoShip')}</span></div>
         </label>
       )}
+      {q?.problems.includes('promo_unknown') && <div className="note bad">{t('promoUnknown')}</div>}
+      {q?.promoRejected === 'first_order_only' && <div className="note warn">{t('promoFirst')}</div>}
+      {q?.promoRejected === 'bundles_excluded' && <div className="note warn">{t('promoNoBundles')}</div>}
+      {q && q.promoDiscount > 0 && <div className="note ok">{t('promoOk', { x: egp(q.promoDiscount) })}</div>}
       {q && <Summary q={q} />}
       {err('cart')}
       <p className="muted" style={{ margin: 0 }}>{t('co.privacy')}</p>

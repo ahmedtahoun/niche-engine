@@ -40,7 +40,8 @@ export function gramsOf(label: string): number | null {
 
 /** Best price per 100 g across a product's weights (null for products sold by size, not weight). */
 export function bestPer100g(p: Product): number | null {
-  const per = p.variants.flatMap((v) => { const g = gramsOf(v.label); return g ? [((v.price ?? p.price) / g) * 100] : []; });
+  // Sizes on sale only: a sold-out big bag must not make the price look lower than anything you can buy.
+  const per = p.variants.filter((v) => v.stock > 0).flatMap((v) => { const g = gramsOf(v.opts?.weight ?? v.label); return g ? [((v.price ?? p.price) / g) * 100] : []; });
   return per.length ? Math.min(...per) : null;
 }
 
@@ -193,7 +194,7 @@ export class Catalog {
     const problems: string[] = [];
     const priced: PricedLine[] = [];
     const items: OrderItem[] = [];
-    const coreLines: { sellerId: string; unitPrice: number; qty: number }[] = [];
+    const coreLines: { sellerId: string; unitPrice: number; qty: number; unitCost?: number; inBundle?: boolean }[] = [];
     let bundleDiscount = 0;
 
     cart.slice(0, 20).forEach((line, i) => {
@@ -221,7 +222,7 @@ export class Catalog {
           rows.push({ sellerId: pt.product.sellerId, productId: pt.product.id, name: pt.product.nameAr, variant: [label, ...extra].join(' · '), qty: pt.qty * qty, unitPrice: priceOf(pt.product, label), ...(costOf(pt.product, label) !== undefined ? { unitCost: costOf(pt.product, label) } : {}) });
         }
         for (const r of rows) {
-          coreLines.push({ sellerId: r.sellerId, unitPrice: r.unitPrice, qty: r.qty, ...(r.unitCost !== undefined ? { unitCost: r.unitCost } : {}) });
+          coreLines.push({ sellerId: r.sellerId, unitPrice: r.unitPrice, qty: r.qty, inBundle: true, ...(r.unitCost !== undefined ? { unitCost: r.unitCost } : {}) });
           items.push(r);
         }
         const full = rows.reduce((a, r) => a + r.unitPrice * r.qty, 0);

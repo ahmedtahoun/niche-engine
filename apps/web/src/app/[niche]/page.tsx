@@ -212,7 +212,7 @@ export default async function Home({ params }: P) {
         </Link>
       )}
       <Footer cfg={cfg} s={s} />
-      {products.length > 0 && <MiniCart niche={cfg.id} freeOver={cfg.freeShippingOverEgp} />}
+      {products.length > 0 && <MiniCart niche={cfg.id} freeOver={cfg.freeShippingOverEgp} freeHint={cfg.freeShippingHint} />}
       {products.length > 0 && <QuickAddSheet niche={cfg.id} axes={cfg.optionAxes ?? []} freeOver={cfg.freeShippingOverEgp} />}
     </main>
   );

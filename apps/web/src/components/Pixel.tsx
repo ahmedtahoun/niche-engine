@@ -18,7 +18,7 @@ function send(c: Call) {
   try { window.fbq?.(...c); } catch { /* the pixel must never break the store */ }
 }
 
-export function track(event: 'ViewContent' | 'AddToCart' | 'InitiateCheckout' | 'Purchase', data: PixelData, eventId?: string) {
+export function track(event: 'ViewContent' | 'AddToCart' | 'InitiateCheckout' | 'Purchase' | 'Contact', data: PixelData, eventId?: string) {
   const c: Call = eventId ? ['track', event, { currency: 'EGP', ...data }, { eventID: eventId }] : ['track', event, { currency: 'EGP', ...data }];
   if (window.fbq) send(c);
   else if (!pixelOn && early.length < 20) early.push(c);
@@ -39,6 +39,17 @@ export function MetaPixel({ id }: { id: string }) {
       window.fbq('init', id);
     }
   }, [id]);
+  useEffect(() => {
+    // Contact: any tap on a WhatsApp or phone link, wherever it is on the page.
+    const onClick = (e: MouseEvent) => {
+      const a = (e.target as Element | null)?.closest?.('a[href]') as HTMLAnchorElement | null;
+      const href = a?.getAttribute('href') ?? '';
+      if (/^(https?:\/\/)?(wa\.me|api\.whatsapp\.com)\//i.test(href)) track('Contact', { content_name: 'whatsapp' });
+      else if (href.startsWith('tel:')) track('Contact', { content_name: 'phone' });
+    };
+    document.addEventListener('click', onClick, true);
+    return () => document.removeEventListener('click', onClick, true);
+  }, []);
   useEffect(() => {
     // Client-side navigation does not reload the page, so each route change is its own PageView.
     send(['track', 'PageView']);

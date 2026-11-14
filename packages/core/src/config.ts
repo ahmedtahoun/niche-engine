@@ -39,6 +39,8 @@ export interface Promo {
   fundedBy: 'platform' | 'seller';
   firstOrderOnly: boolean;
   minOrderEgp: number;
+  /** Percent/fixed codes: count only items bought on their own, not bundles (they already carry a discount). */
+  excludeBundles?: boolean;
 }
 
 /** One option a product's variants vary by (e.g. roast, weight). Labels shown to customers. */
@@ -100,6 +102,8 @@ export interface NicheConfig {
     description?: Bilingual;
     /** Customer-service WhatsApp / phone, Egyptian format (e.g. 01109200150). Shown in the footer, the WhatsApp button and order pages. */
     whatsapp?: string;
+    /** Meta Pixel id for this niche's site (public; shown in the page). META_PIXEL_IDS can override it. */
+    metaPixelId?: string;
     /** One or two lines on who we are, in the footer (e.g. a store that picks from roasters, not a roastery). */
     about?: Bilingual;
     /** Round stamp on product photos, e.g. "Cairo Roast pick" (drawn with the logo). */
@@ -118,6 +122,8 @@ export interface NicheConfig {
   feedCategory?: string;
   /** Orders whose goods (after bundle discounts) reach this ship free; the platform pays the courier. */
   freeShippingOverEgp?: number;
+  /** Cart hint while under the free-shipping line: when the gap is at most unitEgp, say e.g. "about 1 more bag". */
+  freeShippingHint?: { unitEgp: number; ar: string; en: string };
   risk: {
     depositAboveEgp: number;
     /** Deposit amount; we use the shipping fee only. */

@@ -196,6 +196,8 @@ details p { margin: 6px 0 0; color: var(--muted); }
 .scale .dots i.on { background: var(--primary); }
 .scale .ends { grid-column: 2; display: flex; justify-content: space-between; margin-top: -2px; }
 .per100 { font-size: 12.5px; color: var(--muted); }
+.notify-wa { justify-self: start; color: #128C4A; font-weight: 700; text-decoration: none; padding: 6px 0; }
+.notify-wa:hover { text-decoration: underline; }
 /* Coffee home */
 .trustbar { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(96px, 1fr)); gap: 8px; }
 .trustbar li { display: grid; justify-items: center; align-content: start; gap: 6px; text-align: center; font-size: 12.5px; font-weight: 600; line-height: 1.35; padding: 12px 8px; border-radius: 14px; background: var(--surface); border: 1px solid var(--line); }
@@ -487,3 +489,6 @@ html.lang-switching main { opacity: .55; transition: opacity .15s; pointer-event
 .art.has-photo { overflow: hidden; padding: 0; }
 .art.has-photo img { width: 100%; height: 100%; object-fit: cover; display: block; }
 .big .photo { width: 100%; height: 100%; object-fit: cover; border-radius: inherit; display: block; }
+
+/* Checkout: "Create an account (optional)" link that opens the password field. */
+.linkish { justify-self: start; border: 0; background: none; padding: 2px 0; color: var(--primary); font: inherit; font-weight: 700; text-decoration: underline; cursor: pointer; }

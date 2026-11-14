@@ -7,6 +7,7 @@ import { waLink } from '@/lib/site';
 import { HeaderNav, TabBar } from '@/components/TabBar';
 import { CampaignTracker } from '@/components/Campaign';
 import { MetaPixel } from '@/components/Pixel';
+import { CartSync } from '@/components/CartView';
 import { pixelIdFor } from '@/lib/meta';
 import { speak, voiceOf } from '@/lib/i18n';
 import { speaker } from '@/lib/lang';
@@ -34,7 +35,7 @@ export default async function NicheLayout({ children, params }: P & { children: 
   // Both languages for the header texts: the ع / EN button switches them without a server trip.
   const ar = speak('ar', voiceOf(cfg)), en = speak('en', voiceOf(cfg));
   const both = (f: (x: typeof ar) => string) => <Txt ar={f(ar)} en={f(en)} />;
-  const pixel = pixelIdFor(cfg.id);
+  const pixel = pixelIdFor(cfg.id, cfg.brand.metaPixelId);
   return (
     <LangProvider lang={s.lang} voice={voiceOf(cfg)} base={s.base}>
       <div className="shell" style={style}>
@@ -61,6 +62,7 @@ export default async function NicheLayout({ children, params }: P & { children: 
         )}
         <TabBar niche={cfg.id} />
         <CampaignTracker />
+        <CartSync niche={cfg.id} />
         {pixel && <MetaPixel id={pixel} />}
       </div>
     </LangProvider>

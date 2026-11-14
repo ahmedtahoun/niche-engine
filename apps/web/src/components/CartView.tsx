@@ -46,21 +46,38 @@ export function useQuote(niche: string, promo: string, useWallet = false) {
   return { lines, setLines, ready, q: priced?.of === key ? priced.q : priced?.q ?? null, removed };
 }
 
+/**
+ * On every page: prices the saved cart once, which drops lines that can no longer be sold (product
+ * removed, size gone). So the cart badge always equals what the cart page shows, also after a reload.
+ */
+export function CartSync({ niche }: { niche: string }) {
+  useQuote(niche, '');
+  return null;
+}
+
 /** "Add X more for free shipping" with a progress bar, or a cheer once it is free. */
-export function FreeShipBar({ goods, over }: { goods: number; over: number }) {
-  const { t, egp } = useSpeak();
+export type FreeHint = { unitEgp: number; ar: string; en: string };
+
+/** "Add EGP 300 more (about 1 more bag) for free shipping 🚚": the hint only when the gap fits in one unit. */
+export function freeLeftText(sp: { t: ReturnType<typeof useSpeak>['t']; egp: (n: number) => string; en: boolean }, left: number, hint?: FreeHint) {
+  const x = sp.egp(Math.ceil(left));
+  return hint && left <= hint.unitEgp ? sp.t('free.leftHint', { x, hint: sp.en ? hint.en : hint.ar }) : sp.t('free.left', { x });
+}
+
+export function FreeShipBar({ goods, over, hint }: { goods: number; over: number; hint?: FreeHint }) {
+  const s = useSpeak();
   const left = Math.max(0, over - goods);
   return (
     <div className={`freebar${left ? '' : ' done'}`} role="status">
-      <span>{left ? t('free.left', { x: egp(Math.ceil(left)) }) : t('free.got')}</span>
+      <span>{left ? freeLeftText(s, left, hint) : s.t('free.got')}</span>
       <i aria-hidden="true"><b style={{ width: `${Math.min(100, (goods / over) * 100)}%` }} /></i>
     </div>
   );
 }
 
-export function CartView({ niche, depositAbove, deposit, cashback, freeOver }: { niche: string; depositAbove: number; deposit: number; cashback: number; freeOver?: number }) {
-  const [promoInput, setPromoInput] = useState('');
-  const [promo, setPromo] = useState('');
+export function CartView({ niche, depositAbove, deposit, cashback, freeOver, freeHint, initialPromo = '' }: { niche: string; depositAbove: number; deposit: number; cashback: number; freeOver?: number; freeHint?: FreeHint; initialPromo?: string }) {
+  const [promoInput, setPromoInput] = useState(initialPromo);
+  const [promo, setPromo] = useState(initialPromo);
   const { lines, setLines, ready, q, removed } = useQuote(niche, promo);
   const s = useSpeak();
   const { t, egp } = s;
@@ -92,13 +109,14 @@ export function CartView({ niche, depositAbove, deposit, cashback, freeOver }: {
           </div>
         ))}
       </div>
-      {q && freeOver ? <FreeShipBar goods={q.subtotal - q.bundleDiscount} over={freeOver} /> : null}
+      {q && freeOver ? <FreeShipBar goods={q.subtotal - q.bundleDiscount} over={freeOver} hint={freeHint} /> : null}
       <form className="sbox" onSubmit={(e) => { e.preventDefault(); setPromo(promoInput); }}>
         <input value={promoInput} onChange={(e) => setPromoInput(e.target.value)} placeholder={t('promo')} aria-label={t('promo')} dir="ltr" />
         <button className="btn ghost" type="submit">{t('apply')}</button>
       </form>
       {q?.problems.includes('promo_unknown') && <div className="note bad">{t('promoUnknown')}</div>}
       {q?.promoRejected === 'first_order_only' && <div className="note warn">{t('promoFirst')}</div>}
+      {q?.promoRejected === 'bundles_excluded' && <div className="note warn">{t('promoNoBundles')}</div>}
       {q && q.promoDiscount > 0 && <div className="note ok">{t('promoOk', { x: egp(q.promoDiscount) })}</div>}
       {q && <Summary q={q} />}
       {q && cashback > 0 && <div className="note ok">{t('cashbackNote', { x: egp(Math.floor((q.subtotal - q.bundleDiscount - q.promoDiscount) * cashback)) })}</div>}

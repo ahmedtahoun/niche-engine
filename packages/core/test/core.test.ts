@@ -107,23 +107,46 @@ test('free shipping: goods at or over the line ship free and the platform pays t
   const coffee = load('coffee');
   const line = (unitPrice: number, qty = 1) => ({ sellerId: 'bonds', unitPrice, qty });
   const base = { bundleDiscount: 0, walletBalance: 0, useWallet: false, isFirstOrder: true };
-  const under = cartTotals({ ...base, lines: [line(1499)] }, coffee);
+  const under = cartTotals({ ...base, lines: [line(599)] }, coffee);
   assert.equal(under.shipping, coffee.shippingEgp);
   assert.equal(under.shippingWaived, 0);
-  assert.equal(toFreeShipping(1499, coffee), 1);
-  const at = cartTotals({ ...base, lines: [line(750, 2)] }, coffee);
+  assert.equal(toFreeShipping(599, coffee), 1);
+  // Two 250 g bags at 300 reach the 600 line.
+  const at = cartTotals({ ...base, lines: [line(300, 2)] }, coffee);
   assert.equal(at.shipping, 0);
   assert.equal(at.shippingWaived, coffee.shippingEgp);
-  assert.equal(at.total, 1500);
-  assert.equal(toFreeShipping(1500, coffee), null);
-  // Bundle discounts count: 1,540 of goods with a 60 bundle discount is under the line.
-  const bundle = cartTotals({ ...base, lines: [line(1540)], bundleDiscount: 60 }, coffee);
+  assert.equal(at.total, 600);
+  assert.equal(toFreeShipping(600, coffee), null);
+  // Bundle discounts count: 640 of goods with a 60 bundle discount is under the line.
+  const bundle = cartTotals({ ...base, lines: [line(640)], bundleDiscount: 60 }, coffee);
   assert.equal(bundle.shipping, coffee.shippingEgp);
   // A niche without a line always charges shipping.
   const umrah = load('umrah');
   assert.equal(cartTotals({ ...base, lines: [line(5000)] }, umrah).shippingWaived, 0);
   assert.equal(toFreeShipping(10, umrah), null);
   // The waived fee is a platform cost in the net.
-  const net = platformNet({ type: 'new', lines: [{ sellerId: 'bonds', unitPrice: 1500, qty: 1, unitCost: 1200 }], platformDiscount: at.shippingWaived, wallet: 0, delivered: false }, coffee);
+  const net = platformNet({ type: 'new', lines: [{ sellerId: 'bonds', unitPrice: 600, qty: 1, unitCost: 300 }], platformDiscount: at.shippingWaived, wallet: 0, delivered: false }, coffee);
   assert.equal(net, 300 - coffee.shippingEgp);
+});
+
+test('ROAST10: 10% off coffee picked on its own, never shipping or the Discovery Box', () => {
+  const coffee = load('coffee');
+  const promo = coffee.promos.find((p) => p.code === 'ROAST10')!;
+  const base = { bundleDiscount: 0, walletBalance: 0, useWallet: false, isFirstOrder: false, promo };
+  // 250 g Chrome at 300: 270 + 70 shipping.
+  const one = cartTotals({ ...base, lines: [{ sellerId: 'bonds', unitPrice: 300, qty: 1 }] }, coffee);
+  assert.equal(one.promoDiscount, 30);
+  assert.equal(one.shipping, 70);
+  assert.equal(one.total, 340);
+  // Two bags: free shipping is decided on the goods before the code (600), then 10% off.
+  const two = cartTotals({ ...base, lines: [{ sellerId: 'bonds', unitPrice: 300, qty: 2 }] }, coffee);
+  assert.equal(two.shipping, 0);
+  assert.equal(two.total, 540);
+  // Box only: the code is refused with a reason; box + a bag: 10% of the bag only.
+  const box = [{ sellerId: 'bonds', unitPrice: 300, qty: 1, inBundle: true }, { sellerId: 'bonds', unitPrice: 250, qty: 1, inBundle: true }];
+  const boxOnly = cartTotals({ ...base, lines: box, bundleDiscount: 60 }, coffee);
+  assert.equal(boxOnly.promoDiscount, 0);
+  assert.equal(boxOnly.promoRejected, 'bundles_excluded');
+  const mixed = cartTotals({ ...base, lines: [...box, { sellerId: 'bonds', unitPrice: 300, qty: 1 }], bundleDiscount: 60 }, coffee);
+  assert.equal(mixed.promoDiscount, 30);
 });

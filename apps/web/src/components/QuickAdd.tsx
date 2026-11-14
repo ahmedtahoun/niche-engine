@@ -9,7 +9,7 @@ import type { Choice, OptionAxis } from '@niche-engine/core';
 import type { ArtKind, Variant } from '@/lib/types';
 import { AddToCart } from './AddToCart';
 import { Art } from './Art';
-import { useQuote } from './CartView';
+import { freeLeftText, useQuote, type FreeHint } from './CartView';
 import { useSpeak } from './I18n';
 
 export interface QuickItem {
@@ -95,7 +95,7 @@ export function QuickAddSheet({ niche, axes, freeOver }: { niche: string; axes: 
   );
 }
 
-export function MiniCart({ niche, freeOver }: { niche: string; freeOver?: number }) {
+export function MiniCart({ niche, freeOver, freeHint }: { niche: string; freeOver?: number; freeHint?: FreeHint }) {
   const s = useSpeak();
   const { lines, ready, q } = useQuote(niche, '');
   const [bump, setBump] = useState(false);
@@ -115,7 +115,7 @@ export function MiniCart({ niche, freeOver }: { niche: string; freeOver?: number
         <b>🛒 {s.t('mini.cart', { n: count })} · <span className="num">{s.egp(q.total)}</span></b>
         {short ? <small className="bad-t">{s.t('mini.fix')}</small> : left !== null && freeOver ? (
           <>
-            <small className={left ? '' : 'ok-t'}>{left ? s.t('free.left', { x: s.egp(Math.ceil(left)) }) : s.t('free.got')}</small>
+            <small className={left ? '' : 'ok-t'}>{left ? freeLeftText(s, left, freeHint) : s.t('free.got')}</small>
             <i aria-hidden="true"><em style={{ width: `${Math.min(100, (goods / freeOver) * 100)}%` }} /></i>
           </>
         ) : null}

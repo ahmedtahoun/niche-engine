@@ -4,7 +4,7 @@ import { checkEnv } from '../src/lib/env.ts';
 
 const good = {
   SESSION_SECRET: 'x'.repeat(40), ADMIN_PASSWORD: 'a-long-password', SUPABASE_URL: 'https://p.supabase.co', SUPABASE_SERVICE_ROLE_KEY: 'k',
-  NICHE_DOMAINS: 'sakinaeg.com=umrah', TELEGRAM_BOT_TOKEN: 't', TELEGRAM_WEBHOOK_SECRET: 's', BOSTA_API_KEY: 'b', BOSTA_WEBHOOK_SECRET: 'w',
+  NICHE_DOMAINS: 'sakinaeg.com=umrah', TELEGRAM_BOT_TOKEN: 't', TELEGRAM_WEBHOOK_SECRET: 's', BOSTA_API_KEY: 'b', BOSTA_WEBHOOK_SECRET: 'w', META_CAPI_TOKEN: 'm',
 };
 
 test('a complete production config passes with no warnings', () => {

@@ -7,7 +7,7 @@ import { TasteProfile } from '@/components/Taste';
 import { TrackOnView } from '@/components/Pixel';
 import { BoxCard } from '@/components/BoxCard';
 import { ProductCard } from '@/components/ProductCard';
-import { bestPer100g, catalog, choicesFor, similarTo, freshnessOf, isSoldOut, priceRange, saleOf } from '@/lib/catalog';
+import { catalog, choicesFor, similarTo, freshnessOf, isSoldOut, priceRange, saleOf } from '@/lib/catalog';
 import { speaker } from '@/lib/lang';
 import { getNiche } from '@/lib/niches';
 import { jsonLd, pageMeta, siteUrl, waLink } from '@/lib/site';
@@ -40,7 +40,6 @@ export default async function ProductPage({ params }: P) {
   const range = priceRange(p);
   const rating = ratingOf(p.reviews);
   const sale = saleOf(p);
-  const per100 = bestPer100g(p);
   const fresh = freshnessOf(cfg, p);
   const name = s.product(p);
   const lead = s.lead(p);
@@ -123,7 +122,6 @@ export default async function ProductPage({ params }: P) {
           <span className="muted small">· {seller.rating ? `⭐ ${seller.rating}` : s.t('partnerOf', { brand: s.brand(cfg) })}</span>
         </a>
         <div className="pprice num" style={{ fontSize: 21 }}>{range.min !== range.max ? s.t('from', { price: s.egp(range.min) }) : s.egp(range.min)}{sale.compareMin && <s className="was">{s.egp(sale.compareMin)}</s>}{sale.off > 0 && <span className="off">{s.t('off', { n: sale.off })}</span>}</div>
-        {per100 && <div className="per100 num">{s.t('per100', { x: s.egp(per100) })}</div>}
         {freshText && <div className="small" style={{ color: 'var(--ok)', fontWeight: 700 }}>{freshText}</div>}
       </div>
       {facts.length > 0 && (
@@ -139,8 +137,8 @@ export default async function ProductPage({ params }: P) {
           <a className="small" href={s.href('/')} style={{ fontWeight: 700 }}>{s.t('startShopping')}</a>
         </div>
       )}
-      <TrackOnView event="ViewContent" data={{ content_ids: [p.id], content_type: 'product_group', content_name: p.en?.name ?? p.nameAr, value: range.min }} />
-      {!isSoldOut(p) && <AddToCart niche={niche} slug={p.slug} productId={p.id} price={p.price} variants={p.variants} finder={finder} axes={cfg.optionAxes} choices={choices} freeOver={cfg.freeShippingOverEgp} />}
+      <TrackOnView event="ViewContent" data={{ content_ids: [p.id], content_type: 'product_group', content_name: p.en?.name ?? p.nameAr, value: Math.min(...p.variants.filter((v) => v.stock > 0).map((v) => v.price ?? p.price), range.max) }} />
+      {!isSoldOut(p) && <AddToCart niche={niche} slug={p.slug} productId={p.id} notify={cfg.brand.whatsapp ? { whatsapp: cfg.brand.whatsapp, name } : undefined} price={p.price} variants={p.variants} finder={finder} axes={cfg.optionAxes} choices={choices} freeOver={cfg.freeShippingOverEgp} />}
       <div className="eta">
         <EtaPicker />
         <span>{cfg.freeShippingOverEgp ? s.t('eta.feesFree', { fee: s.egp(cfg.shippingEgp), x: s.egp(cfg.freeShippingOverEgp) }) : s.t('eta.fees', { fee: s.egp(cfg.shippingEgp) })}</span>

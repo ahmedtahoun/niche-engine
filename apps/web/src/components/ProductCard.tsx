@@ -36,7 +36,7 @@ export function ProductCard({ p, seller: sl, s, tags, quick }: { p: Product; sel
     </Link>
     {quick && cfg && !out && (
       <QuickAddButton item={{
-        slug: p.slug, name: s.product(p), by: s.t('by', { name: s.seller(sl) }), image: p.images?.[0], art: p.art, color: p.color, price: p.price,
+        slug: p.slug, id: p.id, name: s.product(p), by: s.t('by', { name: s.seller(sl) }), image: p.images?.[0], art: p.art, color: p.color, price: p.price,
         variants: p.variants, choices: choicesFor(cfg, p), notes: fam ? `${fam.emoji} ${(s.en && fam.labelEn) || fam.labelAr}` : undefined,
       }} />
     )}

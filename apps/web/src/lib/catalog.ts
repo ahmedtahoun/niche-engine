@@ -53,6 +53,15 @@ export const publicQuote = (q: Quote): Quote => ({ ...q, items: q.items.map(({ u
 /** Nothing left to sell: every option (or the product itself) is at 0 stock. */
 export const isSoldOut = (p: Product) => p.variants.length > 0 && p.variants.every((v) => v.stock <= 0);
 
+/**
+ * "You might also like" on a product page: other products in stock, same taste family first,
+ * then same category, then the rest, keeping the order given (best sellers first).
+ */
+export function similarTo(p: Product, all: Product[], n = 4): Product[] {
+  const score = (x: Product) => (p.profile?.family && x.profile?.family === p.profile.family ? 2 : 0) + (x.category === p.category ? 1 : 0);
+  return all.filter((x) => x.id !== p.id && !isSoldOut(x)).map((x, i) => ({ x, i, s: score(x) })).sort((a, b) => b.s - a.s || a.i - b.i).slice(0, n).map((e) => e.x);
+}
+
 /** Lowest and highest option price (cards say "من" when they differ). */
 export function priceRange(p: Product): { min: number; max: number } {
   const all = p.variants.length ? p.variants.map((v) => v.price ?? p.price) : [p.price];

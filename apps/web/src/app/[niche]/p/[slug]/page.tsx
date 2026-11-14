@@ -4,7 +4,10 @@ import { AddToCart } from '@/components/AddToCart';
 import { EtaPicker } from '@/components/Eta';
 import { Art, PickSeal } from '@/components/Art';
 import { TasteProfile } from '@/components/Taste';
-import { bestPer100g, catalog, choicesFor, freshnessOf, isSoldOut, priceRange, saleOf } from '@/lib/catalog';
+import { TrackOnView } from '@/components/Pixel';
+import { BoxCard } from '@/components/BoxCard';
+import { ProductCard } from '@/components/ProductCard';
+import { bestPer100g, catalog, choicesFor, similarTo, freshnessOf, isSoldOut, priceRange, saleOf } from '@/lib/catalog';
 import { speaker } from '@/lib/lang';
 import { getNiche } from '@/lib/niches';
 import { jsonLd, pageMeta, siteUrl, waLink } from '@/lib/site';
@@ -64,6 +67,10 @@ export default async function ProductPage({ params }: P) {
     ...(catLabel ? [{ '@type': 'ListItem', position: 2, name: s.category(catLabel), item: siteUrl(cfg, `/search?cat=${catLabel.id}`, s.lang) }] : []),
     { '@type': 'ListItem', position: catLabel ? 3 : 2, name, item: siteUrl(cfg, `/p/${p.slug}`, s.lang) },
   ] };
+  const similar = similarTo(p, cat.search(cfg, { sort: 'best' }));
+  // The starter box, while every coffee in it is in stock.
+  const bv = cfg.bundles[0] ? cat.bundleView(cfg, cfg.bundles[0].id) : null;
+  const box = bv && !bv.parts.some((pt) => isSoldOut(pt.product)) ? bv : null;
   const seal = cfg.brand.pickSeal ? (s.en && cfg.brand.pickSeal.en) || cfg.brand.pickSeal.ar : null;
   const facts = (cfg.facts ?? []).flatMap((f) => {
     const value = attrs[s.en ? f.keyEn : f.key];
@@ -132,7 +139,8 @@ export default async function ProductPage({ params }: P) {
           <a className="small" href={s.href('/')} style={{ fontWeight: 700 }}>{s.t('startShopping')}</a>
         </div>
       )}
-      {!isSoldOut(p) && <AddToCart niche={niche} slug={p.slug} price={p.price} variants={p.variants} finder={finder} axes={cfg.optionAxes} choices={choices} freeOver={cfg.freeShippingOverEgp} />}
+      <TrackOnView event="ViewContent" data={{ content_ids: [p.id], content_type: 'product_group', content_name: p.en?.name ?? p.nameAr, value: range.min }} />
+      {!isSoldOut(p) && <AddToCart niche={niche} slug={p.slug} productId={p.id} price={p.price} variants={p.variants} finder={finder} axes={cfg.optionAxes} choices={choices} freeOver={cfg.freeShippingOverEgp} />}
       <div className="eta">
         <EtaPicker />
         <span>{cfg.freeShippingOverEgp ? s.t('eta.feesFree', { fee: s.egp(cfg.shippingEgp), x: s.egp(cfg.freeShippingOverEgp) }) : s.t('eta.fees', { fee: s.egp(cfg.shippingEgp) })}</span>
@@ -147,6 +155,13 @@ export default async function ProductPage({ params }: P) {
           <tr><td>{s.t('exchange')}</td><td>{s.t('exchangeText')}</td></tr>
         </tbody></table>
       </section>
+      {(similar.length > 0 || box) && (
+        <section id="sec-similar" style={{ display: 'grid', gap: 10 }} aria-labelledby="similar-h">
+          <div><h2 className="h4" id="similar-h" style={{ margin: 0 }}>{s.t('sec.similar')}</h2><span className="muted small">{s.t('sec.similarSub')}</span></div>
+          {box && <BoxCard bv={box} cfg={cfg} s={s} />}
+          {similar.length > 0 && <div className="grid">{similar.map((x) => <ProductCard key={x.id} p={x} seller={cat.sellerOf(x)} s={s} />)}</div>}
+        </section>
+      )}
       {p.category === 'abaya' && (
         <section>
           <h2 className="h4">{s.t('sizeChart')}</h2>

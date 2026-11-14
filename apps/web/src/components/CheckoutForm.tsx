@@ -1,9 +1,14 @@
 'use client';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useEffect, useState, useTransition } from 'react';
+import { useEffect, useRef, useState, useTransition } from 'react';
 import { placeOrder, type CheckoutForm as Form } from '@/app/actions';
+import { purchaseEventId } from '@/lib/meta';
+import type { Quote } from '@/lib/types';
 import { savedCampaign } from './Campaign';
+import { track } from './Pixel';
+
+const pixelData = (q: Quote) => ({ content_ids: [...new Set(q.items.map((i) => i.productId))], content_type: 'product_group' as const, value: q.total, num_items: q.items.reduce((a, i) => a + i.qty, 0) });
 import { writeCart } from './cart-store';
 import { Summary, useQuote } from './CartView';
 import { useSpeak } from './I18n';
@@ -28,6 +33,13 @@ export function CheckoutForm({ niche, governorates, initialPromo, openBeforePay,
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
   useEffect(() => { try { localStorage.setItem('ne_gov', form.governorate); } catch { /* storage blocked */ } }, [form.governorate]);
+  // Meta Pixel: one InitiateCheckout per visit to this page, once the cart is priced.
+  const started = useRef(false);
+  useEffect(() => {
+    if (!q || started.current || !q.items.length) return;
+    started.current = true;
+    track('InitiateCheckout', pixelData(q));
+  }, [q]);
   const set = (k: keyof Form) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => setForm({ ...form, [k]: e.target.value });
 
   if (ready && !lines.length) return <div className="box" style={{ textAlign: 'center' }}><b>{t('cartEmpty')}</b><Link className="btn primary" href={s.href()}>{t('startShopping')}</Link></div>;
@@ -37,6 +49,8 @@ export function CheckoutForm({ niche, governorates, initialPromo, openBeforePay,
     start(async () => {
       const r = await placeOrder(niche, lines, { ...form, utm: savedCampaign() });
       if (r.ok) {
+        // Same event id as the server's Conversions API event, so Meta counts it once.
+        if (q) track('Purchase', pixelData(q), purchaseEventId(r.id));
         writeCart(niche, []);
         router.push(s.href(`/order/${r.id}`));
       } else setErrors(r.errors as Record<string, string>);

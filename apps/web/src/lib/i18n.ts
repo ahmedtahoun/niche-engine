@@ -54,6 +54,8 @@ const D = {
   'sec.size': { ar: 'المقاس', en: 'Size' },
   'sec.options': { ar: 'الاختيارات', en: 'Options' },
   'sec.specs': { ar: 'المواصفات', en: 'Details' },
+  'sec.similar': { ar: 'قهوات قريبة من دي', en: 'Coffees like this one' },
+  'sec.similarSub': { ar: 'نفس الطعم أو النوع، عشان تقارن أو تجرب حاجة جديدة.', en: 'Same taste or type, to compare or try something new.' },
   'sec.reviews': { ar: 'الآراء', en: 'Reviews' },
   'sec.faq': { ar: 'أسئلة', en: 'FAQ' },
   exchange: { ar: 'الاستبدال', en: 'Exchange' },

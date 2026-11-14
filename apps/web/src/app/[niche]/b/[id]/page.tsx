@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { AddBundle } from '@/components/AddToCart';
+import { TrackOnView } from '@/components/Pixel';
 import { Art, BundleArt } from '@/components/Art';
 import { PAGE_SIZES, responsive } from '@/lib/img';
 import { catalog, choicesFor, priceOf, resolveVariant } from '@/lib/catalog';
@@ -32,6 +33,7 @@ export default async function BundlePage({ params }: { params: Promise<{ niche: 
   const pickLabel = bv.pickVariantsFrom?.category === 'abaya' ? s.t('bundlePickSize') : s.t('bundlePick');
   // A choice (e.g. the grind) asked once for the whole bundle, for every part it applies to.
   const choices = [...new Map(bv.parts.flatMap((pt) => choicesFor(cfg, pt.product)).map((c) => [c.id, c])).values()];
+  const ids = [...new Set(bv.parts.map((pt) => pt.product.id))];
   return (
     <main className="page narrow">
       <div className="big" style={{ aspectRatio: '1 / .7' }}>
@@ -52,7 +54,8 @@ export default async function BundlePage({ params }: { params: Promise<{ niche: 
         ))}
       </div>
       {sellers > 1 && <div className="note info">{s.t('bundleShipments', { n: sellers })}</div>}
-      <AddBundle niche={niche} id={bv.bundle.id} variants={bv.pickVariantsFrom?.variants ?? null} label={pickLabel} choices={choices} />
+      <TrackOnView event="ViewContent" data={{ content_ids: ids, content_type: 'product_group', content_name: bv.bundle.id, value: bv.price }} />
+      <AddBundle niche={niche} id={bv.bundle.id} variants={bv.pickVariantsFrom?.variants ?? null} label={pickLabel} choices={choices} productIds={ids} price={bv.price} />
     </main>
   );
 }

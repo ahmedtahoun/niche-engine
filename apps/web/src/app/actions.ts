@@ -16,6 +16,10 @@ import { GOVERNORATES } from '@/lib/eta';
 import { isBlocked } from '@/lib/blocklist';
 import { allow, clientIp } from '@/lib/rate-limit';
 import { store } from '@/lib/store';
+import { sendPurchase } from '@/lib/meta';
+import { siteUrl } from '@/lib/site';
+import { after } from 'next/server';
+import { cookies, headers } from 'next/headers';
 import { getLang, speaker } from '@/lib/lang';
 import type { Speaker } from '@/lib/i18n';
 import type { CartLine, Quote } from '@/lib/types';
@@ -132,9 +136,22 @@ export async function placeOrder(niche: string, cart: CartLine[], form: Checkout
     await takeStock(order);
     await deliver([...(order.status === 'confirmed' ? notifyOrder(order, cat) : []), ...orderAlert(order, 'new')]);
     if (guest) await rememberGuestOrder(order.id);
+    await reportPurchase(niche, order.id, q);
     return { ok: true, id: order.id };
   }
   return { ok: false, errors: { cart: s.t('err.wallet') } };
+}
+
+/** Meta Conversions API: the purchase, sent after the reply so the customer never waits for Meta. */
+async function reportPurchase(niche: string, orderId: number, q: Quote) {
+  const cfg = getNiche(niche);
+  if (!cfg) return;
+  const [h, jar, ip] = await Promise.all([headers(), cookies(), clientIp()]);
+  const event = {
+    orderId, value: q.total, productIds: q.items.map((i) => i.productId), numItems: q.items.reduce((a, i) => a + i.qty, 0),
+    url: siteUrl(cfg, '/checkout'), ip, userAgent: h.get('user-agent') ?? undefined, fbp: jar.get('_fbp')?.value, fbc: jar.get('_fbc')?.value,
+  };
+  after(() => sendPurchase(niche, event));
 }
 
 async function ownOrder(niche: string, id: number) {

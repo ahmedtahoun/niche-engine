@@ -6,6 +6,7 @@ import type { Variant } from '@/lib/types';
 import { gramsOf } from '@/lib/weights';
 import { addLine } from './cart-store';
 import { useSpeak } from './I18n';
+import { track } from './Pixel';
 
 const HEIGHTS: [string, number][] = [['150–155', 1], ['156–162', 2], ['163–168', 3], ['169+', 4]];
 const WEIGHTS: [string, number][] = [['< 65', 0], ['65–85', 0], ['85+', 1]];
@@ -89,7 +90,7 @@ function useAxes(variants: Variant[], axes: OptionAxis[]) {
   return { values, sel, setSel, chosen, ok, missing };
 }
 
-export function AddToCart({ niche, slug, price, variants, finder, axes = [], choices = [], freeOver, onAdded, detailsHref }: { niche: string; slug: string; price: number; variants: Variant[]; finder: 'size' | null; axes?: OptionAxis[]; choices?: Choice[]; freeOver?: number; /** Quick-add sheet: a quantity stepper and one add button; called after adding. */ onAdded?: () => void; detailsHref?: string }) {
+export function AddToCart({ niche, slug, productId, price, variants, finder, axes = [], choices = [], freeOver, onAdded, detailsHref }: { niche: string; slug: string; /** For the Meta Pixel (matches the catalog feed). */ productId?: string; price: number; variants: Variant[]; finder: 'size' | null; axes?: OptionAxis[]; choices?: Choice[]; freeOver?: number; /** Quick-add sheet: a quantity stepper and one add button; called after adding. */ onAdded?: () => void; detailsHref?: string }) {
   const router = useRouter();
   const s = useSpeak();
   const t = s.t;
@@ -116,7 +117,9 @@ export function AddToCart({ niche, slug, price, variants, finder, axes = [], cho
   const [qty, setQty] = useState(1);
   const add = (go: boolean) => {
     if (!variant) return;
-    addLine(niche, { kind: 'item', slug, variant, qty: onAdded ? qty : 1, ...(choices.length ? { choice: Object.fromEntries(choices.map((c) => [c.id, picked[c.id]])) } : {}) });
+    const n = onAdded ? qty : 1;
+    addLine(niche, { kind: 'item', slug, variant, qty: n, ...(choices.length ? { choice: Object.fromEntries(choices.map((c) => [c.id, picked[c.id]])) } : {}) });
+    if (productId) track('AddToCart', { content_ids: [productId], content_type: 'product_group', value: shown * n, num_items: n });
     if (onAdded) onAdded();
     else if (go) router.push(s.href(`/checkout`));
     else setAdded(true);
@@ -229,7 +232,7 @@ export function AddToCart({ niche, slug, price, variants, finder, axes = [], cho
   );
 }
 
-export function AddBundle({ niche, id, variants, label, choices = [] }: { niche: string; id: string; variants: Variant[] | null; label: string; choices?: Choice[] }) {
+export function AddBundle({ niche, id, variants, label, choices = [], productIds, price }: { niche: string; id: string; variants: Variant[] | null; label: string; choices?: Choice[]; /** For the Meta Pixel. */ productIds?: string[]; price?: number }) {
   const router = useRouter();
   const s = useSpeak();
   const [variant, setVariant] = useState<string>(variants ? '' : '-');
@@ -247,7 +250,7 @@ export function AddBundle({ niche, id, variants, label, choices = [] }: { niche:
       )}
       {choices.length > 0 && <section style={{ display: 'grid', gap: 12 }}><ChoicePicker niche={niche} choices={choices} picked={picked} setPicked={setPicked} /></section>}
       <div className="sticky">
-        <button type="button" className="btn primary block" disabled={!variant || Boolean(choiceMissing)} onClick={() => { addLine(niche, { kind: 'bundle', id, variant: variant === '-' ? '' : variant, qty: 1, ...(choices.length ? { choice: Object.fromEntries(choices.map((c) => [c.id, picked[c.id]])) } : {}) }); router.push(s.href(`/cart`)); }}>
+        <button type="button" className="btn primary block" disabled={!variant || Boolean(choiceMissing)} onClick={() => { addLine(niche, { kind: 'bundle', id, variant: variant === '-' ? '' : variant, qty: 1, ...(choices.length ? { choice: Object.fromEntries(choices.map((c) => [c.id, picked[c.id]])) } : {}) }); if (productIds?.length) track('AddToCart', { content_ids: productIds, content_type: 'product_group', content_name: id, ...(price ? { value: price } : {}) }); router.push(s.href(`/cart`)); }}>
           {!variant ? s.t('pickX', { x: label }) : choiceMissing ? s.choice(choiceMissing) : s.t('addBundle')}
         </button>
       </div>

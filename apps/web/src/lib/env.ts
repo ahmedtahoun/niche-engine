@@ -21,5 +21,8 @@ export function checkEnv(env: Record<string, string | undefined> = process.env):
   if (has('BOSTA_API_KEY') && !has('BOSTA_WEBHOOK_SECRET')) errors.push('BOSTA_WEBHOOK_SECRET: required with BOSTA_API_KEY so delivery updates are accepted');
   if (!has('BOSTA_API_KEY')) warnings.push('Bosta not configured: waybills use DEMO tracking numbers');
   if (process.env.TELEGRAM_BOT_TOKEN && !process.env.ADMIN_TELEGRAM_CHAT_IDS) warnings.push('ADMIN_TELEGRAM_CHAT_IDS not set: no team alerts on Telegram (send /myid to the bot to get your number)');
+  if (has('META_CAPI_TOKENS') && !has('META_PIXEL_IDS')) errors.push('META_CAPI_TOKENS needs META_PIXEL_IDS (coffee=<pixel id>)');
+  if (has('META_PIXEL_IDS') && !has('META_CAPI_TOKENS')) warnings.push('META_CAPI_TOKENS not set: purchases reach Meta only from the browser (ad blockers hide some)');
+  if (has('META_TEST_EVENT_CODE')) warnings.push('META_TEST_EVENT_CODE is set: purchases go to Test events, remove it for real traffic');
   return { errors, warnings };
 }

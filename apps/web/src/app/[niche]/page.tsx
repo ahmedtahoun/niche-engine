@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { Fragment } from 'react';
 import { notFound } from 'next/navigation';
 import { BundleArt, TrustIcon } from '@/components/Art';
+import { BoxCard } from '@/components/BoxCard';
 import { Footer } from '@/components/Footer';
 import { ProductCard } from '@/components/ProductCard';
 import { MiniCart, QuickAddSheet } from '@/components/QuickAdd';
@@ -14,6 +15,9 @@ import { CARD_SIZES, responsive } from '@/lib/img';
 import { intlPhone, jsonLd, origin, pageMeta, siteUrl } from '@/lib/site';
 
 type P = { params: Promise<{ niche: string }> };
+
+/** Products before the starter box in the home grid (two rows on phones). */
+const BOX_AFTER = 4;
 
 export async function generateMetadata({ params }: P): Promise<Metadata> {
   const cfg = getNiche((await params).niche);
@@ -39,6 +43,8 @@ export default async function Home({ params }: P) {
     ...families.map((f) => ({ id: f.id, emoji: f.emoji, label: (s.en && f.labelEn) || f.labelAr, hint: (s.en && f.hintEn) || f.hintAr, count: products.filter((p) => p.profile?.family === f.id).length })),
     ...cfg.categories.map((c) => ({ id: c.id, emoji: undefined, label: s.category(c), hint: undefined, count: products.filter((p) => p.category === c.id).length })).filter((c) => c.count > 0),
   ] : [];
+  // With taste filters (coffee) the starter box sits inside the grid; otherwise below it.
+  const boxInGrid = Boolean(hero && cfg.hero && products.length && filters.length);
   const fill = (x: string) => x.replace('{shipping}', String(cfg.shippingEgp)).replace('{freeOver}', (cfg.freeShippingOverEgp ?? 0).toLocaleString('en-US')).replace('{depositAbove}', String(cfg.risk.depositAboveEgp)).replace('{deposit}', String(cfg.risk.depositEgp));
   const faq = (cfg.homeFaq ?? []).map((f) => ({ q: text(f.q), a: fill(text(f.a)) }));
   const structured = [
@@ -114,7 +120,16 @@ export default async function Home({ params }: P) {
             ))}
           </div>
           {filters.filter((f) => f.hint).map((f) => <p key={f.id} className="fhint muted small" data-for={f.id}>{f.emoji} {f.hint}</p>)}
-          <div className="grid">{products.map((p) => <ProductCard key={p.id} p={p} seller={cat.sellerOf(p)} s={s} quick tags={[p.profile?.family, p.category].filter(Boolean).join(' ')} />)}</div>
+          <div className="grid">
+            {products.map((p, i) => (
+              <Fragment key={p.id}>
+                {/* The starter box after the first two rows: early enough for first-time visitors, after the coffees they came for. Shown under every filter. */}
+                {boxInGrid && i === BOX_AFTER && <div className="box-slot" data-f={filters.map((f) => f.id).join(' ')}><BoxCard bv={hero!} cfg={cfg} s={s} /></div>}
+                <ProductCard p={p} seller={cat.sellerOf(p)} s={s} quick tags={[p.profile?.family, p.category].filter(Boolean).join(' ')} />
+              </Fragment>
+            ))}
+            {boxInGrid && products.length <= BOX_AFTER && <div className="box-slot" data-f={filters.map((f) => f.id).join(' ')}><BoxCard bv={hero!} cfg={cfg} s={s} /></div>}
+          </div>
         </section>
       ) : products.length ? (
         <>
@@ -133,20 +148,7 @@ export default async function Home({ params }: P) {
           </div>
         </section>
       )}
-      {hero && cfg.hero && (
-        <Link className="box-card" href={s.href(`/b/${hero.bundle.id}`)}>
-          <div className={`art${hero.bundle.image ? ' has-photo' : ''}`}>{hero.bundle.image
-            // eslint-disable-next-line @next/next/no-img-element
-            ? <img className="photo" {...responsive(hero.bundle.image, CARD_SIZES)} alt={s.bundle(hero.bundle)} loading="lazy" decoding="async" />
-            : <BundleArt parts={hero.parts.map((p) => p.product)} />}</div>
-          <div>
-            <span className="small">{text(cfg.homeEyebrow)}</span>
-            <b>{s.bundle(hero.bundle)}</b>
-            <span className="small muted">{hero.parts.map((p) => s.product(p.product).split(' — ')[0]).join(' + ')}</span>
-            <div className="price num"><b>{s.egp(hero.price)}</b><s>{s.egp(hero.fullPrice)}</s><span className="save">{s.t('bundleSave', { x: s.egp(hero.bundle.discountEgp) })}</span></div>
-          </div>
-        </Link>
-      )}
+      {hero && cfg.hero && !boxInGrid && <BoxCard bv={hero} cfg={cfg} s={s} />}
       {sellers.map((x) => (
         <section key={x.id} className="roaster" aria-label={s.t('meetRoaster')}>
           {/* eslint-disable-next-line @next/next/no-img-element */}

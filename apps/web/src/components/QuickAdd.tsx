@@ -14,6 +14,7 @@ import { useSpeak } from './I18n';
 
 export interface QuickItem {
   slug: string;
+  id?: string;
   name: string;
   by: string;
   image?: string;
@@ -84,7 +85,7 @@ export function QuickAddSheet({ niche, axes, freeOver }: { niche: string; axes: 
               </div>
               <button type="button" className="qa-x" aria-label={s.t('qa.close')} onClick={close}>×</button>
             </div>
-            <AddToCart key={item.slug} niche={niche} slug={item.slug} price={item.price} variants={item.variants} finder={null} axes={axes} choices={item.choices} freeOver={freeOver}
+            <AddToCart key={item.slug} niche={niche} slug={item.slug} productId={item.id} price={item.price} variants={item.variants} finder={null} axes={axes} choices={item.choices} freeOver={freeOver}
               onAdded={() => { close(); setToast(true); }} detailsHref={s.href(`/p/${item.slug}`)} />
           </div>
         </div>

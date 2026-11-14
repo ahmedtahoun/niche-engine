@@ -92,6 +92,8 @@ As in `DEPLOY.md` step 5, using `https://sakinaeg.com/api/telegram` and `https:/
 
 **Team alerts:** send `/myid` to the bot, add `ADMIN_TELEGRAM_CHAT_IDS` = that number in the Node app's environment variables (several people: separate with commas), restart. You then get a Telegram message each time someone taps start, begins or finishes a seller application, or submits a product. `/admin/telegram` has a test button.
 
+**Meta Pixel (for ads):** in Meta Events Manager, copy the pixel id, then Settings → Conversions API → Generate access token. Add `META_PIXEL_IDS` = `coffee=<pixel id>` and `META_CAPI_TOKENS` = `coffee=<token>` in the Node app's environment variables, restart. To check it, also add `META_TEST_EVENT_CODE` from Events Manager → Test events, place an order, see PageView, ViewContent, AddToCart, InitiateCheckout and Purchase arrive (Purchase once, from both browser and server), then remove the test code and restart. Product ids match the catalog feed (`/feeds/meta-catalog.xml`), so catalog ads and retargeting use the same events. No phone, name or address is sent to Meta.
+
 ## 8. Keep an eye on it (free)
 
 - **Uptime alert:** a free monitor (e.g. uptimerobot.com) on `https://sakinaeg.com/api/health` every 5 minutes, alerting your phone. It also keeps a free Supabase project active (free projects pause after 7 days without traffic).

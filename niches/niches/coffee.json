@@ -30,7 +30,8 @@
       "ar": "اختيار محمصة القاهرة",
       "en": "CAIRO ROAST PICK"
     },
-    "whatsapp": "01109200150"
+    "whatsapp": "01109200150",
+    "metaPixelId": "3330084090508688"
   },
   "categories": [
     {
@@ -69,7 +70,12 @@
   },
   "shippingEgp": 70,
   "feedCategory": "Food, Beverages & Tobacco > Beverages > Coffee",
-  "freeShippingOverEgp": 1500,
+  "freeShippingOverEgp": 600,
+  "freeShippingHint": {
+    "unitEgp": 300,
+    "ar": "حوالي كيس كمان",
+    "en": "about 1 more bag"
+  },
   "risk": {
     "depositAboveEgp": 1500,
     "depositEgp": 70,
@@ -134,7 +140,17 @@
       "nameEn": "Discovery box: 3 Bonds coffees"
     }
   ],
-  "promos": [],
+  "promos": [
+    {
+      "code": "ROAST10",
+      "kind": "percent",
+      "value": 0.1,
+      "fundedBy": "platform",
+      "firstOrderOnly": false,
+      "minOrderEgp": 0,
+      "excludeBundles": true
+    }
+  ],
   "partners": [
     "offices",
     "coworking_spaces",

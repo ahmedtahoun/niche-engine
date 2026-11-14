@@ -233,6 +233,12 @@
       "namedRegex": "^/admin(?:/)?$"
     },
     {
+      "page": "/admin/carts",
+      "regex": "^/admin/carts(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/admin/carts(?:/)?$"
+    },
+    {
       "page": "/admin/customers",
       "regex": "^/admin/customers(?:/)?$",
       "routeKeys": {},
@@ -281,6 +287,12 @@
       "namedRegex": "^/admin/telegram(?:/)?$"
     },
     {
+      "page": "/admin/traffic",
+      "regex": "^/admin/traffic(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/admin/traffic(?:/)?$"
+    },
+    {
       "page": "/dev/bot",
       "regex": "^/dev/bot(?:/)?$",
       "routeKeys": {},
@@ -291,6 +303,12 @@
       "regex": "^/feeds/meta\\-catalog\\.xml(?:/)?$",
       "routeKeys": {},
       "namedRegex": "^/feeds/meta\\-catalog\\.xml(?:/)?$"
+    },
+    {
+      "page": "/indexnow-key.txt",
+      "regex": "^/indexnow\\-key\\.txt(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/indexnow\\-key\\.txt(?:/)?$"
     },
     {
       "page": "/llms.txt",

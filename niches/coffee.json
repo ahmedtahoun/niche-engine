@@ -82,6 +82,7 @@
     "requireWhatsappConfirm": false,
     "openBeforePay": true
   },
+  "returnsPolicy": "coffee",
   "wallet": {
     "cashback": 0.04,
     "expiresDays": 45

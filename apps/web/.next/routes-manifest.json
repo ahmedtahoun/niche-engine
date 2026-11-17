@@ -203,6 +203,14 @@
       "namedRegex": "^/(?<nxtPniche>[^/]+?)/p/(?<nxtPslug>[^/]+?)(?:/)?$"
     },
     {
+      "page": "/[niche]/returns",
+      "regex": "^/([^/]+?)/returns(?:/)?$",
+      "routeKeys": {
+        "nxtPniche": "nxtPniche"
+      },
+      "namedRegex": "^/(?<nxtPniche>[^/]+?)/returns(?:/)?$"
+    },
+    {
       "page": "/[niche]/search",
       "regex": "^/([^/]+?)/search(?:/)?$",
       "routeKeys": {

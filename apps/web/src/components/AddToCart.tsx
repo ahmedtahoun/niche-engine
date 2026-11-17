@@ -95,7 +95,7 @@ function useAxes(variants: Variant[], axes: OptionAxis[]) {
   return { values, sel, setSel, chosen, ok, missing };
 }
 
-export function AddToCart({ niche, slug, productId, notify, price, variants, finder, axes = [], choices = [], freeOver, onAdded, detailsHref }: { niche: string; slug: string; /** For the Meta Pixel (matches the catalog feed). */ productId?: string; /** WhatsApp "tell me when it's back" for sold-out sizes. */ notify?: { whatsapp: string; name: string }; price: number; variants: Variant[]; finder: 'size' | null; axes?: OptionAxis[]; choices?: Choice[]; freeOver?: number; /** Quick-add sheet: a quantity stepper and one add button; called after adding. */ onAdded?: () => void; detailsHref?: string }) {
+export function AddToCart({ niche, slug, productId, notify, price, variants, finder, axes = [], choices = [], freeOver, onAdded, detailsHref, coffeeReturns }: { niche: string; slug: string; /** For the Meta Pixel (matches the catalog feed). */ productId?: string; /** WhatsApp "tell me when it's back" for sold-out sizes. */ notify?: { whatsapp: string; name: string }; price: number; variants: Variant[]; finder: 'size' | null; axes?: OptionAxis[]; choices?: Choice[]; freeOver?: number; /** Quick-add sheet: a quantity stepper and one add button; called after adding. */ onAdded?: () => void; detailsHref?: string; /** Coffee store: the note under the buttons speaks of sealed-bag returns, not free exchange. */ coffeeReturns?: boolean }) {
   const router = useRouter();
   const s = useSpeak();
   const t = s.t;
@@ -244,7 +244,7 @@ export function AddToCart({ niche, slug, productId, notify, price, variants, fin
             {variant ? t('buyNow', { price: s.egp(shown) }) : missing}
           </button>
         </div>
-        <span className="muted" style={{ textAlign: 'center' }}>{t('stickyNote')}</span>
+        <span className="muted" style={{ textAlign: 'center' }}>{t(coffeeReturns ? 'ret.sticky' : 'stickyNote')}</span>
       </div>
       )}
     </>

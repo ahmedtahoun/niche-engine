@@ -21,7 +21,7 @@ export async function GET() {
     '',
     `> ${cfg.brand.description?.en ?? cfg.brand.description?.ar ?? ''}`,
     '',
-    `Online store in Egypt at ${siteUrl(cfg)} (Arabic; English at ${siteUrl(cfg, '/', 'en')}). Cash on delivery across Egypt, delivery in 2–4 days by Bosta, shipping EGP ${cfg.shippingEgp}${cfg.freeShippingOverEgp ? ` (free on orders from EGP ${cfg.freeShippingOverEgp})` : ''}, a EGP ${cfg.risk.depositEgp} deposit only on orders over EGP ${cfg.risk.depositAboveEgp}, free exchange within 14 days.${cfg.brand.whatsapp ? ` Customer service on WhatsApp: ${cfg.brand.whatsapp}.` : ''}`,
+    `Online store in Egypt at ${siteUrl(cfg)} (Arabic; English at ${siteUrl(cfg, '/', 'en')}). Cash on delivery across Egypt, delivery in 2–4 days by Bosta, shipping EGP ${cfg.shippingEgp}${cfg.freeShippingOverEgp ? ` (free on orders from EGP ${cfg.freeShippingOverEgp})` : ''}, a EGP ${cfg.risk.depositEgp} deposit only on orders over EGP ${cfg.risk.depositAboveEgp}, ${cfg.returnsPolicy === 'coffee' ? `returns on unopened, full-price bags within 14 days only: opened bags, offer coffee and coffee ground to order can't be returned or exchanged, and taste or roast level isn't a defect (${siteUrl(cfg, '/returns', 'en')})` : 'free exchange within 14 days'}.${cfg.brand.whatsapp ? ` Customer service on WhatsApp: ${cfg.brand.whatsapp}.` : ''}`,
     '',
     '## Products',
     ...products.map((p) => {

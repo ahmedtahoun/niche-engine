@@ -54,7 +54,10 @@ export default async function ProductPage({ params }: P) {
       '@type': 'AggregateOffer', priceCurrency: 'EGP', lowPrice: range.min, highPrice: range.max, offerCount: p.variants.length,
       availability: p.variants.some((v) => v.stock) ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock',
       shippingDetails: { '@type': 'OfferShippingDetails', shippingRate: { '@type': 'MonetaryAmount', value: cfg.shippingEgp, currency: 'EGP' } },
-      hasMerchantReturnPolicy: { '@type': 'MerchantReturnPolicy', merchantReturnDays: 14, returnFees: 'https://schema.org/FreeReturn' },
+      // Coffee: unopened full-price bags within 14 days, the customer pays the return delivery (opened bags never).
+      hasMerchantReturnPolicy: cfg.returnsPolicy === 'coffee'
+        ? { '@type': 'MerchantReturnPolicy', applicableCountry: 'EG', returnPolicyCategory: 'https://schema.org/MerchantReturnFiniteReturnWindow', merchantReturnDays: 14, returnFees: 'https://schema.org/ReturnFeesCustomerResponsibility', merchantReturnLink: siteUrl(cfg, '/returns', s.lang) }
+        : { '@type': 'MerchantReturnPolicy', merchantReturnDays: 14, returnFees: 'https://schema.org/FreeReturn' },
     },
     // Only real reviews with stars count, and only when there are some.
     ...(rating ? { aggregateRating: { '@type': 'AggregateRating', ratingValue: rating.value, reviewCount: rating.count, bestRating: 5, worstRating: 1 } } : {}),
@@ -138,7 +141,7 @@ export default async function ProductPage({ params }: P) {
         </div>
       )}
       <TrackOnView event="ViewContent" data={{ content_ids: [p.id], content_type: 'product_group', content_name: p.en?.name ?? p.nameAr, value: Math.min(...p.variants.filter((v) => v.stock > 0).map((v) => v.price ?? p.price), range.max) }} />
-      {!isSoldOut(p) && <AddToCart niche={niche} slug={p.slug} productId={p.id} notify={cfg.brand.whatsapp ? { whatsapp: cfg.brand.whatsapp, name } : undefined} price={p.price} variants={p.variants} finder={finder} axes={cfg.optionAxes} choices={choices} freeOver={cfg.freeShippingOverEgp} />}
+      {!isSoldOut(p) && <AddToCart niche={niche} slug={p.slug} productId={p.id} notify={cfg.brand.whatsapp ? { whatsapp: cfg.brand.whatsapp, name } : undefined} price={p.price} variants={p.variants} finder={finder} axes={cfg.optionAxes} choices={choices} freeOver={cfg.freeShippingOverEgp} coffeeReturns={cfg.returnsPolicy === 'coffee'} />}
       <div className="eta">
         <EtaPicker />
         <span>{cfg.freeShippingOverEgp ? s.t('eta.feesFree', { fee: s.egp(cfg.shippingEgp), x: s.egp(cfg.freeShippingOverEgp) }) : s.t('eta.fees', { fee: s.egp(cfg.shippingEgp) })}</span>
@@ -150,7 +153,9 @@ export default async function ProductPage({ params }: P) {
         <h2 className="h4">{s.t('sec.specs')}</h2>
         <table className="spec"><tbody>
           {Object.entries(attrs).map(([k, v]) => <tr key={k}><td>{k}</td><td>{v}</td></tr>)}
-          <tr><td>{s.t('exchange')}</td><td>{s.t('exchangeText')}</td></tr>
+          {cfg.returnsPolicy === 'coffee'
+            ? <tr><td>{s.t('ret.label')}</td><td>{s.t('ret.short')} · <a href={s.href(`/returns`)} style={{ textDecoration: 'underline' }}>{s.t('ret.read')}</a></td></tr>
+            : <tr><td>{s.t('exchange')}</td><td>{s.t('exchangeText')}</td></tr>}
         </tbody></table>
       </section>
       {(similar.length > 0 || box) && (

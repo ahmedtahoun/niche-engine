@@ -19,8 +19,8 @@ export interface Me { name: string; phone: string; governorate: string; area: st
 
 export interface WalletView { balance: number; nextExpiry: { amount: number; at: string } | null }
 
-export function CheckoutForm({ niche, governorates, initialPromo, openBeforePay, depositAbove, deposit, eta, me, wallet }: {
-  niche: string; governorates: string[]; initialPromo: string; openBeforePay: boolean; depositAbove: number; deposit: number; eta: Record<string, string>; me: Me | null; wallet: WalletView | null;
+export function CheckoutForm({ niche, governorates, initialPromo, openBeforePay, depositAbove, deposit, eta, me, wallet, returnsHref }: {
+  niche: string; governorates: string[]; initialPromo: string; openBeforePay: boolean; depositAbove: number; deposit: number; eta: Record<string, string>; me: Me | null; /** Coffee store: link to /returns, with the coffee rules shown above the order button. */ returnsHref?: string; wallet: WalletView | null;
 }) {
   const router = useRouter();
   const s = useSpeak();
@@ -103,7 +103,7 @@ export function CheckoutForm({ niche, governorates, initialPromo, openBeforePay,
       <div className="note info">{t('co.eta', { day: date(eta[form.governorate], true) })}</div>
       <fieldset style={{ border: 0, padding: 0, margin: 0, display: 'grid', gap: 8 }}>
         <legend className="h4">{t('payment')}</legend>
-        <label className="radio"><input type="radio" name="pay" checked={form.payment === 'cod'} onChange={() => setForm({ ...form, payment: 'cod' })} /><div><b>{t('cod')}</b><span className="muted">{openBeforePay ? t('codOpen') : t('codPlain')}</span></div></label>
+        <label className="radio"><input type="radio" name="pay" checked={form.payment === 'cod'} onChange={() => setForm({ ...form, payment: 'cod' })} /><div><b>{t('cod')}</b><span className="muted">{openBeforePay ? t(returnsHref ? 'ret.codOpen' : 'codOpen') : t('codPlain')}</span></div></label>
         <label className="radio"><input type="radio" name="pay" checked={form.payment === 'instapay'} onChange={() => setForm({ ...form, payment: 'instapay' })} /><div><b>{t('instapay')}</b><span className="muted">{t('instapayText')}</span></div></label>
       </fieldset>
       {q?.depositRequired && form.payment === 'cod' && <div className="note warn">{t('co.deposit', { above: egp(depositAbove), x: egp(deposit) })}</div>}
@@ -119,6 +119,7 @@ export function CheckoutForm({ niche, governorates, initialPromo, openBeforePay,
       {q && q.promoDiscount > 0 && <div className="note ok">{t('promoOk', { x: egp(q.promoDiscount) })}</div>}
       {q && <Summary q={q} />}
       {err('cart')}
+      {returnsHref && <div className="note warn">{t('ret.checkout')} <a href={returnsHref} target="_blank" style={{ fontWeight: 700, textDecoration: 'underline' }}>{t('ret.read')}</a></div>}
       <p className="muted" style={{ margin: 0 }}>{t('co.privacy')}</p>
       <button className="btn primary block" type="submit" disabled={pending || !q}>{pending ? t('placing') : t('placeOrder', { x: q ? egp(q.total) : '' })}</button>
     </form>

@@ -133,6 +133,9 @@ export interface NicheConfig {
     requireWhatsappConfirm: boolean;
     openBeforePay: boolean;
   };
+  /** Return rules the store shows. "coffee": opened bags, offers and coffee ground to order can't be returned or exchanged,
+   *  taste isn't a defect, full rules on /returns. Without it: the free 14-day exchange. */
+  returnsPolicy?: 'coffee';
   wallet: { cashback: number; expiresDays: number };
   priceCheckDays: number;
   /** Words customers type → the word our catalog uses (already normalized Arabic). */

@@ -24,5 +24,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     ...(guidesFor(cfg.id).length ? [entry('/guide', 0.6)] : []),
     ...guidesFor(cfg.id).map((g) => entry(`/guide/${g.slug}`, 0.6, g.updated)),
     ...(cfg.acceptsSellers !== false ? [entry('/sell', 0.4)] : []),
+    ...(cfg.returnsPolicy === 'coffee' ? [entry('/returns', 0.3)] : []),
   ];
 }

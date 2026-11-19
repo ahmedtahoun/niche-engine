@@ -133,15 +133,15 @@ test('ROAST10: 10% off coffee picked on its own, never shipping or the Discovery
   const coffee = load('coffee');
   const promo = coffee.promos.find((p) => p.code === 'ROAST10')!;
   const base = { bundleDiscount: 0, walletBalance: 0, useWallet: false, isFirstOrder: false, promo };
-  // 250 g Chrome at 300: 270 + 70 shipping.
+  // 250 g Chrome at 300: 270 + 75 shipping.
   const one = cartTotals({ ...base, lines: [{ sellerId: 'bonds', unitPrice: 300, qty: 1 }] }, coffee);
   assert.equal(one.promoDiscount, 30);
-  assert.equal(one.shipping, 70);
-  assert.equal(one.total, 340);
-  // Two bags (600) are under the 800 line: 540 + 70 shipping.
+  assert.equal(one.shipping, 75);
+  assert.equal(one.total, 345);
+  // Two bags (600) are under the 800 line: 540 + 75 shipping.
   const two = cartTotals({ ...base, lines: [{ sellerId: 'bonds', unitPrice: 300, qty: 2 }] }, coffee);
-  assert.equal(two.shipping, 70);
-  assert.equal(two.total, 610);
+  assert.equal(two.shipping, 75);
+  assert.equal(two.total, 615);
   // Three bags: free shipping is decided on the goods before the code (900), then 10% off.
   const three = cartTotals({ ...base, lines: [{ sellerId: 'bonds', unitPrice: 300, qty: 3 }] }, coffee);
   assert.equal(three.shipping, 0);

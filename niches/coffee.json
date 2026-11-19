@@ -68,7 +68,7 @@
     "percent": 0.1,
     "days": 30
   },
-  "shippingEgp": 70,
+  "shippingEgp": 75,
   "feedCategory": "Food, Beverages & Tobacco > Beverages > Coffee",
   "freeShippingOverEgp": 800,
   "freeShippingHint": {
@@ -78,7 +78,7 @@
   },
   "risk": {
     "depositAboveEgp": 1500,
-    "depositEgp": 70,
+    "depositEgp": 75,
     "requireWhatsappConfirm": false,
     "openBeforePay": true
   },

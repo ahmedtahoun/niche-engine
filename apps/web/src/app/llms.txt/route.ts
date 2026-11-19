@@ -4,6 +4,7 @@ import { headers } from 'next/headers';
 import { bestPer100g, catalog, isSoldOut } from '@/lib/catalog';
 import { guidesFor } from '@/lib/guides';
 import { allNiches } from '@/lib/niches';
+import { hasPolicyPages } from '@/lib/policies';
 import { nicheForHost, siteUrl } from '@/lib/site';
 
 export const dynamic = 'force-dynamic';
@@ -23,6 +24,7 @@ export async function GET() {
     '',
     `Online store in Egypt at ${siteUrl(cfg)} (Arabic; English at ${siteUrl(cfg, '/', 'en')}). Cash on delivery across Egypt, delivery in 2–4 days by Bosta, shipping EGP ${cfg.shippingEgp}${cfg.freeShippingOverEgp ? ` (free on orders from EGP ${cfg.freeShippingOverEgp})` : ''}, a EGP ${cfg.risk.depositEgp} deposit only on orders over EGP ${cfg.risk.depositAboveEgp}, ${cfg.returnsPolicy === 'coffee' ? `returns on unopened, full-price bags within 14 days only: opened bags, offer coffee and coffee ground to order can't be returned or exchanged, and taste or roast level isn't a defect (${siteUrl(cfg, '/returns', 'en')})` : 'free exchange within 14 days'}.${cfg.brand.whatsapp ? ` Customer service on WhatsApp: ${cfg.brand.whatsapp}.` : ''}`,
     '',
+    ...(hasPolicyPages(cfg) ? [`Policies: [shipping and delivery](${siteUrl(cfg, '/shipping', 'en')}) · [returns](${siteUrl(cfg, '/returns', 'en')}) · [privacy](${siteUrl(cfg, '/privacy', 'en')}) · [terms](${siteUrl(cfg, '/terms', 'en')}).`, ''] : []),
     '## Products',
     ...products.map((p) => {
       const per = bestPer100g(p);

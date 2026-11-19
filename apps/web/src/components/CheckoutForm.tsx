@@ -19,8 +19,8 @@ export interface Me { name: string; phone: string; governorate: string; area: st
 
 export interface WalletView { balance: number; nextExpiry: { amount: number; at: string } | null }
 
-export function CheckoutForm({ niche, governorates, initialPromo, openBeforePay, depositAbove, deposit, eta, me, wallet, returnsHref }: {
-  niche: string; governorates: string[]; initialPromo: string; openBeforePay: boolean; depositAbove: number; deposit: number; eta: Record<string, string>; me: Me | null; /** Coffee store: link to /returns, with the coffee rules shown above the order button. */ returnsHref?: string; wallet: WalletView | null;
+export function CheckoutForm({ niche, governorates, initialPromo, openBeforePay, depositAbove, deposit, eta, me, wallet, returnsHref, privacyHref }: {
+  niche: string; governorates: string[]; initialPromo: string; openBeforePay: boolean; depositAbove: number; deposit: number; eta: Record<string, string>; me: Me | null; /** Coffee store: link to /returns, with the coffee rules shown above the order button. */ returnsHref?: string; /** Link to the store's privacy policy, after the data note. */ privacyHref?: string; wallet: WalletView | null;
 }) {
   const router = useRouter();
   const s = useSpeak();
@@ -120,7 +120,7 @@ export function CheckoutForm({ niche, governorates, initialPromo, openBeforePay,
       {q && <Summary q={q} />}
       {err('cart')}
       {returnsHref && <div className="note warn">{t('ret.checkout')} <a href={returnsHref} target="_blank" style={{ fontWeight: 700, textDecoration: 'underline' }}>{t('ret.read')}</a></div>}
-      <p className="muted" style={{ margin: 0 }}>{t('co.privacy')}</p>
+      <p className="muted" style={{ margin: 0 }}>{t('co.privacy')}{privacyHref && <> <a href={privacyHref} target="_blank" style={{ textDecoration: 'underline' }}>{t('ft.privacy')}</a></>}</p>
       <button className="btn primary block" type="submit" disabled={pending || !q}>{pending ? t('placing') : t('placeOrder', { x: q ? egp(q.total) : '' })}</button>
     </form>
   );

@@ -279,6 +279,7 @@ const D = {
   'ret.codOpen': { ar: 'افتح الشحنة وشوف الأكياس قبل ما تدفع، من غير ما تفتح كيس القهوة', arF: 'افتحي الشحنة وشوفي الأكياس قبل ما تدفعي، من غير ما تفتحي كيس القهوة', en: 'Open the parcel and check the bags before you pay, without opening a coffee bag' },
   'ft.shipping': { ar: 'الشحن والتوصيل', en: 'Shipping and delivery' },
   'ft.privacy': { ar: 'الخصوصية', en: 'Privacy' },
+  'ft.terms': { ar: 'الشروط والأحكام', en: 'Terms' },
   'ft.sell': { ar: 'بيع معانا', arF: 'بيعي معانا', en: 'Sell with us' },
   // coffee look and trust
   notes: { ar: 'النكهات', en: 'Tasting notes' },

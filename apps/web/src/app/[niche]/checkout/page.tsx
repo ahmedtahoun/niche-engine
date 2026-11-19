@@ -3,6 +3,7 @@ import { CheckoutForm } from '@/components/CheckoutForm';
 import { etaDate, GOVERNORATES } from '@/lib/eta';
 import { speaker } from '@/lib/lang';
 import { getNiche } from '@/lib/niches';
+import { hasPolicyPages } from '@/lib/policies';
 import { currentCustomer } from '@/lib/current-customer';
 import { walletOf } from '@/lib/wallet';
 
@@ -18,7 +19,7 @@ export default async function CheckoutPage({ params, searchParams }: { params: P
   const me = a ? { name: a.name, phone: a.phone, governorate: a.governorate, area: a.area, address: a.address, landmark: a.landmark } : null;
   return (
     <main className="page narrow">
-      <CheckoutForm niche={cfg.id} governorates={GOVERNORATES} initialPromo={promo} openBeforePay={cfg.risk.openBeforePay} depositAbove={cfg.risk.depositAboveEgp} deposit={cfg.risk.depositEgp} eta={eta} me={me} wallet={w ? { balance: w.balance, nextExpiry: w.nextExpiry } : null} returnsHref={cfg.returnsPolicy === 'coffee' ? (await speaker(cfg)).href('/returns') : undefined} />
+      <CheckoutForm niche={cfg.id} governorates={GOVERNORATES} initialPromo={promo} openBeforePay={cfg.risk.openBeforePay} depositAbove={cfg.risk.depositAboveEgp} deposit={cfg.risk.depositEgp} eta={eta} me={me} wallet={w ? { balance: w.balance, nextExpiry: w.nextExpiry } : null} returnsHref={cfg.returnsPolicy === 'coffee' ? (await speaker(cfg)).href('/returns') : undefined} privacyHref={hasPolicyPages(cfg) ? (await speaker(cfg)).href('/privacy') : undefined} />
     </main>
   );
 }

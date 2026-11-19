@@ -3,6 +3,7 @@ import { headers } from 'next/headers';
 import { catalog } from '@/lib/catalog';
 import { guidesFor } from '@/lib/guides';
 import { allNiches } from '@/lib/niches';
+import { hasPolicyPages } from '@/lib/policies';
 import { nicheForHost, siteUrl } from '@/lib/site';
 
 export const dynamic = 'force-dynamic';
@@ -25,5 +26,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     ...guidesFor(cfg.id).map((g) => entry(`/guide/${g.slug}`, 0.6, g.updated)),
     ...(cfg.acceptsSellers !== false ? [entry('/sell', 0.4)] : []),
     ...(cfg.returnsPolicy === 'coffee' ? [entry('/returns', 0.3)] : []),
+    ...(hasPolicyPages(cfg) ? ['/shipping', '/privacy', '/terms'].map((p) => entry(p, 0.3)) : []),
   ];
 }

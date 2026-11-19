@@ -203,6 +203,14 @@
       "namedRegex": "^/(?<nxtPniche>[^/]+?)/p/(?<nxtPslug>[^/]+?)(?:/)?$"
     },
     {
+      "page": "/[niche]/privacy",
+      "regex": "^/([^/]+?)/privacy(?:/)?$",
+      "routeKeys": {
+        "nxtPniche": "nxtPniche"
+      },
+      "namedRegex": "^/(?<nxtPniche>[^/]+?)/privacy(?:/)?$"
+    },
+    {
       "page": "/[niche]/returns",
       "regex": "^/([^/]+?)/returns(?:/)?$",
       "routeKeys": {
@@ -225,6 +233,22 @@
         "nxtPniche": "nxtPniche"
       },
       "namedRegex": "^/(?<nxtPniche>[^/]+?)/sell(?:/)?$"
+    },
+    {
+      "page": "/[niche]/shipping",
+      "regex": "^/([^/]+?)/shipping(?:/)?$",
+      "routeKeys": {
+        "nxtPniche": "nxtPniche"
+      },
+      "namedRegex": "^/(?<nxtPniche>[^/]+?)/shipping(?:/)?$"
+    },
+    {
+      "page": "/[niche]/terms",
+      "regex": "^/([^/]+?)/terms(?:/)?$",
+      "routeKeys": {
+        "nxtPniche": "nxtPniche"
+      },
+      "namedRegex": "^/(?<nxtPniche>[^/]+?)/terms(?:/)?$"
     }
   ],
   "staticRoutes": [

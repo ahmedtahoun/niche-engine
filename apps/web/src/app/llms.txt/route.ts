@@ -1,7 +1,7 @@
 // /llms.txt: a plain summary of the store for AI assistants (llmstxt.org format):
 // who we are, what we sell with prices, how ordering works, and the guide pages.
 import { headers } from 'next/headers';
-import { bestPer100g, catalog } from '@/lib/catalog';
+import { bestPer100g, catalog, isSoldOut } from '@/lib/catalog';
 import { guidesFor } from '@/lib/guides';
 import { allNiches } from '@/lib/niches';
 import { nicheForHost, siteUrl } from '@/lib/site';
@@ -27,7 +27,7 @@ export async function GET() {
     ...products.map((p) => {
       const per = bestPer100g(p);
       const notes = p.profile?.notesEn?.join(', ') ?? p.en?.attributes?.['Tasting notes'];
-      return `- [${p.en?.name ?? p.nameAr}](${siteUrl(cfg, `/p/${p.slug}`, 'en')}): ${p.en?.lead ?? p.leadAr} By ${cat.sellerOf(p).nameEn ?? cat.sellerOf(p).name}. ${p.variants.map((v) => `${v.labelEn ?? v.label} EGP ${v.price ?? p.price}`).join(' · ')}${per ? ` (EGP ${Math.round(per)}/100 g)` : ''}${notes ? `. Notes: ${notes}` : ''}.`;
+      return `- [${p.en?.name ?? p.nameAr}](${siteUrl(cfg, `/p/${p.slug}`, 'en')}): ${p.en?.lead ?? p.leadAr} By ${cat.sellerOf(p).nameEn ?? cat.sellerOf(p).name}. ${p.variants.map((v) => `${v.labelEn ?? v.label} EGP ${v.price ?? p.price}`).join(' · ')}${per ? ` (EGP ${Math.round(per)}/100 g)` : ''}${notes ? `. Notes: ${notes}` : ''}.${isSoldOut(p) ? ' Sold out for now: it can’t be ordered until it is back in stock.' : (() => { const out = p.variants.filter((v) => v.stock <= 0).map((v) => v.labelEn ?? v.label); return out.length ? ` Sold out for now in ${out.join(', ')}.` : ''; })()}`;
     }),
     '',
     ...(cfg.bundles.length ? ['## Bundles', ...cfg.bundles.flatMap((b) => { const v = cat.bundleView(cfg, b.id); return v ? [`- [${b.nameEn ?? b.nameAr}](${siteUrl(cfg, `/b/${b.id}`, 'en')}): EGP ${v.price} instead of EGP ${v.fullPrice}.`] : []; }), ''] : []),

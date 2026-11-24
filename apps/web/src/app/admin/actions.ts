@@ -14,7 +14,7 @@ import { unblock } from '@/lib/blocklist';
 import { catalog, deleteProduct, deleteSeller, saveProduct, saveSeller } from '@/lib/catalog';
 import { store } from '@/lib/store';
 import { RIBBONS, type CartLine, type Product } from '@/lib/types';
-import { moveOrderTo, queueShipment, shipSellerPart, ShipmentHold, syncOpenShipments } from '@/lib/fulfillment';
+import { autoAccept, HOLD, moveOrderTo, queueShipment, shipSellerPart, ShipmentHold, syncOpenShipments } from '@/lib/fulfillment';
 import { bostaEnabled, checkDistrict } from '@/lib/bosta';
 import { allNiches, getNiche } from '@/lib/niches';
 import { applySellerPart, draftOrder, mutateOrder, ORDER_SOURCES, orderById, ordersFor, type OrderSource, type OrderStatus } from '@/lib/orders';
@@ -68,6 +68,8 @@ export async function confirmForSellers(id: number) {
     const moved = await moveOrderTo(id, 'confirmed', ['awaiting_confirm']);
     if (moved) await deliver([...moved.messages, ...notifyOrder(moved.order, await catalog())]);
   }
+  // Confirming a held order is the owner's OK: the hold flag goes and it ships like any other.
+  await mutateOrder(id, (x) => { if (!x.needsAttention?.startsWith(HOLD)) return false; delete x.needsAttention; return true; });
   const pending = Object.entries((await orderById(id))?.sellerState ?? {}).filter(([, part]) => part === 'pending').map(([sid]) => sid);
   for (const sid of pending) {
     const saved = await mutateOrder(id, (x) => applySellerPart(x, sid, 'accepted'));
@@ -412,7 +414,8 @@ export async function createManualOrder(input: ManualOrderInput): Promise<Manual
   }), null);
   if (order === 'wallet_conflict') return { ok: false, error: 'Please try again.' };
   await takeStock(order);
-  await deliver([...notifyOrder(order, cat), ...orderAlert(order, 'new')]);
+  // Typed in by the team: no duplicate/payment checks, ships straight away in stores the owner fulfils.
+  await deliver([...orderAlert(order, 'new'), ...(cfg.risk.autoAccept ? await autoAccept(order.id, { trusted: true }) : notifyOrder(order, cat))]);
   done();
   return { ok: true, id: order.id };
 }

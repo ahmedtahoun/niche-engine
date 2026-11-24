@@ -11,6 +11,7 @@ import { currentCustomer, endSession, isGuestOrder, rememberGuestOrder, startSes
 import { moveOrderTo } from '@/lib/fulfillment';
 import { walletOf } from '@/lib/wallet';
 import { notifyOrder } from '@/bot/engine';
+import { autoAccept } from '@/lib/fulfillment';
 import { deliver } from '@/bot/transport';
 import { GOVERNORATES } from '@/lib/eta';
 import { checkDistrict } from '@/lib/bosta';
@@ -145,7 +146,8 @@ export async function placeOrder(niche: string, cart: CartLine[], form: Checkout
     if (order === 'wallet_conflict') continue;
     // With WhatsApp confirmation off, the order goes straight to the sellers.
     await takeStock(order);
-    await deliver([...(order.status === 'confirmed' ? notifyOrder(order, cat) : []), ...orderAlert(order, 'new')]);
+    // Stores the owner fulfils (risk.autoAccept) accept and ship a clean order now; others ask the sellers.
+    await deliver([...orderAlert(order, 'new'), ...(order.status !== 'confirmed' ? [] : cfg.risk.autoAccept ? await autoAccept(order.id) : notifyOrder(order, cat))]);
     if (guest) await rememberGuestOrder(order.id);
     await reportPurchase(niche, order.id, q, { phone: phone!, name: details.name, governorate: details.governorate });
     await afterOrder(niche, order.id, phone!, form.utm);
@@ -232,7 +234,7 @@ async function ownOrder(niche: string, id: number) {
 export async function confirmOrder(niche: string, id: number) {
   if (!(await ownOrder(niche, id))) return false;
   const o = await mutateOrder(id, (x) => applyStatus(x, ['awaiting_confirm'], 'confirmed'));
-  if (o) await deliver(notifyOrder(o, await catalog()));
+  if (o) await deliver(getNiche(o.niche)?.risk.autoAccept ? await autoAccept(o.id) : notifyOrder(o, await catalog()));
   return Boolean(o);
 }
 

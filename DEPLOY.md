@@ -62,7 +62,8 @@ Bosta (one business account per store; Sakina has its own):
 1. In Bosta: Settings → API integration → create an API key. Put it in `BOSTA_API_KEY_UMRAH` (Sakina) or `BOSTA_API_KEY_COFFEE` (Cairo Roast); `BOSTA_API_KEY` is the fallback for a store without its own. Set `BOSTA_WEBHOOK_SECRET` to a random string of 20+ characters. Restart.
 2. No webhook to set in Bosta's dashboard: every shipment carries `https://<store domain>/api/bosta` and the secret, so Bosta reports each status change by itself. Missed updates are caught by a sync every 2 hours (and the "Sync with Bosta" button in Admin → Orders).
 3. For each seller, create a pickup location in Bosta (Pickup locations) and paste its id in Admin → Sellers → "Bosta pickup location id". Empty = the account's default location.
-4. Checkout asks for the area from Bosta's own district list (same as shop.wheretospot.com), so shipments go out with Bosta's exact district. An older order without one shows "Bosta area" on its admin page: pick it there and the shipment is created.
+4. Stores with `"autoAccept": true` under `risk` in `niches/<id>.json` (Cairo Roast and Sakina for now: the owner is the seller) ship by themselves: a clean order is accepted and sent to Bosta the moment it's placed. An order from a phone with another open order, a phone that refused before, InstaPay, a deposit, or an address Bosta can't place waits in Admin → Orders → Needs action with the reason; **Approve and ship** sends it.
+5. Checkout asks for the area from Bosta's own district list (same as shop.wheretospot.com), so shipments go out with Bosta's exact district. An older order without one shows "Bosta area" on its admin page: pick it there and the shipment is created.
 
 ## 6. Check it is live
 

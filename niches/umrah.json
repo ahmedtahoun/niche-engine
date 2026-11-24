@@ -71,7 +71,8 @@
     "depositAboveEgp": 1200,
     "depositEgp": 65,
     "requireWhatsappConfirm": false,
-    "openBeforePay": true
+    "openBeforePay": true,
+    "autoAccept": true
   },
   "wallet": {
     "cashback": 0.04,

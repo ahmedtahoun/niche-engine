@@ -7,7 +7,9 @@ import { freshStore, makeOrder } from './helpers.ts';
 import { checkDistrict, getWaybillPdf, parseWebhook, resolveDistrict, webhookAuthorized } from '../src/lib/bosta.ts';
 import { citiesForGovernorate, exactArea, indexAreas, parseBostaCities, searchAreas } from '../src/lib/bosta-areas.ts';
 import { AREAS } from './bosta-fake.ts';
-import { applyTracking, queueShipment, settleShipments, shipSellerPart, syncOpenShipments } from '../src/lib/fulfillment.ts';
+import { applyTracking, autoAccept, queueShipment, settleShipments, shipSellerPart, syncOpenShipments } from '../src/lib/fulfillment.ts';
+import { recordRefusal } from '../src/lib/blocklist.ts';
+const recordRefusalFor = (phone: string) => recordRefusal(phone, 900000 + Number(phone.slice(-4)));
 import { applySellerPart, mutateOrder, orderById } from '../src/lib/orders.ts';
 import { saveSeller, catalog } from '../src/lib/catalog.ts';
 import { GOVERNORATES } from '../src/lib/eta.ts';
@@ -176,4 +178,57 @@ test('a store without its own key (and no shared key) stays in demo mode', async
   await shipSellerPart(o.id, sid);
   assert.match((await orderById(o.id))!.shipments![sid].tracking, /^DEMO/);
   assert.equal(fake.requests.filter((r) => r.path.startsWith('/deliveries')).length, 0);
+});
+
+// ---------- automatic acceptance (risk.autoAccept: the store owner is the seller) ----------
+const SMALL = [{ kind: 'item' as const, slug: 'chiffon-hijab-sand', variant: 'مقاس واحد', qty: 2 }];
+
+test('auto-accept: a clean order is accepted and sent to Bosta with no clicks', async () => {
+  const o = await makeOrder({ cart: SMALL, phone: '01100000001' });
+  const alerts = await autoAccept(o.id);
+  await settleShipments();
+  const saved = (await orderById(o.id))!;
+  assert.equal(saved.status, 'accepted');
+  assert.ok(Object.values(saved.sellerState).every((p) => p === 'accepted'));
+  assert.ok(Object.values(saved.shipments ?? {}).every((s) => /^\d+$/.test(s.tracking)), 'real Bosta tracking numbers');
+  assert.equal(Object.keys(saved.shipments ?? {}).length, Object.keys(saved.sellerState).length);
+  assert.equal(saved.needsAttention, undefined);
+  assert.ok(Array.isArray(alerts));
+  assert.deepEqual(await autoAccept(o.id), [], 'running it again does nothing');
+});
+
+test('auto-accept: risky orders wait for the owner with the reason', async () => {
+  const held = async (o: Awaited<ReturnType<typeof makeOrder>>) => { await autoAccept(o.id); const x = (await orderById(o.id))!; return { status: x.status, flag: x.needsAttention ?? '', shipped: Boolean(x.shipments) }; };
+  // Same phone, second open order (#1020 / #1022 case).
+  await makeOrder({ cart: SMALL, phone: '01100000002' });
+  const dup = await held(await makeOrder({ cart: SMALL, phone: '01100000002' }));
+  assert.match(dup.flag, /^hold: same phone has open order #\d+/);
+  assert.equal(dup.status, 'confirmed');
+  assert.equal(dup.shipped, false);
+  assert.match((await held(await makeOrder({ cart: SMALL, phone: '01100000003', payment: 'instapay' }))).flag, /^hold: InstaPay/);
+  assert.match((await held(await makeOrder({ phone: '01100000004' }))).flag, /^hold: deposit 65 EGP/, 'the kit is above the deposit line');
+  await recordRefusalFor('01100000005');
+  assert.match((await held(await makeOrder({ cart: SMALL, phone: '01100000005' }))).flag, /^hold: this phone refused/);
+  const noArea = await makeOrder({ cart: SMALL, phone: '01100000006' });
+  await mutateOrder(noArea.id, (x) => { x.customer.area = 'مكان مش في القايمة'; return true; });
+  assert.match((await held(noArea)).flag, /^hold: pick the customer's Bosta area/);
+});
+
+test('auto-accept: orders the team typed in skip the customer checks; shipping clears a hold', async () => {
+  const o = await makeOrder({ cart: SMALL, phone: '01100000007', payment: 'instapay' });
+  await autoAccept(o.id, { trusted: true });
+  await settleShipments();
+  assert.equal((await orderById(o.id))!.status, 'accepted');
+  const h = await makeOrder({ cart: SMALL, phone: '01100000008', payment: 'instapay' });
+  await autoAccept(h.id);
+  assert.match((await orderById(h.id))!.needsAttention ?? '', /^hold/);
+  await accepted(h);
+  for (const s of Object.keys(h.sellerState)) await shipSellerPart(h.id, s);
+  assert.equal((await orderById(h.id))!.needsAttention, undefined, 'the owner approved and it shipped: flag gone');
+});
+
+test('auto-accept is off for stores without it, and waits while an order still needs WhatsApp confirmation', async () => {
+  const o = await makeOrder({ cart: SMALL, phone: '01100000009', status: 'awaiting_confirm' });
+  assert.deepEqual(await autoAccept(o.id), []);
+  assert.equal((await orderById(o.id))!.status, 'awaiting_confirm');
 });

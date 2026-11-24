@@ -8,11 +8,11 @@ import { returnStock } from './stock.ts';
 import type { Outgoing } from '../bot/types.ts';
 import { deliver } from '../bot/transport.ts';
 import { recordRefusal } from './blocklist.ts';
-import { BostaError, FINAL_STATES, STATE_CODES, bostaEnabled, createDelivery, getWaybillPdf, resolveDistrict, stateLabel, viewDelivery } from './bosta.ts';
+import { BostaError, FINAL_STATES, STATE_CODES, bostaEnabled, checkDistrict, createDelivery, getWaybillPdf, resolveDistrict, stateLabel, viewDelivery } from './bosta.ts';
 import { origin } from './site.ts';
 import { catalog, type Catalog } from './catalog.ts';
 import { getNiche } from './niches.ts';
-import { itemsOfSeller, mutateOrder, orderById, type Order, type OrderStatus, type Shipment } from './orders.ts';
+import { applySellerPart, itemsOfSeller, mutateOrder, orderById, type Order, type OrderStatus, type Shipment } from './orders.ts';
 import { store } from './store/index.ts';
 import { grantCashback, refundSpend } from './wallet.ts';
 import { rewardPassport } from './passport.ts';
@@ -81,7 +81,7 @@ export async function shipSellerPart(orderId: number, sellerId: string): Promise
     const now = x.shipments?.[sellerId];
     if (now && now.status !== 'cancelled') return false;
     x.shipments = { ...(x.shipments ?? {}), [sellerId]: shipment };
-    if (x.needsAttention && /^(bosta_area|shipment_failed|shipment_cancelled)/.test(x.needsAttention)) delete x.needsAttention;
+    if (x.needsAttention && /^(bosta_area|shipment_failed|shipment_cancelled|hold)/.test(x.needsAttention)) delete x.needsAttention;
     return true;
   });
   if (!saved) console.error(`[bosta] order ${orderId}/${sellerId} already had a shipment; Bosta delivery ${res.deliveryId} may be a duplicate`);
@@ -89,6 +89,51 @@ export async function shipSellerPart(orderId: number, sellerId: string): Promise
   if (!chat || !saved) return [];
   const pdf = await getWaybillPdf(o.niche, res.tracking).catch(() => null);
   return [{ chatId: chat, text: `📄 بوليصة بوسطة · رقم التتبع ${res.tracking}`, file: { name: `AWB-${o.id}-${res.tracking}.pdf`, ...(pdf ? { base64: pdf } : {}) } }];
+}
+
+// ---------- automatic acceptance (the store owner is the seller) ----------
+
+const OPEN: OrderStatus[] = ['awaiting_confirm', 'confirmed', 'accepted', 'picked'];
+export const HOLD = 'hold';
+
+/**
+ * Why an order should wait for the owner instead of shipping by itself, or null when it's clean.
+ * `trusted` (an order the team typed in the admin) skips the customer checks.
+ */
+export async function holdReason(o: Order, trusted = false): Promise<string | null> {
+  if (!trusted) {
+    const others = (await store().listOrders({ phone: o.customer.phone, niche: o.niche, statuses: OPEN, limit: 20 })).filter((x) => x.id !== o.id);
+    if (others.length) return `same phone has open order${others.length > 1 ? 's' : ''} ${others.map((x) => `#${x.id}`).join(', ')}: duplicate?`;
+    if ((await store().refusalCount(o.customer.phone)) > 0) return 'this phone refused a delivery before';
+    if (o.payment === 'instapay') return 'InstaPay: check the payment arrived';
+    if (o.quote.depositRequired) return `deposit ${Math.round(o.quote.deposit)} EGP: check it arrived`;
+  }
+  if (bostaEnabled(o.niche) && (await checkDistrict(o.customer.governorate, o.customer.area, o.customer.districtId)) === 'pick') {
+    return `pick the customer's Bosta area ("${o.customer.area}")`;
+  }
+  return null;
+}
+
+/**
+ * For stores with risk.autoAccept: a confirmed order is accepted for every seller and its Bosta
+ * shipments are created now; a risky one is flagged "hold: …" for the owner (admin → Confirm ships it).
+ * Returns the team alerts to send. Does nothing for other stores or other statuses.
+ */
+export async function autoAccept(orderId: number, o2: { trusted?: boolean } = {}): Promise<Outgoing[]> {
+  const o = await orderById(orderId);
+  const cfg = o && getNiche(o.niche);
+  if (!o || !cfg?.risk.autoAccept || o.status !== 'confirmed') return [];
+  const why = await holdReason(o, o2.trusted);
+  if (why) {
+    const held = await mutateOrder(orderId, (x) => { x.needsAttention = `${HOLD}: ${why}`; return true; });
+    return held ? orderAlert(held, 'held', why) : [];
+  }
+  const pending = Object.entries(o.sellerState).filter(([, p]) => p === 'pending').map(([sid]) => sid);
+  let saved: Order | null = null;
+  for (const sid of pending) saved = (await mutateOrder(orderId, (x) => applySellerPart(x, sid, 'accepted'))) ?? saved;
+  if (!saved) return [];
+  if (bostaEnabled(o.niche)) for (const sid of pending) queueShipment(orderId, sid);
+  return orderAlert(saved, 'accepted', bostaEnabled(o.niche) ? 'تلقائي · اتبعت لبوسطة' : 'تلقائي');
 }
 
 // Shipments run after the bot replies; tests await them with settleShipments().

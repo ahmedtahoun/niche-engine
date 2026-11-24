@@ -138,6 +138,12 @@ export interface NicheConfig {
     depositEgp: number;
     requireWhatsappConfirm: boolean;
     openBeforePay: boolean;
+    /**
+     * The store owner fulfils every order (no seller taps "accept"): a clean order is accepted for every
+     * seller and sent to Bosta the moment it's confirmed. Risky ones (same phone with an open order, a past
+     * refusal, InstaPay or a deposit to check, an area Bosta can't place) wait in admin → Needs action.
+     */
+    autoAccept?: boolean;
   };
   /** Return rules the store shows. "coffee": opened bags, offers and coffee ground to order can't be returned or exchanged,
    *  taste isn't a defect, full rules on /returns. Without it: the free 14-day exchange. */

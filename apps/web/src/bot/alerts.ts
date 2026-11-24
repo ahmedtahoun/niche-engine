@@ -30,13 +30,14 @@ export function teamEntries(raw = process.env.TEAM_TELEGRAM_CHAT_IDS): { chatId:
 export const orderChats = (niche: string) => [...new Set([...adminChats(), ...teamEntries().filter((t) => !t.niche || t.niche === niche).map((t) => t.chatId)])];
 export const orderAlerts = (niche: string, texts: string[]): Outgoing[] => texts.flatMap((text) => orderChats(niche).map((chatId) => ({ chatId, text })));
 
-export type OrderEvent = 'new' | 'confirmed' | 'accepted' | 'rejected' | 'picked' | 'delivered' | 'refused' | 'cancelled';
+export type OrderEvent = 'new' | 'confirmed' | 'accepted' | 'held' | 'rejected' | 'picked' | 'delivered' | 'refused' | 'cancelled';
 
 const egp = (n: number) => `${Math.round(n).toLocaleString('en-US')} ج`;
 const SOURCE: Record<string, string> = { whatsapp: 'واتساب', phone: 'تليفون', instagram: 'رسايل إنستجرام', facebook: 'رسايل فيسبوك', other: 'يدوي' };
 const STEP: Record<Exclude<OrderEvent, 'new'>, string> = {
   confirmed: '☑️ اتأكد واتبعت للبائع',
   accepted: '✅ البائع قبل الطلب',
+  held: '⏸️ مستني مراجعتك قبل الشحن',
   rejected: '❌ البائع قال مش متاح: كلم العميل',
   picked: '🚚 مع المندوب',
   delivered: '🎉 اتسلم للعميل',

@@ -5,6 +5,7 @@ import { after } from 'next/server';
 import { headers } from 'next/headers';
 import { devOpen, isAdmin } from '@/lib/admin-auth';
 import { maybeSweep } from '@/lib/abandoned';
+import { maybeSyncBosta } from '@/lib/fulfillment';
 import { getNiche } from '@/lib/niches';
 import { allow, clientIp } from '@/lib/rate-limit';
 import { store } from '@/lib/store';
@@ -31,6 +32,8 @@ export async function POST(req: Request) {
   after(async () => {
     try { await store().addSiteEvent(event); } catch { /* migration 0006 not run yet: drop quietly */ }
     await maybeSweep();
+    // Bosta statuses whose webhook was missed catch up here too (at most every 2 hours).
+    await maybeSyncBosta();
   });
   return ok;
 }

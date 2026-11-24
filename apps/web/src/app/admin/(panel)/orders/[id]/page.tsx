@@ -42,6 +42,7 @@ export default async function OrderPage({ params }: { params: Promise<{ id: stri
   const address = [o.customer.governorate, o.customer.area, o.customer.address].filter(Boolean).join('، ') + (o.customer.landmark ? ` (${o.customer.landmark})` : '');
   const brand = cfg?.brand.nameAr ?? '';
   const bostaOn = bostaEnabled(o.niche);
+  const onBosta = Object.values(o.shipments ?? {}).some((s) => !s.tracking.startsWith('DEMO') && s.status !== 'cancelled');
   // Accepted seller parts with no shipment (or one cancelled at Bosta): the team can create it from here.
   const missing = Object.entries(o.sellerState).filter(([sid, part]) => ['accepted', 'handed'].includes(part) && (!o.shipments?.[sid] || o.shipments[sid].status === 'cancelled'));
   const canShip = bostaOn && missing.length > 0 && ['confirmed', 'accepted', 'picked'].includes(o.status);
@@ -68,7 +69,7 @@ export default async function OrderPage({ params }: { params: Promise<{ id: stri
             <ol className="steps-adm">{STEPS.map(([label, on]) => <li key={label} className={on.includes(o.status) ? 'on' : ''}>{label}</li>)}</ol>
             {!['delivered', 'refused', 'cancelled'].includes(o.status) && (
               <div className="next-step">
-                <span className="sub">{NEXT[o.status]}</span>
+                <span className="sub">{o.needsAttention?.startsWith('hold') ? 'Next: check it (see Needs attention), then Approve and ship, or cancel it.' : onBosta && ['accepted', 'picked'].includes(o.status) ? 'Next: nothing. Bosta moves it to With courier, then Delivered or Refused.' : NEXT[o.status]}</span>
                 <OrderActions o={o} />
               </div>
             )}

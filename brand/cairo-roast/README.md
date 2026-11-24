@@ -27,27 +27,36 @@ The mark says *Cairo + coffee* without a pyramid cliché, and it stays readable 
 
 SVGs carry their fonts inside, so they look the same on any computer. For a printing shop, send the PNG, or the SVG opened and exported as PDF from Chrome.
 
-## Bag labels: "ساعات القاهرة · Cairo Hours"
-`labels/`: rebuild with `node brand/cairo-roast/labels.mjs`.
+## Bag labels: "CAIRO HOURS · ساعات القاهرة"
+`labels/`: rebuild with `node brand/cairo-roast/labels.mjs`. Review sheet: `labels/all-labels.png`.
 
-**The idea:** the label is die-cut in the logo's Cairo arch. Inside the arch is the same Cairo skyline on every bag (domes, minarets, the Cairo Tower, the logo's Nile), each coffee at a different hour of the day, with the sun or moon drawn from its main tasting note. Seven hours make a collection, and each hour suggests when to drink it.
+**The idea:** premium on a white bag. White labels that almost disappear into the bag, gold-foil arch frames and logo, English first with Arabic in support, and lots of white space. In the middle sits a small framed window onto Cairo: the same skyline on every bag, at a different hour, with the sun or moon drawn from the coffee's main tasting note. Under it, the journey from origin to Cairo ("≈ 2,800 KM TO YOUR CUP") and one story line, so people feel the trip before they taste. Numbered N° 01–07 as a collection.
 
-| Coffee | Hour | Sun / moon |
-|---|---|---|
-| Ethiopia Guji | Dawn · 5:30 AM | apricot sun, orange blossoms, berries |
-| Ethiopia Limu | Morning · 8:00 AM | orange-slice sun, tea steam |
-| Brazil Red Catuai | Noon · 12:00 PM | hazelnut sun, sugar cane |
-| Colombia Castillo | Afternoon · 3:30 PM | tangerine sun, felucca |
-| Amber Blend | Sunset · 5:30 PM | molasses-amber setting sun |
-| Chrome Blend | Night · 10:00 PM | chrome-silver moon, stars |
-| El Salvador San Agustín | Late evening · 12:00 AM | coffee-bean moon (notes to confirm) |
+| N° | Coffee | Hour | Sun / moon |
+|---|---|---|---|
+| 01 | Ethiopia Guji Hambela | Dawn · 5:30 AM | apricot, orange blossom |
+| 02 | Ethiopia Limu | Morning · 8:00 AM | orange slice, tea steam |
+| 03 | Brazil Red Catuai | Noon · 12:00 PM | hazelnut, sugar cane |
+| 04 | Colombia Castillo | Afternoon · 3:30 PM | tangerine, felucca |
+| 05 | Amber Blend | Sunset · 5:30 PM | molasses-amber sun |
+| 06 | Chrome Blend | Night · 10:00 PM | chrome-silver moon |
+| 07 | El Salvador San Agustín | Late evening · 12:00 AM | coffee-bean moon |
 
-**Print:** label 95 × 135 mm trim, 3 mm bleed (101 × 141 mm), arch-shaped die cut (`labels/dieline.svg`, magenta line). Files: `labels/label-<coffee>.svg` (vector, fonts embedded) and `.png` (300 dpi). Keep text 3 mm inside the cut. Bag: white 13 × 20 cm; the label's arch top sits about 5 cm below the top edge, under the degassing valve. Paper: matte white or cream sticker, or kraft for a craft look (colours shift on kraft: proof first).
+**Front for desire, back for use.**
+- **Front** (95 × 135 mm, arch-shaped die cut, 3 mm bleed): brand, hour, the Cairo window, origin and name, the journey and story, tasting notes, process/variety/altitude and weight.
+- **Back** (60 × 90 mm, 3 mm rounded corners, 3 mm bleed): roast-date box, grind ticks, a two-line brew recipe, QR ("scan to taste the journey": tasting game, brew coach, Coffee Passport), the passport stamp, WhatsApp and storage.
+
+**Print:**
+- Files: `labels/front-<coffee>.svg` and `labels/back-<coffee>.svg` (vector, fonts embedded), plus 300 dpi PNGs. Die lines: `labels/dieline-front.svg`, `labels/dieline-back.svg`.
+- **Gold (#B08D57) = gold foil**: outer frame, window frames, logo arch. Without foil, print it as the brass colour.
+- Stock: matte white sticker, so it melts into the white bag. A soft-touch laminate makes it feel premium in the hand.
+- Placement: the front arch top about 5 cm below the bag's top edge (under the degassing valve); the back label centred on the back.
+- Distances are approximate (origin region to Cairo, rounded to 100 km).
 
 **Before printing:**
-- Anything in magenta brackets is a placeholder: El Salvador's variety, process, altitude and tasting notes must come from Bonds.
-- The dashed QR box is a placeholder: each label's QR should open its coffee page (`cairoroast.com/p/<coffee>`), where the tasting game is.
-- Weight (250 g), roast date and grind are written or ticked by hand on each bag.
+- Magenta brackets are placeholders: El Salvador's tasting notes, process, variety and altitude must come from Bonds.
+- The dashed QR box: each code should open its coffee page (`cairoroast.com/p/<coffee>`).
+- Weight is 250 g on every label; change it in `labels.mjs` if the 13 × 20 bag holds a different weight.
 
 ## Colors
 

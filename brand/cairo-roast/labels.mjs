@@ -1,33 +1,40 @@
-// Cairo Roast bag labels: "ساعات القاهرة · Cairo Hours".
+// Cairo Roast bag labels, v2: "Cairo Hours", premium on a white bag.
 //   node brand/cairo-roast/labels.mjs
-// One label per coffee for the white 13 × 20 cm bag. The label is die-cut in the shape of the logo's
-// Cairo arch. Inside the arch: the same Cairo skyline on every bag, at a different hour of the day,
-// with the sun (or moon) drawn from the coffee's main tasting note.
-// Print: 95 × 135 mm trim + 3 mm bleed (101 × 141 mm), 300 dpi PNG and SVG; the die line is a
-// separate file. Drawn in millimetres (viewBox 0 0 101 141). Fonts are embedded (OFL).
+// FRONT (95 × 135 mm, arch die cut): white label on the white bag so it almost disappears; gold-foil
+// arch frame and logo; English leads, Arabic supports; a small framed window onto Cairo at this coffee's
+// hour, the sun drawn from its main tasting note; the journey from origin to Cairo, and one story line.
+// BACK (60 × 90 mm): the practical side: roast date, grind, a short brew recipe, QR, passport stamp.
+// Print files: SVG (fonts embedded) and 300 dpi PNG, 3 mm bleed; die lines separate; gold = foil.
 import { execFileSync } from 'node:child_process';
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const root = path.join(here, '..', '..');
 const dir = path.join(here, 'labels');
+rmSync(dir, { recursive: true, force: true });
 mkdirSync(dir, { recursive: true });
 
-const C = { espresso: '#24160F', roast: '#B4552D', brass: '#C8963E', sand: '#F3E9D8', cream: '#FBF7F0', nile: '#2F5D5A', muted: '#6E5A4E' };
+const C = { espresso: '#1E1410', roast: '#B4552D', foil: '#B08D57', muted: '#6F6259', hair: '#D9D2C7', white: '#FFFFFF' };
 
 const font = (pkg, file) => readFileSync(path.join(root, 'node_modules', '@fontsource', pkg, 'files', file)).toString('base64');
-const FONTS = `
-@font-face{font-family:Messiri;font-weight:700;src:url(data:font/woff;base64,${font('el-messiri', 'el-messiri-arabic-700-normal.woff')}) format('woff');unicode-range:U+0600-06FF,U+200C-200E,U+2010-2011,U+FB50-FDFF,U+FE70-FEFC}
-@font-face{font-family:Messiri;font-weight:700;src:url(data:font/woff;base64,${font('el-messiri', 'el-messiri-latin-700-normal.woff')}) format('woff');unicode-range:U+0000-00FF,U+2000-206F}
-@font-face{font-family:Plex;font-weight:500;src:url(data:font/woff;base64,${font('ibm-plex-sans-arabic', 'ibm-plex-sans-arabic-arabic-500-normal.woff')}) format('woff');unicode-range:U+0600-06FF,U+FB50-FDFF,U+FE70-FEFC}
-@font-face{font-family:Plex;font-weight:500;src:url(data:font/woff;base64,${font('ibm-plex-sans-arabic', 'ibm-plex-sans-arabic-latin-500-normal.woff')}) format('woff');unicode-range:U+0000-00FF,U+2000-206F}
-@font-face{font-family:Plex;font-weight:700;src:url(data:font/woff;base64,${font('ibm-plex-sans-arabic', 'ibm-plex-sans-arabic-arabic-700-normal.woff')}) format('woff');unicode-range:U+0600-06FF,U+FB50-FDFF,U+FE70-FEFC}
-@font-face{font-family:Plex;font-weight:700;src:url(data:font/woff;base64,${font('ibm-plex-sans-arabic', 'ibm-plex-sans-arabic-latin-700-normal.woff')}) format('woff');unicode-range:U+0000-00FF,U+2000-206F}`;
-const STYLE = `<style>${FONTS}
-.ar{font-family:Messiri;font-weight:700}.en{font-family:Plex;font-weight:700}.tx{font-family:Plex;font-weight:500}
+const face = (fam, pkg, w, ar, lat) => `@font-face{font-family:${fam};font-weight:${w};src:url(data:font/woff;base64,${font(pkg, ar)}) format('woff');unicode-range:U+0600-06FF,U+200C-200E,U+FB50-FDFF,U+FE70-FEFC}
+@font-face{font-family:${fam};font-weight:${w};src:url(data:font/woff;base64,${font(pkg, lat)}) format('woff');unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02C6,U+02DA,U+02DC,U+2000-206F,U+2070-209F,U+20AC,U+2122,U+2190-2199,U+2212}`;
+const plex = (w) => face('Plex', 'ibm-plex-sans-arabic', w, `ibm-plex-sans-arabic-arabic-${w}-normal.woff`, `ibm-plex-sans-arabic-latin-${w}-normal.woff`);
+const mess = (w) => face('Messiri', 'el-messiri', w, `el-messiri-arabic-${w}-normal.woff`, `el-messiri-latin-${w}-normal.woff`);
+const STYLE = `<style>${[plex(200), plex(300), plex(400), plex(500), mess(400), mess(600)].join('\n')}
+.l2{font-family:Plex;font-weight:200}.l3{font-family:Plex;font-weight:300}.l4{font-family:Plex;font-weight:400}.l5{font-family:Plex;font-weight:500}
+.a4{font-family:Messiri;font-weight:400}.a6{font-family:Messiri;font-weight:600}
 </style>`;
+
+// The logo mark (arch + bean with the Nile line), from the brand kit, on a 200 × 240 grid.
+const LOGO_ARCH = 'M24 232 V118 C24 70 58 38 100 8 C142 38 176 70 176 118 V232';
+const logo = (x, y, s) => `<g transform="translate(${x} ${y}) scale(${s})">
+  <path d="${LOGO_ARCH}" fill="none" stroke="${C.foil}" stroke-width="12" stroke-linecap="square" stroke-linejoin="round"/>
+  <path d="M8 232 H192" stroke="${C.foil}" stroke-width="12" stroke-linecap="square"/>
+  <g transform="rotate(-24 100 150)"><ellipse cx="100" cy="150" rx="40" ry="58" fill="${C.roast}"/>
+  <path d="M100 96 C80 118 120 136 100 152 C80 168 120 186 100 206" fill="none" stroke="#F3E9D8" stroke-width="7" stroke-linecap="round"/></g></g>`;
 
 // ---------- shapes (mm) ----------
 // Trim: x 3–98, y 3–138, a pointed Cairo arch on top (same proportions family as the logo).
@@ -107,177 +114,240 @@ const felucca = (x, c, sail) => `<path d="M${x - 4} ${BASE + 0.6} H${x + 4} L${x
   <rect x="${x - 0.2}" y="${BASE - 9}" width="0.4" height="9.6" fill="${c}"/><path d="M${x + 0.2} ${BASE - 9.4} L${x + 5.2} ${BASE - 0.4} H${x + 0.2} Z" fill="${sail}"/>`;
 const bird = (x, y, c) => `<path d="M${x - 1.4} ${y} q0.7 -0.8 1.4 0 q0.7 -0.8 1.4 0" fill="none" stroke="${c}" stroke-width="0.4" stroke-linecap="round"/>`;
 
-// ---------- the seven coffees (facts as Bonds states them on the store; nothing invented) ----------
+
+// ---------- the coffees (facts as Bonds states them on the store; nothing invented) ----------
+const CAIRO = [30.04, 31.24];
+const km = ([a, b]) => { const r = (d) => (d * Math.PI) / 180; const h = Math.sin(r(a - CAIRO[0]) / 2) ** 2 + Math.cos(r(a)) * Math.cos(r(CAIRO[0])) * Math.sin(r(b - CAIRO[1]) / 2) ** 2; return Math.round((2 * 6371 * Math.asin(Math.sqrt(h))) / 100) * 100; };
+const RECIPE = {
+  v60: { en: 'V60', how: '15 g · 250 ml · 92–96 °C · 3 min' },
+  press: { en: 'FRENCH PRESS', how: '30 g · 500 ml · 4 min' },
+  espresso: { en: 'ESPRESSO', how: '18 g in · 36 g out · 25–30 s' },
+  kanaka: { en: 'KANAKA', how: '7 g · 75 ml cold water · low heat' },
+};
+
 const COFFEES = [
-  { slug: 'bonds-ethiopia-guji', ar: 'إثيوبيا جوجي', en: 'Ethiopia Guji Hambela', hour: { ar: 'الفجر', en: 'DAWN', time: '5:30 AM' },
-    origin: { ar: 'إثيوبيا · جوجي هامبيلا', en: 'Ethiopia · Guji Hambela' }, details: { ar: 'هيرلوم · معالجة طبيعية · 1400–1800 م', en: 'Heirloom · Natural · 1400–1800 m' },
-    notes: { ar: 'توت · زهور · مشمش · زهر البرتقال', en: 'Berries · Floral · Apricot · Orange blossom' }, country: { ar: 'إثيوبيا', en: 'ETHIOPIA' },
-    sky: ['#FBD5C8', '#C9A7D8'], ink: '#5A3A5E', accent: '#B0507A', nileC: '#E9C6D9', sun: ['apricot', 76, 29, 8.5],
-    extra: () => blossom(24, 26, 1, '#FFF4E6', '#F4A259') + blossom(34, 18, 0.7, '#FFF4E6', '#F4A259') + blossom(57, 33, 0.8, '#FFF4E6', '#F4A259') + berries(17, 38, '#7B4A8E') + berries(87, 44, '#7B4A8E') },
-  { slug: 'bonds-ethiopia-limu', ar: 'إثيوبيا ليمو', en: 'Ethiopia Limu', hour: { ar: 'الصبح', en: 'MORNING', time: '8:00 AM' },
-    origin: { ar: 'إثيوبيا · ليمو', en: 'Ethiopia · Limu' }, details: { ar: 'هيرلوم · معالجة طبيعية', en: 'Heirloom · Natural' },
-    notes: { ar: 'شوكولاتة داكنة · شاي أسود · برتقال', en: 'Dark chocolate · Black tea · Orange' }, country: { ar: 'إثيوبيا', en: 'ETHIOPIA' },
-    sky: ['#FFF1D6', '#A9D3B5'], ink: '#24453F', accent: '#2F6B4F', nileC: '#CFE6D6', sun: ['orange', 38, 30, 8.5],
-    extra: () => steam(20, 52, '#FFFFFF') + steam(24, 49, '#FFFFFF') + steam(78, 50, '#FFFFFF') },
-  { slug: 'bonds-brazil-red-catuai', ar: 'البرازيل ريد كاتواي', en: 'Brazil Red Catuai', hour: { ar: 'الضهر', en: 'NOON', time: '12:00 PM' },
-    origin: { ar: 'البرازيل · موجيانا', en: 'Brazil · Mogiana' }, details: { ar: 'ريد كاتواي · معالجة طبيعية', en: 'Red Catuai · Natural' },
-    notes: { ar: 'بندق محمص · قصب السكر · عين جمل', en: 'Roasted hazelnut · Sugar cane · Walnut' }, country: { ar: 'البرازيل', en: 'BRAZIL' },
-    sky: ['#FFE9A8', '#F2B94B'], ink: '#5C3A1C', accent: '#A8673A', nileC: '#F7D98A', sun: ['hazelnut', 50.5, 24, 7.5],
-    extra: () => cane(12.5, 20, '#7A8F3A') + cane(89, 17, '#7A8F3A') },
-  { slug: 'bonds-colombia-castillo', ar: 'كولومبيا كاستيو', en: 'Colombia Castillo', hour: { ar: 'العصر', en: 'AFTERNOON', time: '3:30 PM' },
-    origin: { ar: 'كولومبيا · فالي ديل كاوكا', en: 'Colombia · Valle del Cauca' }, details: { ar: 'كاستيو', en: 'Castillo' },
-    notes: { ar: 'فواكه استوائية · كراميل باللبن · يوسفي · خشب البلوط', en: 'Tropical fruit · Milk caramel · Tangerine · Oak' }, country: { ar: 'كولومبيا', en: 'COLOMBIA' },
-    sky: ['#FFD9AE', '#5FB3B0'], ink: '#1F4E5A', accent: '#D2691E', nileC: '#BFE3DF', sun: ['tangerine', 77, 31, 8],
-    extra: () => felucca(30, '#1F4E5A', '#F9B54C') + bird(24, 26, '#1F4E5A') + bird(30, 22, '#1F4E5A') },
-  { slug: 'bonds-amber', ar: 'أمبر بلند', en: 'Amber Blend', hour: { ar: 'المغرب', en: 'SUNSET', time: '5:30 PM' },
-    origin: { ar: 'بلند من بوندز', en: 'A Bonds blend' }, details: { ar: 'قوام غني · حموضة منخفضة', en: 'Rich body · Low acidity' },
-    notes: { ar: 'شوكولاتة داكنة · عسل أسود · بندق محمص', en: 'Dark chocolate · Molasses · Roasted hazelnut' }, country: null,
-    sky: ['#FFB86B', '#9E2B25'], ink: '#3A140E', accent: '#B4552D', nileC: '#E88A5C', sun: ['sunset', 50.5, 62, 13],
-    extra: () => bird(26, 30, '#3A140E') + bird(31, 26, '#3A140E') + bird(72, 24, '#3A140E') },
-  { slug: 'bonds-chrome', ar: 'كروم بلند', en: 'Chrome Blend', hour: { ar: 'الليل', en: 'NIGHT', time: '10:00 PM' },
-    origin: { ar: 'بلند من بوندز', en: 'A Bonds blend' }, details: { ar: 'قوام غني وممتلئ · حموضة خفيفة', en: 'Full body · Mild acidity' },
-    notes: { ar: 'كراميل · شوكولاتة داكنة · مكسرات محمصة', en: 'Caramel · Dark chocolate · Roasted nuts' }, country: null,
-    sky: ['#2A3142', '#14171F'], ink: '#0B0D12', accent: '#8C96A8', nileC: '#3B4558', sun: ['moon', 74, 28, 8],
-    extra: () => star(22, 22, 1.1, '#DADFE6') + star(32, 34, 0.7, '#DADFE6') + star(44, 18, 0.8, '#DADFE6') + star(86, 46, 0.7, '#DADFE6') + star(15, 44, 0.6, '#DADFE6') },
-  { slug: 'bonds-el-salvador', ar: 'السلفادور سان أجوستين', en: 'El Salvador San Agustín', hour: { ar: 'السهرة', en: 'LATE EVENING', time: '12:00 AM' },
-    origin: { ar: 'السلفادور · سان أجوستين', en: 'El Salvador · San Agustín' }, details: null,
-    notes: null, country: { ar: 'السلفادور', en: 'EL SALVADOR' },
-    sky: ['#4B4F9C', '#1E2150'], ink: '#12132E', accent: '#8B7BD8', nileC: '#3C3F86', sun: ['bean', 75, 29, 7.5],
-    extra: () => star(20, 24, 0.9, '#E8E4FF') + star(34, 16, 0.6, '#E8E4FF') + star(80, 44, 0.7, '#E8E4FF') },
+  { slug: 'bonds-ethiopia-guji', n: 1, kind: 'SINGLE ORIGIN · ETHIOPIA', name: 'Guji Hambela', ar: 'إثيوبيا جوجي هامبيلا',
+    hour: { ar: 'الفجر', en: 'DAWN', time: '5:30 AM' }, from: { en: 'GUJI', at: [5.9, 38.7] },
+    story: ['First light over Cairo. Apricot and orange blossom,', 'all the way from the highlands of Guji.'], storyAr: 'أول نور على القاهرة… مشمش وزهر برتقال من مرتفعات جوجي',
+    notes: { en: 'BERRIES · FLORAL · APRICOT · ORANGE BLOSSOM', ar: 'توت · زهور · مشمش · زهر البرتقال' }, specs: 'NATURAL · HEIRLOOM · 1400–1800 M',
+    country: { ar: 'إثيوبيا', en: 'ETHIOPIA' }, brew: ['v60', 'press'],
+    sky: ['#FBE3DA', '#DCC8E6'], ink: '#4E3553', accent: '#9B4F74', nileC: '#EEDDE9', sun: ['apricot', 72, 30, 8.5],
+    extra: () => blossom(26, 27, 0.8, '#FFFFFF', '#F4A259') + blossom(52, 20, 0.6, '#FFFFFF', '#F4A259') + berries(86, 45, '#8C6A9C') },
+  { slug: 'bonds-ethiopia-limu', n: 2, kind: 'SINGLE ORIGIN · ETHIOPIA', name: 'Limu', ar: 'إثيوبيا ليمو',
+    hour: { ar: 'الصبح', en: 'MORNING', time: '8:00 AM' }, from: { en: 'LIMU', at: [8.07, 36.95] },
+    story: ['The first cup of the morning: dark chocolate', 'and black tea, with a twist of orange.'], storyAr: 'فنجان الصبح: شوكولاتة داكنة وشاي أسود ولمسة برتقال',
+    notes: { en: 'DARK CHOCOLATE · BLACK TEA · ORANGE', ar: 'شوكولاتة داكنة · شاي أسود · برتقال' }, specs: 'NATURAL · HEIRLOOM',
+    country: { ar: 'إثيوبيا', en: 'ETHIOPIA' }, brew: ['v60', 'espresso'],
+    sky: ['#FFF6E4', '#CFE5D6'], ink: '#24453F', accent: '#2F6B4F', nileC: '#E1EFE5', sun: ['orange', 36, 29, 8.5],
+    extra: () => steam(22, 52, '#FFFFFF') + steam(79, 50, '#FFFFFF') },
+  { slug: 'bonds-brazil-red-catuai', n: 3, kind: 'SINGLE ORIGIN · BRAZIL', name: 'Red Catuai', ar: 'البرازيل ريد كاتواي',
+    hour: { ar: 'الضهر', en: 'NOON', time: '12:00 PM' }, from: { en: 'MOGIANA', at: [-20.54, -47.4] },
+    story: ['Midday warmth from Mogiana: roasted hazelnut', 'and sugar cane, smooth and easy.'], storyAr: 'دفا الضهر من موجيانا: بندق محمص وقصب سكر، ناعمة وسهلة',
+    notes: { en: 'ROASTED HAZELNUT · SUGAR CANE · WALNUT', ar: 'بندق محمص · قصب السكر · عين جمل' }, specs: 'NATURAL · RED CATUAI',
+    country: { ar: 'البرازيل', en: 'BRAZIL' }, brew: ['kanaka', 'espresso'],
+    sky: ['#FFF3D1', '#F5D58A'], ink: '#5C3A1C', accent: '#9A5B2E', nileC: '#FBE9BC', sun: ['hazelnut', 50.5, 24, 7],
+    extra: () => cane(13, 18, '#8C9A52') + cane(88.5, 15, '#8C9A52') },
+  { slug: 'bonds-colombia-castillo', n: 4, kind: 'SINGLE ORIGIN · COLOMBIA', name: 'Castillo', ar: 'كولومبيا كاستيو',
+    hour: { ar: 'العصر', en: 'AFTERNOON', time: '3:30 PM' }, from: { en: 'VALLE DEL CAUCA', at: [3.8, -76.5] },
+    story: ['An afternoon on the Nile: tangerine, tropical', 'fruit and a soft milk caramel.'], storyAr: 'عصرية على النيل: يوسفي وفواكه استوائية وكراميل باللبن',
+    notes: { en: 'TROPICAL FRUIT · MILK CARAMEL · TANGERINE · OAK', ar: 'فواكه استوائية · كراميل باللبن · يوسفي · خشب البلوط' }, specs: 'CASTILLO',
+    country: { ar: 'كولومبيا', en: 'COLOMBIA' }, brew: ['v60', 'espresso'],
+    sky: ['#FFE6CC', '#A9D6D2'], ink: '#1F4E5A', accent: '#C4621F', nileC: '#DCEFEC', sun: ['tangerine', 76, 31, 8],
+    extra: () => felucca(30, '#1F4E5A', '#F4B860') },
+  { slug: 'bonds-amber', n: 5, kind: 'HOUSE BLEND · ROASTED BY BONDS', name: 'Amber', ar: 'أمبر بلند', blend: true,
+    hour: { ar: 'المغرب', en: 'SUNSET', time: '5:30 PM' },
+    story: ['Sunset in a cup: dark chocolate and molasses,', 'rich, slow and warm.'], storyAr: 'المغرب في فنجان: شوكولاتة داكنة وعسل أسود، تقيلة ورايقة',
+    notes: { en: 'DARK CHOCOLATE · MOLASSES · ROASTED HAZELNUT', ar: 'شوكولاتة داكنة · عسل أسود · بندق محمص' }, specs: 'RICH BODY · LOW ACIDITY',
+    country: null, brew: ['espresso', 'kanaka'],
+    sky: ['#FFD9A8', '#D7745A'], ink: '#3A1A12', accent: '#A9472B', nileC: '#F2B48E', sun: ['sunset', 50.5, 62, 13],
+    extra: () => bird(27, 30, '#3A1A12') + bird(32, 26, '#3A1A12') },
+  { slug: 'bonds-chrome', n: 6, kind: 'HOUSE BLEND · ROASTED BY BONDS', name: 'Chrome', ar: 'كروم بلند', blend: true,
+    hour: { ar: 'الليل', en: 'NIGHT', time: '10:00 PM' },
+    story: ['For long Cairo nights: caramel, dark chocolate', 'and roasted nuts. Lovely with milk.'], storyAr: 'لليالي القاهرة: كراميل وشوكولاتة داكنة ومكسرات، حلوة باللبن',
+    notes: { en: 'CARAMEL · DARK CHOCOLATE · ROASTED NUTS', ar: 'كراميل · شوكولاتة داكنة · مكسرات محمصة' }, specs: 'FULL BODY · MILD ACIDITY',
+    country: null, brew: ['espresso', 'kanaka'],
+    sky: ['#39425A', '#171B26'], ink: '#0B0D12', accent: '#5E6B80', nileC: '#465069', sun: ['moon', 73, 28, 8],
+    extra: () => star(24, 23, 1, '#E4E8EE') + star(40, 17, 0.7, '#E4E8EE') + star(16, 42, 0.6, '#E4E8EE') + star(87, 46, 0.6, '#E4E8EE') },
+  { slug: 'bonds-el-salvador', n: 7, kind: 'SINGLE ORIGIN · EL SALVADOR', name: 'San Agustín', ar: 'السلفادور سان أجوستين',
+    hour: { ar: 'السهرة', en: 'LATE EVENING', time: '12:00 AM' }, from: { en: 'SAN AGUSTÍN', at: [13.43, -88.6] },
+    story: ['The last cup of the night,', 'from the hills of San Agustín.'], storyAr: 'آخر فنجان في الليل، من سان أجوستين',
+    notes: null, specs: null, country: { ar: 'السلفادور', en: 'EL SALVADOR' }, brew: ['v60', 'espresso'],
+    sky: ['#5A5EA8', '#23265A'], ink: '#14153A', accent: '#5B55B0', nileC: '#4B4F95', sun: ['bean', 74, 29, 7.5],
+    extra: () => star(22, 25, 0.9, '#EEEBFF') + star(38, 17, 0.6, '#EEEBFF') + star(87, 46, 0.6, '#EEEBFF') },
 ];
+const TODO = '#E5007E'; // magenta: fill in before printing
 
-const TODO = '#E5007E'; // magenta: "fill this in before printing"
+// ---------- front label ----------
+const FOIL_FRAME = 'M5.4 132.6 Q5.4 135.6 8.4 135.6 H92.6 Q95.6 135.6 95.6 132.6 V40.4 C95.6 23.4 77.4 11.4 50.5 5.3 C23.6 11.4 5.4 23.4 5.4 40.4 Z';
+const K = 0.67, TX = 22 - 8 * K, TY = 36 - 8.5 * K; // the window: 57 mm wide, top at 36 mm
 
-function label(c, { qr = true } = {}) {
+function windowArt(c, id) {
   const [kind, sx, sy, sr] = c.sun;
-  const mid = 50.5;
   const dark = c.hour.en === 'NIGHT' || c.hour.en === 'LATE EVENING';
-  const pill = 41;
+  return `<defs>
+    <linearGradient id="sky${id}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${c.sky[1]}"/><stop offset="1" stop-color="${c.sky[0]}"/></linearGradient>
+    <clipPath id="win${id}"><path d="${WINDOW}"/></clipPath></defs>
+  <g transform="translate(${TX.toFixed(3)} ${TY.toFixed(3)}) scale(${K})">
+    <g clip-path="url(#win${id})">
+      <rect x="0" y="0" width="101" height="80" fill="url(#sky${id})"/>
+      ${SUNS[kind](sx, sy, sr).replaceAll('sunclip', `sunclip${id}`).replaceAll('crescent', `crescent${id}`)}
+      ${c.extra()}
+      ${skyline(c.ink)}
+      ${nile(c.nileC, dark ? '#FFFFFF44' : '#FFFFFF')}
+    </g>
+    <path d="${WINDOW}" fill="none" stroke="${C.foil}" stroke-width="${(0.42 / K).toFixed(3)}"/>
+  </g>
+  <path d="${WINDOW}" fill="none" stroke="${C.foil}" stroke-width="${(0.18 / (K * 1.06)).toFixed(3)}" transform="translate(${(50.5 - 50.5 * K * 1.06).toFixed(3)} ${(TY - 1.6).toFixed(3)}) scale(${(K * 1.06).toFixed(4)})"/>`;
+}
+
+function front(c, id = '') {
+  const m = 50.5;
+  const nameSize = c.name.length > 11 ? 5.2 : c.name.length > 7 ? 6 : 7;
+  const dist = c.from ? km(c.from.at) : null;
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 101 141" width="1193" height="1665">
 ${STYLE}
-<defs>
-  <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${c.sky[1]}"/><stop offset="1" stop-color="${c.sky[0]}"/></linearGradient>
-  <clipPath id="win"><path d="${WINDOW}"/></clipPath>
-</defs>
-<path d="${BLEED}" fill="${C.cream}"/>
-<g clip-path="url(#win)">
-  <rect x="0" y="0" width="101" height="80" fill="url(#sky)"/>
-  ${SUNS[kind](sx, sy, sr)}
-  ${c.extra()}
-  ${skyline(c.ink)}
-  ${nile(c.nileC, dark ? '#FFFFFF55' : '#FFFFFF')}
+<path d="${BLEED}" fill="${C.white}"/>
+<path d="${FOIL_FRAME}" fill="none" stroke="${C.foil}" stroke-width="0.3"/>
+${logo(m - 3.6, 10.2, 0.036)}
+<text x="${m}" y="23.4" text-anchor="middle" class="l5" font-size="1.85" letter-spacing="1.15" fill="${C.espresso}">CAIRO ROAST</text>
+<text x="${m}" y="26.6" text-anchor="middle" class="a6" font-size="2" fill="${C.roast}">محمصة القاهرة</text>
+<text x="${m - 1.4}" y="31.6" text-anchor="end" class="l5" font-size="1.5" letter-spacing="0.55" fill="${c.accent}">N° 0${c.n}  ·  ${c.hour.en}  ${c.hour.time}</text>
+<text x="${m + 1.4}" y="31.75" text-anchor="start" class="a6" font-size="2" fill="${c.accent}">· ${c.hour.ar}</text>
+${windowArt(c, id)}
+
+<text x="${m}" y="86.8" text-anchor="middle" class="l5" font-size="1.55" letter-spacing="0.75" fill="${c.accent}">${c.kind}</text>
+<text x="${m}" y="94.8" text-anchor="middle" class="l2" font-size="${nameSize}" letter-spacing="${(nameSize * 0.07).toFixed(2)}" fill="${C.espresso}">${c.name.toUpperCase()}</text>
+<text x="${m}" y="99.2" text-anchor="middle" class="a6" font-size="2.6" fill="${C.muted}">${c.ar}</text>
+
+<!-- the journey -->
+<g transform="translate(0 0.8)">
+${c.from ? `
+  <circle cx="20" cy="106.2" r="0.75" fill="${c.accent}"/>
+  <path d="M21.4 106.2 Q50.5 102.4 79.6 106.2" fill="none" stroke="${C.espresso}" stroke-width="0.22" stroke-dasharray="0.5 0.9" stroke-linecap="round"/>
+  ${logo(79.9, 104.2, 0.0165)}
+  <text x="${m}" y="103.2" text-anchor="middle" class="l5" font-size="1.4" letter-spacing="0.5" fill="${C.muted}">≈ ${dist.toLocaleString('en-US')} KM TO YOUR CUP</text>
+  <text x="20" y="109.4" text-anchor="middle" class="l5" font-size="1.3" letter-spacing="0.4" fill="${C.espresso}">${c.from.en}</text>
+  <text x="81.5" y="109.4" text-anchor="middle" class="l5" font-size="1.3" letter-spacing="0.4" fill="${C.espresso}">CAIRO</text>`
+  : `
+  <circle cx="20" cy="106.2" r="0.75" fill="${c.accent}"/><circle cx="22.2" cy="105.5" r="0.55" fill="${c.accent}"/><circle cx="21.6" cy="107.2" r="0.5" fill="${c.accent}"/>
+  <path d="M23.6 106.2 Q50.5 102.4 79.6 106.2" fill="none" stroke="${C.espresso}" stroke-width="0.22" stroke-dasharray="0.5 0.9" stroke-linecap="round"/>
+  ${logo(79.9, 104.2, 0.0165)}
+  <text x="${m}" y="103.2" text-anchor="middle" class="l5" font-size="1.4" letter-spacing="0.5" fill="${C.muted}">SELECTED ORIGINS, BLENDED BY BONDS</text>
+  <text x="21" y="109.4" text-anchor="middle" class="l5" font-size="1.3" letter-spacing="0.4" fill="${C.espresso}">THE FARMS</text>
+  <text x="81.5" y="109.4" text-anchor="middle" class="l5" font-size="1.3" letter-spacing="0.4" fill="${C.espresso}">CAIRO</text>`}
+  ${c.story.map((l, i) => `<text x="${m}" y="${112.8 + i * 3}" text-anchor="middle" class="l3" font-size="2.15" fill="${C.espresso}">${l}</text>`).join('\n  ')}
+  <text x="${m}" y="${112.8 + c.story.length * 3 + 0.5}" text-anchor="middle" class="a4" font-size="2.2" fill="${C.muted}" direction="rtl">${c.storyAr}</text>
 </g>
-<path d="${WINDOW}" fill="none" stroke="${C.espresso}" stroke-width="0.5"/>
 
-<!-- hour badge -->
-<rect x="${mid - pill / 2}" y="70.6" width="${pill}" height="7.2" rx="3.6" fill="${C.cream}" stroke="${C.espresso}" stroke-width="0.4"/>
-<text x="${mid + 9.2}" y="75.6" text-anchor="middle" class="ar" font-size="3.6" fill="${c.accent}">${c.hour.ar}</text>
-<line x1="${mid + 1.6}" y1="72.6" x2="${mid + 1.6}" y2="75.9" stroke="${C.brass}" stroke-width="0.3"/>
-<text x="${mid - 8.4}" y="75.35" text-anchor="middle" class="en" font-size="2.2" letter-spacing="0.25" fill="${C.espresso}">${c.hour.time}</text>
-
-<!-- brand -->
-<text x="${mid}" y="83.6" text-anchor="middle" class="en" font-size="2.15" letter-spacing="0.9" fill="${C.espresso}">CAIRO ROAST · <tspan class="ar" font-size="2.8" letter-spacing="0" fill="${C.roast}">محمصة القاهرة</tspan></text>
-
-<!-- coffee -->
-<text x="${mid}" y="92.6" text-anchor="middle" class="ar" font-size="${c.ar.length > 14 ? 5.6 : 6.8}" fill="${C.espresso}">${c.ar}</text>
-<text x="${mid}" y="97.6" text-anchor="middle" class="en" font-size="2.7" letter-spacing="0.7" fill="${c.accent}">${c.en.toUpperCase()}</text>
-<text x="${mid}" y="103" text-anchor="middle" class="tx" font-size="2.55" fill="${C.muted}">${c.origin.ar}${c.details ? `  ·  ${c.details.ar}` : ''}</text>
-<text x="${mid}" y="106.6" text-anchor="middle" class="tx" font-size="2.05" fill="${C.muted}">${c.origin.en}${c.details ? `  ·  ${c.details.en}` : ''}</text>
-${c.details ? '' : `<text x="${mid}" y="110.1" text-anchor="middle" class="tx" font-size="2" fill="${TODO}">[ variety · process · altitude: confirm with Bonds ]</text>`}
-
-<!-- notes -->
-<line x1="22" y1="${c.details ? 109.4 : 112.4}" x2="79" y2="${c.details ? 109.4 : 112.4}" stroke="${C.brass}" stroke-width="0.3"/>
+<line x1="40" y1="123.9" x2="61" y2="123.9" stroke="${C.foil}" stroke-width="0.25"/>
 ${c.notes ? `
-<text x="${mid}" y="114.4" text-anchor="middle" class="ar" font-size="${c.notes.ar.length > 34 ? 3 : 3.4}" fill="${C.espresso}">${c.notes.ar}</text>
-<text x="${mid}" y="118" text-anchor="middle" class="tx" font-size="2.05" fill="${C.muted}">${c.notes.en}</text>`
-  : `<text x="${mid}" y="117" text-anchor="middle" class="tx" font-size="2.3" fill="${TODO}">[ tasting notes: confirm with Bonds ]</text>`}
-
-<!-- bottom row: QR · weight, roast date, grind · passport stamp -->
-<g>
-  ${qr ? `<rect x="9" y="121.2" width="13.2" height="13.2" rx="1" fill="#FFFFFF" stroke="${C.espresso}" stroke-width="0.35" stroke-dasharray="0.8 0.6"/>
-  <text x="15.6" y="127.3" text-anchor="middle" class="en" font-size="2.2" fill="${C.espresso}">QR</text>
-  <text x="15.6" y="130.2" text-anchor="middle" class="tx" font-size="1.25" fill="${C.muted}">cairoroast.com</text>` : ''}
-  <text x="50.5" y="124.4" text-anchor="middle" class="tx" font-size="2.25" fill="${C.espresso}" direction="rtl">250 جم  ·  ☐ حبوب  ·  ☐ مطحون لـ __________</text>
-  <text x="50.5" y="128.8" text-anchor="middle" class="tx" font-size="2.25" fill="${C.espresso}" direction="rtl">اتحمصت في: ______ / ______</text>
-  <text x="50.5" y="133.4" text-anchor="middle" class="ar" font-size="2.3" fill="${c.accent}" direction="rtl">امسح الكود: اعرف النكهات واختبر لسانك</text>
-  ${c.country ? `<g transform="rotate(-8 86 127.8)">
-    <circle cx="86" cy="127.8" r="6.4" fill="none" stroke="${c.accent}" stroke-width="0.55"/>
-    <circle cx="86" cy="127.8" r="5.5" fill="none" stroke="${c.accent}" stroke-width="0.3"/>
-    <text x="86" y="125.6" text-anchor="middle" class="tx" font-size="1.25" fill="${c.accent}">جواز القهوة</text>
-    <text x="86" y="128.9" text-anchor="middle" class="ar" font-size="2.3" fill="${c.accent}">${c.country.ar}</text>
-    <text x="86" y="131.3" text-anchor="middle" class="en" font-size="${c.country.en.length > 8 ? 1 : 1.15}" letter-spacing="0.12" fill="${c.accent}">${c.country.en}</text>
-  </g>` : `<g transform="rotate(-8 86 127.8)">
-    <circle cx="86" cy="127.8" r="6.4" fill="none" stroke="${c.accent}" stroke-width="0.55"/>
-    <text x="86" y="127.2" text-anchor="middle" class="ar" font-size="2.2" fill="${c.accent}">بلند</text>
-    <text x="86" y="130.2" text-anchor="middle" class="en" font-size="1.35" letter-spacing="0.25" fill="${c.accent}">BLEND</text>
-  </g>`}
-</g>
+<text x="${m}" y="128.2" text-anchor="middle" class="l5" font-size="${c.notes.en.length > 40 ? 1.35 : 1.5}" letter-spacing="0.45" fill="${c.accent}">${c.notes.en}</text>
+<text x="${m}" y="131.3" text-anchor="middle" class="a6" font-size="2.05" fill="${C.espresso}" direction="rtl">${c.notes.ar}</text>`
+  : `<text x="${m}" y="129.4" text-anchor="middle" class="l5" font-size="1.6" fill="${TODO}">[ TASTING NOTES: CONFIRM WITH BONDS ]</text>`}
+<text x="${m}" y="134.3" text-anchor="middle" class="l4" font-size="1.3" letter-spacing="0.5" fill="${C.muted}">${c.specs ?? '<tspan fill="' + TODO + '">[ PROCESS · VARIETY · ALTITUDE ]</tspan>'}  ·  250 G</text>
 </svg>`;
 }
 
-const dieline = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 101 141" width="101mm" height="141mm">
-<path d="${TRIM}" fill="none" stroke="#E5007E" stroke-width="0.25"/>
-<path d="M8 74 V40.5" stroke="none"/>
-<text x="50.5" y="139.6" text-anchor="middle" font-family="sans-serif" font-size="1.6" fill="#E5007E">DIE LINE · trim 95 × 135 mm · bleed 3 mm · arch top</text>
-</svg>`;
-
-/** The label on a white 13 × 20 cm bag (zip at the top, degassing valve above the label). */
-function onBag(c) {
-  const art = label(c).replace(/^<svg[^>]*>/, '').replace(/<\/svg>$/, '');
-  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="-12 -10 154 224" width="924" height="1344">
+// ---------- back label: 60 × 90 mm, 3 mm bleed ----------
+const BACK_TRIM = 'M6 3 H60 Q63 3 63 6 V90 Q63 93 60 93 H6 Q3 93 3 90 V6 Q3 3 6 3 Z';
+function back(c) {
+  const x = 7.5;
+  const stamp = c.country
+    ? `<g transform="rotate(-9 54.5 15.5)"><circle cx="54.5" cy="15.5" r="5.6" fill="none" stroke="${c.accent}" stroke-width="0.4"/><circle cx="54.5" cy="15.5" r="4.8" fill="none" stroke="${c.accent}" stroke-width="0.2"/>
+       <text x="54.5" y="13.7" text-anchor="middle" class="l5" font-size="0.95" letter-spacing="0.3" fill="${c.accent}">PASSPORT</text>
+       <text x="54.5" y="16.6" text-anchor="middle" class="a6" font-size="1.9" fill="${c.accent}">${c.country.ar}</text>
+       <text x="54.5" y="18.7" text-anchor="middle" class="l5" font-size="${c.country.en.length > 8 ? 0.8 : 0.95}" letter-spacing="0.2" fill="${c.accent}">${c.country.en}</text></g>`
+    : `<g transform="rotate(-9 54.5 15.5)"><circle cx="54.5" cy="15.5" r="5.6" fill="none" stroke="${c.accent}" stroke-width="0.4"/>
+       <text x="54.5" y="15.4" text-anchor="middle" class="a6" font-size="1.9" fill="${c.accent}">بلند</text><text x="54.5" y="17.8" text-anchor="middle" class="l5" font-size="0.95" letter-spacing="0.3" fill="${c.accent}">BLEND</text></g>`;
+  const lab = (y, en, ar) => `<text x="${x}" y="${y}" class="l5" font-size="1.25" letter-spacing="0.55" fill="${c.accent}">${en}</text><text x="58.5" y="${y + 0.1}" text-anchor="end" class="a6" font-size="1.55" fill="${C.muted}">${ar}</text>`;
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 66 96" width="780" height="1134">
 ${STYLE}
-<defs><filter id="sh" x="-20%" y="-20%" width="140%" height="140%"><feDropShadow dx="0" dy="2" stdDeviation="2.4" flood-color="#000" flood-opacity=".18"/></filter>
-<clipPath id="trimclip"><path d="${TRIM}"/></clipPath></defs>
-<rect x="-12" y="-10" width="154" height="224" fill="#EEE9E1"/>
-<path d="M4 2 H126 Q130 2 130 6 V196 Q130 200 126 200 H4 Q0 200 0 196 V6 Q0 2 4 2 Z" fill="#FFFFFF" filter="url(#sh)"/>
-<path d="M0 22 H130" stroke="#E3DED6" stroke-width="0.6"/><path d="M0 25 H130" stroke="#EDE9E2" stroke-width="0.4"/>
-<path d="M120 2 V18" stroke="#F1EDE6" stroke-width="2.2"/>
-<circle cx="65" cy="40" r="5.6" fill="#F7F5F1" stroke="#E2DDD4" stroke-width="0.6"/><circle cx="65" cy="40" r="2.2" fill="none" stroke="#DAD4CA" stroke-width="0.5"/>
-<g transform="translate(14.5 52)"><g clip-path="url(#trimclip)">${art}</g><path d="${TRIM}" fill="none" stroke="#00000014" stroke-width="0.3"/></g>
+<rect width="66" height="96" fill="${C.white}"/>
+<path d="M5.2 5.2 H60.8 V90.8 H5.2 Z" fill="none" stroke="${C.foil}" stroke-width="0.25"/>
+${logo(x, 8.2, 0.024)}
+<text x="${x + 6}" y="10.6" class="l5" font-size="1.45" letter-spacing="0.8" fill="${C.espresso}">CAIRO ROAST</text>
+<text x="${x + 6}" y="13" class="a6" font-size="1.5" fill="${C.roast}">محمصة القاهرة</text>
+<text x="${x}" y="20.4" class="l3" font-size="3" letter-spacing="0.2" fill="${C.espresso}">N° 0${c.n} · ${c.name.toUpperCase()}</text>
+<text x="${x}" y="23.6" class="a6" font-size="2" fill="${C.muted}">${c.ar}</text>
+${stamp}
+<line x1="${x}" y1="26.4" x2="58.5" y2="26.4" stroke="${C.hair}" stroke-width="0.2"/>
+
+${lab(30.4, 'ROASTED ON', 'اتحمصت في')}
+<rect x="${x}" y="31.8" width="51" height="7.6" rx="1" fill="none" stroke="${C.espresso}" stroke-width="0.25"/>
+<text x="${x + 25.5}" y="36.6" text-anchor="middle" class="l3" font-size="2" fill="${C.hair}">DD  /  MM  /  YY</text>
+
+${lab(43.6, 'GRIND', 'الطحنة')}
+<text x="${x}" y="47.2" class="l4" font-size="1.55" fill="${C.espresso}">○ WHOLE BEAN     ○ GROUND FOR ____________</text>
+<text x="58.5" y="50.6" text-anchor="start" class="a4" font-size="1.75" fill="${C.muted}" direction="rtl">○ حبوب     ○ مطحون لـ ____________</text>
+<line x1="${x}" y1="52.8" x2="58.5" y2="52.8" stroke="${C.hair}" stroke-width="0.2"/>
+
+${lab(56.8, 'BREW IT', 'حضّرها')}
+${c.brew.map((b, i) => `<text x="${x}" y="${60.6 + i * 3}" class="l5" font-size="1.4" letter-spacing="0.4" fill="${C.espresso}">${RECIPE[b].en}</text><text x="58.5" y="${60.6 + i * 3}" text-anchor="end" class="l4" font-size="1.45" fill="${C.muted}">${RECIPE[b].how}</text>`).join('')}
+<line x1="${x}" y1="66.6" x2="58.5" y2="66.6" stroke="${C.hair}" stroke-width="0.2"/>
+
+<rect x="${x}" y="69.4" width="14" height="14" rx="0.8" fill="#FFFFFF" stroke="${C.espresso}" stroke-width="0.25" stroke-dasharray="0.7 0.5"/>
+<text x="${x + 7}" y="76.8" text-anchor="middle" class="l5" font-size="1.8" fill="${C.espresso}">QR</text>
+<text x="${x + 17}" y="72.4" class="l5" font-size="1.55" letter-spacing="0.6" fill="${C.espresso}">SCAN TO TASTE</text>
+<text x="${x + 17}" y="74.8" class="l5" font-size="1.55" letter-spacing="0.6" fill="${C.espresso}">THE JOURNEY</text>
+<text x="${x + 17}" y="77.6" class="l4" font-size="1.25" fill="${C.muted}">Tasting-notes game, brew coach</text>
+<text x="${x + 17}" y="79.7" class="l4" font-size="1.25" fill="${C.muted}">and your Coffee Passport stamp.</text>
+<text x="58.5" y="82.9" text-anchor="start" class="a4" font-size="1.6" fill="${c.accent}" direction="rtl">امسح الكود: دوّق النكهات وجمّع الختم</text>
+
+<text x="33" y="86.6" text-anchor="middle" class="l4" font-size="1.1" letter-spacing="0.3" fill="${C.muted}">WHATSAPP 0110 920 0150 · KEEP SEALED, COOL AND DRY</text>
+<text x="33" y="88.9" text-anchor="middle" class="l5" font-size="1.2" letter-spacing="0.6" fill="${C.espresso}">CAIROROAST.COM</text>
 </svg>`;
 }
 
-/** All seven bags on one sheet (for review). */
+// ---------- previews on the white 13 × 20 cm bag ----------
+const BAG = `<path d="M4 2 H126 Q130 2 130 6 V196 Q130 200 126 200 H4 Q0 200 0 196 V6 Q0 2 4 2 Z" fill="#FFFFFF" filter="url(#sh)"/>
+<path d="M0 22 H130" stroke="#E6E2DB" stroke-width="0.6"/><path d="M0 25 H130" stroke="#EFECE6" stroke-width="0.4"/>
+<circle cx="65" cy="40" r="5.6" fill="#FAF9F7" stroke="#E6E1D9" stroke-width="0.6"/><circle cx="65" cy="40" r="2.2" fill="none" stroke="#DCD6CC" stroke-width="0.5"/>`;
+const inner = (s) => s.replace(/^<svg[^>]*>/, '').replace(/<\/svg>$/, '').replace(STYLE, '');
+const bagSvg = (body, extraDefs = '') => `<svg xmlns="http://www.w3.org/2000/svg" viewBox="-14 -12 158 228" width="948" height="1368">
+${STYLE}<defs><filter id="sh" x="-20%" y="-20%" width="140%" height="140%"><feDropShadow dx="0" dy="2.4" stdDeviation="2.8" flood-color="#3A2A1E" flood-opacity=".16"/></filter>${extraDefs}</defs>
+<rect x="-14" y="-12" width="158" height="228" fill="#EFEBE5"/>${BAG}${body}</svg>`;
+const frontOnBag = (c, id = '') => bagSvg(`<g transform="translate(14.5 52)"><g clip-path="url(#tc${id})">${inner(front(c, id))}</g><path d="${TRIM}" fill="none" stroke="#0000000F" stroke-width="0.25"/></g>`, `<clipPath id="tc${id}"><path d="${TRIM}"/></clipPath>`);
+const backOnBag = (c) => bagSvg(`<g transform="translate(32 72)"><g clip-path="url(#bt)">${inner(back(c))}</g><path d="${BACK_TRIM}" fill="none" stroke="#0000000F" stroke-width="0.25"/></g>`, `<clipPath id="bt"><path d="${BACK_TRIM}"/></clipPath>`);
+
 function sheet() {
-  const per = 4, cw = 165, ch = 238;
-  const rows = Math.ceil(COFFEES.length / per);
-  const bags = COFFEES.map((c, i) => {
-    const inner = onBag(c).replace(/^<svg[^>]*>/, '').replace(/<\/svg>$/, '').replace(STYLE, '')
-      .replaceAll('id="sh"', `id="sh${i}"`).replaceAll('url(#sh)', `url(#sh${i})`).replaceAll('id="trimclip"', `id="tc${i}"`).replaceAll('url(#trimclip)', `url(#tc${i})`)
-      .replaceAll('id="sky"', `id="sky${i}"`).replaceAll('url(#sky)', `url(#sky${i})`).replaceAll('id="win"', `id="win${i}"`).replaceAll('url(#win)', `url(#win${i})`)
-      .replaceAll('id="sunclip"', `id="sunclip${i}"`).replaceAll('url(#sunclip)', `url(#sunclip${i})`).replaceAll('id="crescent"', `id="cres${i}"`).replaceAll('url(#crescent)', `url(#cres${i})`);
-    return `<g transform="translate(${(i % per) * cw + 12} ${Math.floor(i / per) * ch + 40})"><svg viewBox="-12 -10 154 224" width="154" height="224">${inner}</svg>
-      <text x="65" y="230" text-anchor="middle" class="tx" font-size="5" fill="${C.espresso}">${c.hour.en} · ${c.hour.time} · ${c.en}</text></g>`;
-  }).join('');
-  const w = per * cw + 10, h = rows * ch + 52;
-  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${w} ${h}" width="${w * 3}" height="${h * 3}">
-${STYLE}<rect width="${w}" height="${h}" fill="${C.sand}"/>
-<text x="${w / 2}" y="20" text-anchor="middle" class="ar" font-size="13" fill="${C.espresso}">ساعات القاهرة</text>
-<text x="${w / 2}" y="30" text-anchor="middle" class="en" font-size="5.5" letter-spacing="2" fill="${C.roast}">CAIRO ROAST · CAIRO HOURS · BAG LABELS</text>
-${bags}</svg>`;
+  const per = 4, cw = 168, ch = 246;
+  const cards = [...COFFEES.map((c, i) => ({ svg: frontOnBag(c, `s${i}`), cap: `N° 0${c.n} · ${c.hour.en} · ${c.name}` })), { svg: backOnBag(COFFEES[0]), cap: 'BACK LABEL · 60 × 90 MM' }];
+  const body = cards.map((x, i) => `<g transform="translate(${(i % per) * cw + 10} ${Math.floor(i / per) * ch + 44})"><svg viewBox="-14 -12 158 228" width="158" height="228">${inner(x.svg).replace(/id="sh"/g, `id="sh${i}"`).replace(/url\(#sh\)/g, `url(#sh${i})`).replace(/id="bt"/g, `id="bt${i}"`).replace(/url\(#bt\)/g, `url(#bt${i})`)}</svg>
+    <text x="79" y="236" text-anchor="middle" class="l5" font-size="4.6" letter-spacing="1" fill="${C.espresso}">${x.cap.toUpperCase()}</text></g>`).join('');
+  const w = per * cw + 6, h = 2 * ch + 52;
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${w} ${h}" width="${w * 3}" height="${h * 3}">${STYLE}
+<rect width="${w}" height="${h}" fill="#F6F3EE"/>
+<text x="${w / 2}" y="22" text-anchor="middle" class="l2" font-size="12" letter-spacing="3" fill="${C.espresso}">CAIRO HOURS</text>
+<text x="${w / 2}" y="32" text-anchor="middle" class="a6" font-size="7" fill="${C.roast}">ساعات القاهرة · محمصة القاهرة</text>${body}</svg>`;
 }
+
+const dieFront = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 101 141" width="101mm" height="141mm"><path d="${TRIM}" fill="none" stroke="#E5007E" stroke-width="0.25"/><path d="${FOIL_FRAME}" fill="none" stroke="#00A3E0" stroke-width="0.2" stroke-dasharray="1 1"/><text x="50.5" y="139.8" text-anchor="middle" font-family="sans-serif" font-size="1.5" fill="#E5007E">FRONT · die cut (magenta) 95 × 135 mm, arch top · 3 mm bleed · gold foil areas: frame, window frames, logo arch</text></svg>`;
+const dieBack = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 66 96" width="66mm" height="96mm"><path d="${BACK_TRIM}" fill="none" stroke="#E5007E" stroke-width="0.25"/><text x="33" y="95.2" text-anchor="middle" font-family="sans-serif" font-size="1.3" fill="#E5007E">BACK · die cut 60 × 90 mm, 3 mm corners · 3 mm bleed</text></svg>`;
 
 // ---------- write and render ----------
-const files = {};
+const print = {}, previews = {};
 for (const c of COFFEES) {
-  files[`label-${c.slug}.svg`] = label(c);
-  files[`bag-${c.slug}.svg`] = onBag(c);
+  print[`front-${c.slug}.svg`] = front(c);
+  print[`back-${c.slug}.svg`] = back(c);
+  previews[`bag-front-${c.slug}.svg`] = frontOnBag(c);
 }
-files['dieline.svg'] = dieline;
-files['all-bags.svg'] = sheet();
-for (const [name, body] of Object.entries(files)) writeFileSync(path.join(dir, name), body);
+previews['bag-back.svg'] = backOnBag(COFFEES[0]);
+previews['all-labels.svg'] = sheet();
+print['dieline-front.svg'] = dieFront;
+print['dieline-back.svg'] = dieBack;
+for (const [n, b] of Object.entries({ ...print, ...previews })) writeFileSync(path.join(dir, n), b);
 
 const CHROME = ['/Applications/Google Chrome.app/Contents/MacOS/Google Chrome', '/Applications/Brave Browser.app/Contents/MacOS/Brave Browser'].find(existsSync);
 if (CHROME) {
   const tmp = path.join(dir, '.render.html');
-  for (const name of Object.keys(files).filter((n) => n !== 'dieline.svg')) {
-    const body = files[name];
+  for (const [name, body] of Object.entries({ ...print, ...previews })) {
+    if (name.startsWith('dieline')) continue;
     const [, w, h] = body.match(/width="(\d+)" height="(\d+)"/);
-    writeFileSync(tmp, `<!doctype html><meta charset="utf-8"><style>html,body{margin:0;background:transparent}</style>${body.replace(/width="\d+" height="\d+"/, `width="${w}" height="${h}"`)}`);
+    writeFileSync(tmp, `<!doctype html><meta charset="utf-8"><style>html,body{margin:0;background:transparent}</style>${body}`);
     execFileSync(CHROME, ['--headless=new', '--disable-gpu', '--hide-scrollbars', '--force-device-scale-factor=1', `--window-size=${w},${h}`, `--screenshot=${path.join(dir, name.replace('.svg', '.png'))}`, `file://${tmp}`], { stdio: 'ignore' });
   }
-  execFileSync('rm', ['-f', tmp]);
-  // Bag mock-ups are previews only: keep their PNGs, drop the heavy SVGs (fonts embedded in each).
-  for (const name of Object.keys(files).filter((n) => n.startsWith('bag-') || n === 'all-bags.svg')) execFileSync('rm', ['-f', path.join(dir, name)]);
-  console.log(`Labels: ${Object.keys(files).length} SVGs and PNGs in brand/cairo-roast/labels`);
+  rmSync(tmp);
+  // Previews are for review: keep their PNGs, drop the heavy SVGs (fonts embedded in each).
+  for (const n of Object.keys(previews)) rmSync(path.join(dir, n));
+  console.log(`Labels: ${readdirSync(dir).length} files in brand/cairo-roast/labels`);
 } else console.log('Chrome not found: SVGs written, PNGs skipped');

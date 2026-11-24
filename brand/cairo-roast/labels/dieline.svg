@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 101 141" width="101mm" height="141mm">
+<path d="M3 135 Q3 138 6 138 H95 Q98 138 98 135 V40 C98 22 79 9.5 50.5 3 C22 9.5 3 22 3 40 Z" fill="none" stroke="#E5007E" stroke-width="0.25"/>
+<path d="M8 74 V40.5" stroke="none"/>
+<text x="50.5" y="139.6" text-anchor="middle" font-family="sans-serif" font-size="1.6" fill="#E5007E">DIE LINE · trim 95 × 135 mm · bleed 3 mm · arch top</text>
+</svg>

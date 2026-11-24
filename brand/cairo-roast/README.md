@@ -27,6 +27,28 @@ The mark says *Cairo + coffee* without a pyramid cliché, and it stays readable 
 
 SVGs carry their fonts inside, so they look the same on any computer. For a printing shop, send the PNG, or the SVG opened and exported as PDF from Chrome.
 
+## Bag labels: "ساعات القاهرة · Cairo Hours"
+`labels/`: rebuild with `node brand/cairo-roast/labels.mjs`.
+
+**The idea:** the label is die-cut in the logo's Cairo arch. Inside the arch is the same Cairo skyline on every bag (domes, minarets, the Cairo Tower, the logo's Nile), each coffee at a different hour of the day, with the sun or moon drawn from its main tasting note. Seven hours make a collection, and each hour suggests when to drink it.
+
+| Coffee | Hour | Sun / moon |
+|---|---|---|
+| Ethiopia Guji | Dawn · 5:30 AM | apricot sun, orange blossoms, berries |
+| Ethiopia Limu | Morning · 8:00 AM | orange-slice sun, tea steam |
+| Brazil Red Catuai | Noon · 12:00 PM | hazelnut sun, sugar cane |
+| Colombia Castillo | Afternoon · 3:30 PM | tangerine sun, felucca |
+| Amber Blend | Sunset · 5:30 PM | molasses-amber setting sun |
+| Chrome Blend | Night · 10:00 PM | chrome-silver moon, stars |
+| El Salvador San Agustín | Late evening · 12:00 AM | coffee-bean moon (notes to confirm) |
+
+**Print:** label 95 × 135 mm trim, 3 mm bleed (101 × 141 mm), arch-shaped die cut (`labels/dieline.svg`, magenta line). Files: `labels/label-<coffee>.svg` (vector, fonts embedded) and `.png` (300 dpi). Keep text 3 mm inside the cut. Bag: white 13 × 20 cm; the label's arch top sits about 5 cm below the top edge, under the degassing valve. Paper: matte white or cream sticker, or kraft for a craft look (colours shift on kraft: proof first).
+
+**Before printing:**
+- Anything in magenta brackets is a placeholder: El Salvador's variety, process, altitude and tasting notes must come from Bonds.
+- The dashed QR box is a placeholder: each label's QR should open its coffee page (`cairoroast.com/p/<coffee>`), where the tasting game is.
+- Weight (250 g), roast date and grind are written or ticked by hand on each bag.
+
 ## Colors
 
 | Name | Hex | Use |

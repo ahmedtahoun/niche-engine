@@ -46,6 +46,7 @@ export async function publicUrls(cfg: NicheConfig): Promise<string[]> {
     ...cat.productsOf(cfg.id).filter((p) => (p.status ?? 'live') === 'live').map((p) => `/p/${p.slug}`),
     ...cfg.bundles.filter((b) => cat.bundleView(cfg, b.id)).map((b) => `/b/${b.id}`),
     ...(guidesFor(cfg.id).length ? ['/guide', ...guidesFor(cfg.id).map((g) => `/guide/${g.slug}`)] : []),
+    ...(cfg.tasteFamilies ? ['/notes'] : []),
   ];
   return paths.flatMap((p) => [siteUrl(cfg, p, 'ar'), siteUrl(cfg, p, 'en')]);
 }

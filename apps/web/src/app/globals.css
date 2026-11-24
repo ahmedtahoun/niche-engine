@@ -538,3 +538,44 @@ html.lang-switching main { opacity: .55; transition: opacity .15s; pointer-event
 .pp.compact .pp-flag { font-size: 18px; }
 .pp .btn.ghost { color: #F3E9D8; border-color: rgba(243, 233, 216, .45); background: transparent; }
 .pp-new { display: flex; gap: 8px; align-items: center; font-size: 13.5px; font-weight: 600; background: rgba(233, 199, 123, .16); border: 1px solid rgba(233, 199, 123, .4); border-radius: 10px; padding: 8px 10px; }
+
+/* ---------- Tasting notes: tap to decode, the tasting game, the dictionary ---------- */
+.notes-tap button { display: inline-flex; align-items: center; gap: 4px; font: inherit; cursor: pointer; border: 1px solid var(--line); }
+.notes-tap button .q { font-size: 11px; opacity: .55; margin-inline-start: 2px; }
+.notes-tap button:hover, .notes-tap button:focus-visible { border-color: var(--primary); }
+.nd-sheet { display: grid; gap: 12px; }
+.nd-head { display: grid; grid-template-columns: auto 1fr auto; gap: 10px; align-items: center; }
+.nd-head b { display: block; font-size: 20px; font-family: var(--f-display), serif; }
+.nd-emoji { font-size: 34px; width: 54px; height: 54px; display: grid; place-items: center; border-radius: 16px; background: var(--primary-soft, #F6E6DC); }
+.nd-x { border: 0; background: none; font-size: 26px; line-height: 1; color: var(--muted); cursor: pointer; padding: 4px 8px; }
+.nd-facts { display: grid; gap: 10px; margin: 0; }
+.nd-facts div { display: grid; gap: 2px; }
+.nd-facts dt { font-size: 12.5px; font-weight: 700; color: var(--primary); }
+.nd-facts dd { margin: 0; line-height: 1.6; }
+.nd-more { display: grid; gap: 6px; }
+.nd-more div { display: flex; flex-wrap: wrap; gap: 6px; }
+.nd-more a, .note-in a { font-size: 13px; font-weight: 700; padding: 5px 10px; border-radius: 999px; background: var(--surface); border: 1px solid var(--line); color: var(--ink); text-decoration: none; }
+.tg { display: grid; gap: 10px; padding: 14px; border-radius: 16px; border: 1.5px dashed var(--primary); background: linear-gradient(135deg, var(--primary-soft, #F6E6DC), var(--surface)); }
+.tg-head { display: flex; gap: 10px; align-items: center; }
+.tg-head > span { font-size: 28px; }
+.tg-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.tg-chip { position: relative; display: flex; gap: 6px; align-items: center; min-height: 44px; padding: 8px 10px; border-radius: 12px; border: 1.5px solid var(--line); background: var(--surface); font: inherit; font-weight: 600; text-align: start; cursor: pointer; color: var(--ink); }
+.tg-chip i { font-style: normal; }
+.tg-chip.on { border-color: var(--primary); background: var(--primary-soft, #F6E6DC); }
+.tg-chip.hit { border-color: var(--ok); background: color-mix(in srgb, var(--ok) 12%, var(--surface)); }
+.tg-chip.miss { border-style: dashed; border-color: var(--primary); }
+.tg-chip.extra { opacity: .8; }
+.tg-chip.off { opacity: .45; }
+.tg-chip:disabled { cursor: default; }
+.tg-mark { margin-inline-start: auto; font-weight: 800; color: var(--ok); }
+.tg-chip.miss .tg-mark { color: var(--primary); }
+.tg-result { display: grid; gap: 6px; }
+.tg-level { display: flex; flex-wrap: wrap; gap: 6px 10px; align-items: baseline; font-weight: 700; }
+.tg-again { justify-self: start; border: 0; background: none; color: var(--primary); font-weight: 700; padding: 0; cursor: pointer; text-decoration: underline; }
+.notes-steps { margin: 0; padding-inline-start: 20px; display: grid; gap: 6px; line-height: 1.6; }
+.note-cards { display: grid; gap: 10px; }
+@media (min-width: 700px) { .note-cards { grid-template-columns: 1fr 1fr; } }
+.note-card { display: grid; gap: 6px; padding: 14px; border-radius: 14px; background: var(--surface); border: 1px solid var(--line); scroll-margin-top: 90px; }
+.note-card b { font-size: 16px; }
+.note-card p { margin: 0; line-height: 1.6; }
+.note-in { display: flex; flex-wrap: wrap; gap: 6px; }

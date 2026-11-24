@@ -1,6 +1,7 @@
 import type { NicheConfig } from '@niche-engine/core';
 import type { Speaker } from '@/lib/i18n';
 import type { Product } from '@/lib/types';
+import { NoteChips, type NoteLinks } from './NoteDecoder';
 
 /** The emoji for a tasting note, from the niche's noteEmoji words (first match wins). */
 export function noteEmoji(cfg: NicheConfig | null | undefined, note: string): string {
@@ -24,7 +25,7 @@ const Bean = ({ on }: { on: boolean }) => (
 );
 
 /** Flavor family and 1–5 scales (body, acidity…) drawn from what the roaster states. */
-export function TasteProfile({ p, cfg, s }: { p: Product; cfg: NicheConfig; s: Speaker }) {
+export function TasteProfile({ p, cfg, s, noteLinks }: { p: Product; cfg: NicheConfig; s: Speaker; /** Other coffees per note (tap a note to decode it). */ noteLinks?: NoteLinks }) {
   const fam = cfg.tasteFamilies?.find((f) => f.id === p.profile?.family);
   const scales = (cfg.profileScales ?? []).filter((sc) => p.profile?.scales?.[sc.id]);
   if (!fam && !scales.length && !p.profile?.notes?.length) return null;
@@ -34,7 +35,10 @@ export function TasteProfile({ p, cfg, s }: { p: Product; cfg: NicheConfig; s: S
   return (
     <section className="taste" aria-labelledby="taste-h">
       <h2 className="h4" id="taste-h">{s.t('tasteProfile')}</h2>
-      <Notes p={p} s={s} max={5} cfg={cfg} big />
+      {noteLinks ? (() => {
+        const notes = ((s.en && p.profile?.notesEn?.length ? p.profile.notesEn : p.profile?.notes) ?? []).slice(0, 5);
+        return notes.length ? <NoteChips notes={notes} emojis={notes.map((n) => noteEmoji(cfg, n))} links={noteLinks} /> : null;
+      })() : <Notes p={p} s={s} max={5} cfg={cfg} big />}
       {fam && <div className="fam"><b>{fam.emoji ? `${fam.emoji} ` : ''}{word(fam.labelAr, fam.labelEn)}</b>{fam.hintAr && <span className="muted">{word(fam.hintAr, fam.hintEn)}</span>}</div>}
       {best.length > 0 && (
         <div className="best">

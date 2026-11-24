@@ -23,6 +23,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     ...cat.productsOf(cfg.id).map((p) => entry(`/p/${p.slug}`, 0.8, p.priceConfirmedAt)),
     ...cfg.bundles.filter((b) => cat.bundleView(cfg, b.id)).map((b) => entry(`/b/${b.id}`, 0.7)),
     ...(guidesFor(cfg.id).length ? [entry('/guide', 0.6)] : []),
+    ...(cfg.tasteFamilies ? [entry('/notes', 0.6)] : []),
     ...guidesFor(cfg.id).map((g) => entry(`/guide/${g.slug}`, 0.6, g.updated)),
     ...(cfg.acceptsSellers !== false ? [entry('/sell', 0.4)] : []),
     ...(cfg.returnsPolicy === 'coffee' ? [entry('/returns', 0.3)] : []),

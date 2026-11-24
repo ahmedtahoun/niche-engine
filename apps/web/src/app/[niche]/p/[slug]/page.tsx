@@ -4,6 +4,8 @@ import { AddToCart } from '@/components/AddToCart';
 import { EtaPicker } from '@/components/Eta';
 import { Art, PickSeal } from '@/components/Art';
 import { TasteProfile } from '@/components/Taste';
+import { TasteGame } from '@/components/TasteGame';
+import { noteInfo } from '@/lib/notes';
 import { TrackOnView } from '@/components/Pixel';
 import { BoxCard } from '@/components/BoxCard';
 import { ProductCard } from '@/components/ProductCard';
@@ -69,6 +71,13 @@ export default async function ProductPage({ params }: P) {
     ...(catLabel ? [{ '@type': 'ListItem', position: 2, name: s.category(catLabel), item: siteUrl(cfg, `/search?cat=${catLabel.id}`, s.lang) }] : []),
     { '@type': 'ListItem', position: catLabel ? 3 : 2, name, item: siteUrl(cfg, `/p/${p.slug}`, s.lang) },
   ] };
+  // Tap-a-note: other coffees on sale that share each of this coffee's notes.
+  const onSale = cat.search(cfg, { sort: 'best' }).filter((x) => x.id !== p.id);
+  const noteLinks: Record<string, { slug: string; name: string }[]> = {};
+  for (const n of p.profile?.notes ?? []) {
+    const id = noteInfo(n)?.id;
+    if (id) noteLinks[id] = onSale.filter((x) => (x.profile?.notes ?? []).some((m) => noteInfo(m)?.id === id)).slice(0, 4).map((x) => ({ slug: x.slug, name: s.product(x) }));
+  }
   const similar = similarTo(p, cat.search(cfg, { sort: 'best' }));
   // The starter box, while every coffee in it is in stock.
   const bv = cfg.bundles[0] ? cat.bundleView(cfg, cfg.bundles[0].id) : null;
@@ -147,7 +156,8 @@ export default async function ProductPage({ params }: P) {
         <span>{cfg.freeShippingOverEgp ? s.t('eta.feesFree', { fee: s.egp(cfg.shippingEgp), x: s.egp(cfg.freeShippingOverEgp) }) : s.t('eta.fees', { fee: s.egp(cfg.shippingEgp) })}</span>
       </div>
       {lead && <p className="lead" style={{ margin: 0 }}>{lead}</p>}
-      <TasteProfile p={p} cfg={cfg} s={s} />
+      <TasteProfile p={p} cfg={cfg} s={s} noteLinks={noteLinks} />
+      {(p.profile?.notes?.length ?? 0) >= 2 && <TasteGame slug={p.slug} notes={p.profile!.notes!} name={name} />}
       {journey && <div className="only-narrow">{journey}</div>}
       <section id="sec-specs">
         <h2 className="h4">{s.t('sec.specs')}</h2>

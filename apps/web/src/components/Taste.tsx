@@ -2,12 +2,14 @@ import type { NicheConfig } from '@niche-engine/core';
 import type { Speaker } from '@/lib/i18n';
 import type { Product } from '@/lib/types';
 import { NoteChips, type NoteLinks } from './NoteDecoder';
+import { noteInfo } from '@/lib/notes';
 
 /** The emoji for a tasting note, from the niche's noteEmoji words (first match wins). */
 export function noteEmoji(cfg: NicheConfig | null | undefined, note: string): string {
   const n = note.toLowerCase();
   for (const [word, e] of Object.entries(cfg?.noteEmoji ?? {})) if (n.includes(word.toLowerCase())) return e;
-  return '';
+  // Notes the niche list doesn't cover (tropical fruit, tangerine, oak…) use the tasting-notes dictionary.
+  return noteInfo(note)?.emoji ?? '';
 }
 
 /** Tasting notes as small chips with an emoji (cards and product pages). */

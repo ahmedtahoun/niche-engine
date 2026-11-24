@@ -211,6 +211,15 @@
       "namedRegex": "^/(?<nxtPniche>[^/]+?)/p/(?<nxtPslug>[^/]+?)(?:/)?$"
     },
     {
+      "page": "/[niche]/passport/[token]",
+      "regex": "^/([^/]+?)/passport/([^/]+?)(?:/)?$",
+      "routeKeys": {
+        "nxtPniche": "nxtPniche",
+        "nxtPtoken": "nxtPtoken"
+      },
+      "namedRegex": "^/(?<nxtPniche>[^/]+?)/passport/(?<nxtPtoken>[^/]+?)(?:/)?$"
+    },
+    {
       "page": "/[niche]/privacy",
       "regex": "^/([^/]+?)/privacy(?:/)?$",
       "routeKeys": {

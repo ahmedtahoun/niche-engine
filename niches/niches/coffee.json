@@ -71,6 +71,14 @@
   "shippingEgp": 75,
   "feedCategory": "Food, Beverages & Tobacco > Beverages > Coffee",
   "freeShippingOverEgp": 800,
+  "passport": {
+    "welcome": {
+      "ar": "القاهرة",
+      "en": "Cairo"
+    },
+    "rewardEgp": 300,
+    "minOrders": 2
+  },
   "freeShippingHint": {
     "unitEgp": 300,
     "ar": "حوالي كيس كمان",

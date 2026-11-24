@@ -11,6 +11,9 @@ import { publicQuote } from '@/lib/catalog';
 import Link from 'next/link';
 import { currentCustomer, isGuestOrder } from '@/lib/current-customer';
 import { BuyAgain } from '@/components/BuyAgain';
+import { PassportBook } from '@/components/Passport';
+import { catalog } from '@/lib/catalog';
+import { originOf, passportOf, passportToken } from '@/lib/passport';
 
 export async function generateMetadata() { return { title: (await speaker()).t('orderTitle') }; }
 export const dynamic = 'force-dynamic';
@@ -38,6 +41,12 @@ export default async function OrderPage({ params }: { params: Promise<{ niche: s
     );
   }
   const r = RANK[o.status];
+  // Coffee Passport: the countries this order adds (stamped on delivery).
+  const pp = cfg.passport && o.status !== 'cancelled' && o.status !== 'refused' ? await passportOf(o.customer.phone, niche) : null;
+  const cat = pp ? await catalog() : null;
+  const firstOrder = pp && cat ? new Map<string, number>() : null;
+  if (pp && firstOrder) for (const st of pp.stamps) if (st.orderId) firstOrder.set(st.country.ar, st.orderId);
+  const fromThis = pp && cat ? [...new Set(o.items.map((i) => cat.products.find((p) => p.id === i.productId)).map((p) => p && originOf(p, cfg)).filter((x): x is { ar: string; en: string } => Boolean(x)).filter((c) => firstOrder?.get(c.ar) === o.id).map((c) => `${pp.stamps.find((st) => st.country.ar === c.ar)?.country.flag ?? ''} ${s.en ? c.en : c.ar}`))] : [];
   const toPayAtDoor = o.quote.total - (o.quote.depositRequired && o.payment === 'cod' ? o.quote.deposit : 0);
   return (
     <main className="page narrow">
@@ -60,6 +69,12 @@ export default async function OrderPage({ params }: { params: Promise<{ niche: s
         </a>
       )}
       <OrderActions niche={niche} id={o.id} status={o.status} />
+      {pp && (
+        <>
+          {fromThis.length > 0 && <div className="pp-new" style={{ color: 'var(--ink)', background: 'var(--surface)', borderColor: 'var(--line)' }}>🛂 {t('pp.newStamp', { list: fromThis.join('، ') })}</div>}
+          <PassportBook pp={pp} cfg={cfg} s={s} compact signedIn={Boolean(me)} shareUrl={s.href(`/passport/${passportToken(niche, o.customer.phone)}`)} />
+        </>
+      )}
       <BuyAgain niche={niche} cart={o.cart} />
       {!me && <p className="muted small" style={{ margin: 0 }}>{t('ord.guestNote')}</p>}
       <div style={{ display: 'grid', gap: 8 }}>

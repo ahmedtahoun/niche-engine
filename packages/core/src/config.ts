@@ -122,6 +122,12 @@ export interface NicheConfig {
   shippingEgp: number;
   /** Google product category for the Meta / Google catalog feed, e.g. "Food, Beverages & Tobacco > Beverages > Coffee". */
   feedCategory?: string;
+  /**
+   * Coffee Passport: a stamp per origin country ordered, a free welcome stamp, and wallet credit once
+   * the customer has stamps for `goal` countries (default: every country on sale) from delivered orders,
+   * spread over at least `minOrders` orders.
+   */
+  passport?: { welcome: Bilingual; rewardEgp: number; goal?: number; minOrders?: number };
   /** Orders whose goods (after bundle discounts) reach this ship free; the platform pays the courier. */
   freeShippingOverEgp?: number;
   /** Cart hint while under the free-shipping line: when the gap is at most unitEgp, say e.g. "about 1 more bag". */

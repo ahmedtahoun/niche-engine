@@ -239,6 +239,11 @@ export function AddToCart({ niche, slug, productId, notify, price, variants, fin
       <div className="sticky">
         {added && <div className="note ok" role="status">{t('added')} <a href={s.href(`/cart`)} style={{ fontWeight: 700 }}>{t('openCart')}</a></div>}
         <div style={{ display: 'flex', gap: 8 }}>
+          {notify && (
+            <a className="btn ghost wa-mini" href={waLink(notify.whatsapp, t('wa.ask', { name: notify.name }))} target="_blank" rel="noopener" aria-label={t('wa.button')} title={t('wa.button')}>
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 2.2a9.7 9.7 0 0 0-8.4 14.6L2.3 21.7l5-1.3A9.7 9.7 0 1 0 12 2.2zm0 17.7a8 8 0 0 1-4.1-1.1l-.3-.2-3 .8.8-2.9-.2-.3A8 8 0 1 1 12 19.9zm4.4-6c-.2-.1-1.4-.7-1.7-.8-.2-.1-.4-.1-.5.1l-.8.9c-.1.2-.3.2-.5.1a6.6 6.6 0 0 1-3.3-2.9c-.2-.4.2-.4.7-1.3.1-.2 0-.3 0-.4l-.8-1.8c-.2-.5-.4-.4-.5-.4h-.5a.9.9 0 0 0-.6.3 2.7 2.7 0 0 0-.9 2c0 1.2.9 2.4 1 2.5.1.2 1.7 2.6 4.2 3.7 1.6.7 2.2.7 3 .6.5-.1 1.4-.6 1.6-1.1.2-.6.2-1 .1-1.1l-.5-.4z"/></svg>
+            </a>
+          )}
           <button type="button" className="btn ghost" disabled={!variant} onClick={() => add(false)}>{t('toCart')}</button>
           <button type="button" className="btn primary" style={{ flex: 1 }} disabled={!variant} onClick={() => add(true)}>
             {variant ? t('buyNow', { price: s.egp(shown) }) : missing}

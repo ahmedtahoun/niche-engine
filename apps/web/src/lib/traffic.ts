@@ -50,8 +50,9 @@ export function cleanPath(raw: unknown, niche: string): string | null {
   if (p === `/${niche}`) p = '/';
   else if (p.startsWith(`/${niche}/`)) p = p.slice(niche.length + 1);
   p = p.replace(/\/+$/, '') || '/';
-  // Order pages carry an order number: one bucket, so no order ids are stored.
+  // Order and passport pages carry an id or a private token: one bucket each, so neither is stored.
   if (p.startsWith('/order/')) p = '/order';
+  if (p.startsWith('/passport/')) p = '/passport';
   return /^[\p{L}\p{N}/._~%-]*$/u.test(p) ? p.slice(0, 120) : null;
 }
 

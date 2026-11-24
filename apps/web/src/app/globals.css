@@ -380,8 +380,10 @@ details p { margin: 6px 0 0; color: var(--muted); }
 .wa-fab { position: fixed; z-index: 6; bottom: 78px; inset-inline-start: 14px; width: 52px; height: 52px; border-radius: 50%; background: #25D366; color: #fff; display: grid; place-items: center; box-shadow: 0 6px 18px rgba(0,0,0,.22); }
 .wa-fab svg { width: 28px; height: 28px; }
 @media (min-width: 900px) { .wa-fab { bottom: 24px; inset-inline-start: 24px; } }
-.page.product ~ .wa-fab { bottom: 150px; }
-@media (min-width: 900px) { .page.product ~ .wa-fab { bottom: 24px; } }
+/* Product pages: no floating button (it covered the price while scrolling); WhatsApp sits in the buy bar instead. */
+.page.product ~ .wa-fab { display: none; }
+.wa-mini { flex: none; width: 48px; padding: 0; display: grid; place-items: center; color: #128C4A; border-color: rgba(37, 211, 102, .55); }
+.wa-mini svg { width: 24px; height: 24px; }
 .wa-confirm { display: grid; gap: 2px; padding: 12px 14px; border-radius: 14px; background: #E7F8EE; border: 1.5px solid #25D366; color: #0B5A2B; }
 .wa-confirm b { font-size: 15px; }
 .buy-again { min-height: 38px; padding: 6px 12px; font-size: 13px; white-space: nowrap; }
@@ -503,3 +505,36 @@ html.lang-switching main { opacity: .55; transition: opacity .15s; pointer-event
 
 /* Checkout: "Create an account (optional)" link that opens the password field. */
 .linkish { justify-self: start; border: 0; background: none; padding: 2px 0; color: var(--primary); font: inherit; font-weight: 700; text-decoration: underline; cursor: pointer; }
+
+/* ---------- Coffee Passport ---------- */
+.pp { display: grid; gap: 10px; padding: 16px; border-radius: 18px; color: #F3E9D8;
+  background: radial-gradient(120% 100% at 85% 0%, #3E5A44 0%, #1F3328 55%, #16251D 100%); box-shadow: 0 10px 28px rgba(22, 37, 29, .25); }
+.pp-head { display: grid; grid-template-columns: auto 1fr auto; gap: 10px; align-items: center; }
+.pp-head b { display: block; font-family: var(--f-display), serif; font-size: 18px; letter-spacing: .01em; }
+.pp-head .small { opacity: .8; }
+.pp-crest { width: 40px; height: 40px; border-radius: 50%; display: grid; place-items: center; font-size: 20px; border: 1.5px solid rgba(243, 233, 216, .45); }
+.pp-count { font-size: 20px; font-weight: 700; color: #E9C77B; }
+.pp-bar { height: 6px; border-radius: 99px; background: rgba(243, 233, 216, .18); overflow: hidden; }
+.pp-bar i { display: block; height: 100%; border-radius: 99px; background: #E9C77B; }
+.pp-status { margin: 0; font-size: 14px; font-weight: 600; }
+.pp-status.win { color: #E9C77B; }
+.pp-page { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px 8px; padding: 14px 10px; border-radius: 12px;
+  background: #F6EEDF repeating-linear-gradient(0deg, transparent 0 22px, rgba(94, 59, 37, .06) 22px 23px); color: var(--ink); }
+.pp-slot { display: grid; justify-items: center; gap: 4px; }
+.pp-stamp { width: 92px; height: 92px; border-radius: 50%; display: grid; place-items: center; align-content: center; gap: 1px; text-align: center; justify-self: center;
+  border: 3px double var(--ink); color: var(--ink); padding: 6px; mix-blend-mode: multiply; }
+.pp-stamp b { font-size: 12.5px; line-height: 1.15; font-weight: 800; text-transform: uppercase; }
+.pp-stamp small { font-size: 10px; line-height: 1.1; opacity: .9; }
+.pp-flag { font-size: 22px; line-height: 1; }
+.pp-stamp.stamped, .pp-stamp.welcome { background: radial-gradient(circle, transparent 58%, color-mix(in srgb, var(--ink) 8%, transparent) 100%); animation: pp-ink .5s cubic-bezier(.2, 1.6, .4, 1) both; }
+.pp-stamp.coming { border: 2px dashed var(--ink); opacity: .75; }
+.pp-stamp.empty { border: 2px dotted rgba(94, 59, 37, .35); color: rgba(94, 59, 37, .55); }
+.pp-stamp.empty .pp-flag { filter: grayscale(1); opacity: .45; }
+.pp-try { color: var(--primary); font-weight: 700; text-align: center; line-height: 1.3; }
+@keyframes pp-ink { from { opacity: 0; transform: scale(1.6) rotate(0deg); } }
+@media (prefers-reduced-motion: reduce) { .pp-stamp.stamped, .pp-stamp.welcome { animation: none; } }
+.pp.compact .pp-stamp { width: 74px; height: 74px; }
+.pp.compact .pp-stamp b { font-size: 11px; }
+.pp.compact .pp-flag { font-size: 18px; }
+.pp .btn.ghost { color: #F3E9D8; border-color: rgba(243, 233, 216, .45); background: transparent; }
+.pp-new { display: flex; gap: 8px; align-items: center; font-size: 13.5px; font-weight: 600; background: rgba(233, 199, 123, .16); border: 1px solid rgba(233, 199, 123, .4); border-radius: 10px; padding: 8px 10px; }

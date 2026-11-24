@@ -15,6 +15,7 @@ import { getNiche } from './niches.ts';
 import { itemsOfSeller, mutateOrder, orderById, type Order, type OrderStatus, type Shipment } from './orders.ts';
 import { store } from './store/index.ts';
 import { grantCashback, refundSpend } from './wallet.ts';
+import { rewardPassport } from './passport.ts';
 
 const egp = (n: number) => `${Math.round(n).toLocaleString('en-US')} ج`;
 
@@ -126,6 +127,8 @@ export async function afterMove(o: Order, to: OrderStatus, cat?: Catalog): Promi
   const c = cat ?? (await catalog());
   // The team chat hears about every step (delivered, refused, cancelled, with the courier…).
   const out: Outgoing[] = ['picked', 'delivered', 'refused', 'cancelled', 'confirmed'].includes(to) ? orderAlert(o, to as OrderEvent) : [];
+  // Coffee Passport: a delivery may complete the passport (Explorer credit, once per phone).
+  if (to === 'delivered') out.push(...(await rewardPassport(o).catch(() => [])));
   for (const sid of Object.keys(o.sellerState)) {
     const chat = c.sellerById(sid)?.telegramChatId;
     if (!chat) continue;

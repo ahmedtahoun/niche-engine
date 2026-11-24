@@ -7,6 +7,9 @@ import { speaker } from '@/lib/lang';
 import { getNiche } from '@/lib/niches';
 import { store } from '@/lib/store';
 import { entriesOf, walletOf } from '@/lib/wallet';
+import { PassportBook } from '@/components/Passport';
+import { passportOf, passportToken, REWARD_NOTE } from '@/lib/passport';
+import { siteUrl } from '@/lib/site';
 
 export async function generateMetadata() { return { title: (await speaker()).t('nav.account') }; }
 export const dynamic = 'force-dynamic';
@@ -26,7 +29,7 @@ export default async function AccountPage({ params }: { params: Promise<{ niche:
       </main>
     );
   }
-  const [orders, w, entries] = await Promise.all([store().listOrders({ phone: me.phone, niche: cfg.id, limit: 50 }), walletOf(me.phone, cfg.id), entriesOf(me.phone, cfg.id)]);
+  const [orders, w, entries, pp] = await Promise.all([store().listOrders({ phone: me.phone, niche: cfg.id, limit: 50 }), walletOf(me.phone, cfg.id), entriesOf(me.phone, cfg.id), passportOf(me.phone, cfg.id)]);
   const history = entries.slice().reverse().slice(0, 8);
   const day = (iso: string) => s.date(iso);
   return (
@@ -37,10 +40,11 @@ export default async function AccountPage({ params }: { params: Promise<{ niche:
         <b style={{ fontSize: 28 }} className="num">{egp(w.balance)}</b>
         <span className="small" style={{ opacity: 0.9 }}>{w.nextExpiry ? t('acc.expires', { x: egp(w.nextExpiry.amount), day: day(w.nextExpiry.at) }) : ''}{t('acc.cashback', { p: Math.round(cfg.wallet.cashback * 100) })}</span>
       </section>
+      {pp && <PassportBook pp={pp} cfg={cfg} s={s} shareUrl={siteUrl(cfg, `/passport/${passportToken(cfg.id, me.phone)}`, s.lang)} />}
       {history.length > 0 && (
         <div className="box small">
           <b>{t('acc.history')}</b>
-          {history.map((e) => <div className="row" key={e.id}><span>{t(`kind.${e.kind}` as 'kind.cashback')}{e.orderId ? ` · #${e.orderId}` : ''} · {day(e.createdAt)}</span><span className="num" style={{ color: e.amount > 0 ? 'var(--ok)' : 'var(--ink)' }}>{e.amount > 0 ? '+' : '−'}{egp(Math.abs(e.amount))}</span></div>)}
+          {history.map((e) => <div className="row" key={e.id}><span>{e.note === REWARD_NOTE ? t('kind.passport') : t(`kind.${e.kind}` as 'kind.cashback')}{e.orderId ? ` · #${e.orderId}` : ''} · {day(e.createdAt)}</span><span className="num" style={{ color: e.amount > 0 ? 'var(--ok)' : 'var(--ink)' }}>{e.amount > 0 ? '+' : '−'}{egp(Math.abs(e.amount))}</span></div>)}
         </div>
       )}
       <div className="box small">

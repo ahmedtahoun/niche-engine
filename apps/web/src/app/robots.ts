@@ -5,7 +5,7 @@ import { nicheForHost, origin } from '@/lib/site';
 
 export const dynamic = 'force-dynamic';
 
-const PRIVATE = ['/admin', '/dev', '/api', '/cart', '/checkout', '/account', '/order'];
+const PRIVATE = ['/admin', '/dev', '/api', '/cart', '/checkout', '/account', '/order', '/passport'];
 
 export default async function robots(): Promise<MetadataRoute.Robots> {
   const niches = allNiches();

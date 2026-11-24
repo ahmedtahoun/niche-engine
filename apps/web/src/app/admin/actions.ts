@@ -14,8 +14,8 @@ import { unblock } from '@/lib/blocklist';
 import { catalog, deleteProduct, deleteSeller, saveProduct, saveSeller } from '@/lib/catalog';
 import { store } from '@/lib/store';
 import { RIBBONS, type CartLine, type Product } from '@/lib/types';
-import { moveOrderTo, queueShipment } from '@/lib/fulfillment';
-import { bostaEnabled } from '@/lib/bosta';
+import { moveOrderTo, queueShipment, shipSellerPart, ShipmentHold, syncOpenShipments } from '@/lib/fulfillment';
+import { bostaEnabled, checkDistrict } from '@/lib/bosta';
 import { allNiches, getNiche } from '@/lib/niches';
 import { applySellerPart, draftOrder, mutateOrder, ORDER_SOURCES, orderById, ordersFor, type OrderSource, type OrderStatus } from '@/lib/orders';
 import { GOVERNORATES } from '@/lib/eta';
@@ -71,7 +71,7 @@ export async function confirmForSellers(id: number) {
   const pending = Object.entries((await orderById(id))?.sellerState ?? {}).filter(([, part]) => part === 'pending').map(([sid]) => sid);
   for (const sid of pending) {
     const saved = await mutateOrder(id, (x) => applySellerPart(x, sid, 'accepted'));
-    if (saved && bostaEnabled()) queueShipment(id, sid);
+    if (saved && bostaEnabled(saved.niche)) queueShipment(id, sid);
     if (saved && saved.status === 'accepted') await deliver(orderAlert(saved, 'accepted', 'اتأكد من الأدمن'));
   }
   done();
@@ -85,6 +85,49 @@ export async function moveOrder(id: number, move: keyof typeof MOVES) {
   const moved = await moveOrderTo(id, m.to, m.from);
   // An order cancelled before confirmation never reached the sellers: nothing to tell them.
   if (moved && !(m.to === 'cancelled' && before?.status === 'awaiting_confirm')) await deliver(moved.messages);
+  done();
+}
+
+/**
+ * Creates the Bosta shipment now for every accepted seller part that has none (or whose shipment
+ * was cancelled at Bosta). Used after a failure or after picking the customer's Bosta area.
+ */
+export async function shipNow(id: number) {
+  await guard();
+  const o = await orderById(id);
+  if (!o || !bostaEnabled(o.niche) || !['accepted', 'picked', 'confirmed'].includes(o.status)) return;
+  for (const [sid, part] of Object.entries(o.sellerState)) {
+    if (!['accepted', 'handed'].includes(part)) continue;
+    const sh = o.shipments?.[sid];
+    if (sh && sh.status !== 'cancelled') continue;
+    try { await deliver(await shipSellerPart(id, sid)); }
+    catch (e) {
+      const why = e instanceof ShipmentHold ? e.message : `shipment_failed: ${(e as Error).message}`.slice(0, 300);
+      await mutateOrder(id, (x) => { x.needsAttention = why; return true; });
+      break;
+    }
+  }
+  done();
+}
+
+/** Saves the Bosta district the team picked for an order's address, then ships if that was the only thing missing. */
+export async function setOrderArea(id: number, area: string, districtId: string) {
+  await guard();
+  const o = await orderById(id);
+  if (!o) return { ok: false, error: 'Order not found.' };
+  const district = await checkDistrict(o.customer.governorate, area, districtId);
+  if (district === null) return { ok: false, error: 'Bosta\'s area list is unreachable right now. Try again in a minute.' };
+  if (district === 'pick') return { ok: false, error: 'Pick the area from the list.' };
+  const saved = await mutateOrder(id, (x) => { x.customer = { ...x.customer, area: area.trim().slice(0, 80), districtId: district }; return true; });
+  if (saved?.needsAttention?.startsWith('bosta_area')) await shipNow(id);
+  done();
+  return { ok: true };
+}
+
+/** Asks Bosta for the latest state of every open shipment now (the automatic sync runs every 2 hours). */
+export async function syncBostaNow() {
+  await guard();
+  await syncOpenShipments(200);
   done();
 }
 
@@ -149,6 +192,7 @@ export async function saveSellerForm(id: string, form: FormData) {
   s.area = text(form, 'area', 80) ?? s.area ?? '';
   set('governorate', opt('governorate', 40));
   set('pickupAddress', opt('pickupAddress', 200));
+  set('bostaLocationId', opt('bostaLocationId', 60));
   set('instapay', opt('instapay', 60));
   set('capacity', opt('capacity', 40));
   set('instagram', opt('instagram', 60));
@@ -317,7 +361,7 @@ export async function deleteProductAction(id: string) {
 export interface ManualOrderInput {
   niche: string;
   source: OrderSource;
-  customer: { phone: string; name: string; governorate: string; area: string; address: string; landmark: string };
+  customer: { phone: string; name: string; governorate: string; area: string; districtId?: string; address: string; landmark: string };
   lines: CartLine[];
   payment: 'cod' | 'instapay';
   freeShipping: boolean;
@@ -340,6 +384,8 @@ export async function createManualOrder(input: ManualOrderInput): Promise<Manual
   if (c.name.trim().length < 2) return { ok: false, error: 'Enter the customer\'s name.' };
   if (!GOVERNORATES.includes(c.governorate)) return { ok: false, error: 'Pick the governorate.' };
   if (c.area.trim().length < 2 || c.address.trim().length < 5) return { ok: false, error: 'Enter the area and the street address.' };
+  const district = await checkDistrict(c.governorate, c.area, c.districtId);
+  if (district === 'pick') return { ok: false, error: 'Pick the area from Bosta\'s list (type it, then choose).' };
   const lines = (input.lines ?? []).filter((l) => l.qty > 0).map((l) => ({ ...l, qty: Math.min(50, Math.floor(l.qty)) }));
   if (!lines.length) return { ok: false, error: 'Add at least one item.' };
   if (!ORDER_SOURCES.includes(input.source)) return { ok: false, error: 'Pick where the order came from.' };
@@ -362,7 +408,7 @@ export async function createManualOrder(input: ManualOrderInput): Promise<Manual
   await ensureCustomer(phone, details);
   const order = await store().createOrder(draftOrder({
     niche: input.niche, status: 'confirmed', type: previous.length ? 'repeat' : 'new', payment: input.payment === 'instapay' ? 'instapay' : 'cod',
-    customer: { ...details, phone }, cart: lines, quote: q, source: input.source,
+    customer: { ...details, phone, ...(district ? { districtId: district } : {}) }, cart: lines, quote: q, source: input.source,
   }), null);
   if (order === 'wallet_conflict') return { ok: false, error: 'Please try again.' };
   await takeStock(order);

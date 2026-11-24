@@ -18,8 +18,9 @@ export function checkEnv(env: Record<string, string | undefined> = process.env):
 
   if (has('TELEGRAM_BOT_TOKEN') !== has('TELEGRAM_WEBHOOK_SECRET')) errors.push('TELEGRAM_BOT_TOKEN and TELEGRAM_WEBHOOK_SECRET must be set together');
   if (!has('TELEGRAM_BOT_TOKEN')) warnings.push('Telegram not configured: sellers will not receive orders');
-  if (has('BOSTA_API_KEY') && !has('BOSTA_WEBHOOK_SECRET')) errors.push('BOSTA_WEBHOOK_SECRET: required with BOSTA_API_KEY so delivery updates are accepted');
-  if (!has('BOSTA_API_KEY')) warnings.push('Bosta not configured: waybills use DEMO tracking numbers');
+  const bostaKeys = Object.keys(env).filter((k) => /^BOSTA_API_KEY(_[A-Z0-9]+)?$/.test(k) && has(k));
+  if (bostaKeys.length && (!has('BOSTA_WEBHOOK_SECRET') || env.BOSTA_WEBHOOK_SECRET!.length < 20)) errors.push('BOSTA_WEBHOOK_SECRET: set a random string of 20+ characters with a Bosta API key, so delivery updates are accepted');
+  if (!bostaKeys.length) warnings.push('Bosta not configured: waybills use DEMO tracking numbers');
   if (process.env.TELEGRAM_BOT_TOKEN && !process.env.ADMIN_TELEGRAM_CHAT_IDS) warnings.push('ADMIN_TELEGRAM_CHAT_IDS not set: no team alerts on Telegram (send /myid to the bot to get your number)');
   if (!has('META_CAPI_TOKEN') && !has('META_CAPI_TOKENS')) warnings.push('META_CAPI_TOKEN not set: Meta gets events from the browser only (ad blockers hide some)');
   if (has('META_TEST_EVENT_CODE')) warnings.push('META_TEST_EVENT_CODE is set: purchases go to Test events, remove it for real traffic');

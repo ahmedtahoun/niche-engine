@@ -58,8 +58,8 @@ test('Bosta webhook: a returned shipment marks the order refused and counts the 
 });
 
 test('Bosta webhook payload parsing', () => {
-  assert.deepEqual(parseWebhook({ trackingNumber: 123, state: 45 }), { tracking: '123', status: 'delivered' });
-  assert.deepEqual(parseWebhook({ trackingNumber: '9', state: { code: 46 } }), { tracking: '9', status: 'returned' });
+  assert.deepEqual(parseWebhook({ trackingNumber: 123, state: 45 }), { tracking: '123', status: 'delivered', state: 45, note: '' });
+  assert.deepEqual(parseWebhook({ trackingNumber: '9', state: { code: 46 } }), { tracking: '9', status: 'returned', state: 46, note: '' });
   assert.equal(parseWebhook({ trackingNumber: '9', state: 999 }), null);
   assert.equal(parseWebhook(null), null);
 });

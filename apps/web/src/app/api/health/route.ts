@@ -2,6 +2,7 @@
 // only whether parts are up and which build is running.
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
+import { bostaEnabled } from '@/lib/bosta';
 import { NextResponse } from 'next/server';
 import { allNiches } from '@/lib/niches';
 import { store } from '@/lib/store';
@@ -26,6 +27,7 @@ export async function GET() {
     database: s.kind === 'supabase' ? (dbUp ? 'supabase' : 'supabase_unreachable') : 'demo',
     migrations: missing.length ? `run in Supabase: ${missing.join(', ')}` : 'ok',
     telegram: Boolean(process.env.TELEGRAM_BOT_TOKEN),
-    bosta: Boolean(process.env.BOSTA_API_KEY),
+    // Which stores create real Bosta shipments (the others use demo tracking numbers).
+    bosta: Object.fromEntries(Object.keys(allNiches()).map((id) => [id, bostaEnabled(id)])),
   }, { status: dbUp ? 200 : 503, headers: { 'Cache-Control': 'no-store' } });
 }

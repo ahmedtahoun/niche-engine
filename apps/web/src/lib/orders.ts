@@ -14,6 +14,10 @@ export interface Shipment {
   tracking: string;
   status: 'created' | 'picked' | 'in_transit' | 'delivered' | 'returned' | 'exception' | 'cancelled';
   cod: number;
+  /** Bosta's own state code (bosta.ts BOSTA_STATES), its reason for a failed attempt, and when it last changed. */
+  state?: number;
+  note?: string;
+  updatedAt?: string;
 }
 
 export const ORDER_SOURCES = ['web', 'whatsapp', 'phone', 'instagram', 'facebook', 'other'] as const;
@@ -28,7 +32,7 @@ export interface Order {
   type: 'new' | 'repeat';
   payment: 'cod' | 'instapay';
   /** Delivery details as typed at checkout. */
-  customer: { name: string; phone: string; governorate: string; area: string; address: string; landmark: string };
+  customer: { name: string; phone: string; governorate: string; area: string; address: string; landmark: string; /** Bosta district picked at checkout (area is its name). */ districtId?: string };
   cart: CartLine[];
   quote: Quote;
   items: OrderItem[];

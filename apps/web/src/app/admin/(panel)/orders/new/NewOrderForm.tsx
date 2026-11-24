@@ -1,5 +1,6 @@
 'use client';
 // Manual order form: find the customer (smart search) or add a new one, add items, check the total, create.
+import { AreaPicker } from '@/components/AreaPicker';
 import { useRouter } from 'next/navigation';
 import { useMemo, useState, useTransition } from 'react';
 import { matches } from '@/lib/smart-search';
@@ -21,7 +22,7 @@ export function NewOrderForm({ niche, shipping, freeOver, governorates, customer
   const [query, setQuery] = useState('');
   const [picked, setPicked] = useState<Person | null>(pre ?? null);
   const [fresh, setFresh] = useState(false);
-  const [cust, setCust] = useState({ phone: pre?.phone ?? '', name: pre?.name ?? '', governorate: pre?.governorate ?? governorates[0], area: pre?.area ?? '', address: pre?.address ?? '', landmark: '' });
+  const [cust, setCust] = useState<{ phone: string; name: string; governorate: string; area: string; districtId?: string; address: string; landmark: string }>({ phone: pre?.phone ?? '', name: pre?.name ?? '', governorate: pre?.governorate ?? governorates[0], area: pre?.area ?? '', address: pre?.address ?? '', landmark: '' });
   const [lines, setLines] = useState<Line[]>([]);
   const [source, setSource] = useState('whatsapp');
   const [payment, setPayment] = useState<'cod' | 'instapay'>('cod');
@@ -82,7 +83,8 @@ export function NewOrderForm({ niche, shipping, freeOver, governorates, customer
                 <label className="fld"><span>Mobile</span><input value={cust.phone} onChange={(e) => setCust({ ...cust, phone: e.target.value })} dir="ltr" inputMode="tel" placeholder="01…" /></label>
                 <label className="fld"><span>Name</span><input value={cust.name} onChange={(e) => setCust({ ...cust, name: e.target.value })} dir="rtl" /></label>
                 <label className="fld"><span>Governorate</span><select className="sel" value={cust.governorate} onChange={(e) => setCust({ ...cust, governorate: e.target.value })}>{governorates.map((g) => <option key={g}>{g}</option>)}</select></label>
-                <label className="fld"><span>Area</span><input value={cust.area} onChange={(e) => setCust({ ...cust, area: e.target.value })} dir="rtl" /></label>
+                <AreaPicker className="fld" governorate={cust.governorate} value={{ area: cust.area, districtId: cust.districtId }} onChange={(v) => setCust((c) => ({ ...c, area: v.area, districtId: v.districtId }))}
+                  label={<span>Area (Bosta)</span>} placeholder="Type the area… e.g. مدينة نصر" noneText="Not in Bosta's list for this governorate. Try another spelling." en={false} dir="rtl" />
                 <label className="fld"><span>Street address</span><input value={cust.address} onChange={(e) => setCust({ ...cust, address: e.target.value })} dir="rtl" /></label>
                 <label className="fld"><span>Landmark (optional)</span><input value={cust.landmark} onChange={(e) => setCust({ ...cust, landmark: e.target.value })} dir="rtl" /></label>
               </div>

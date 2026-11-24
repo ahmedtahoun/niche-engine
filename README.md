@@ -16,7 +16,7 @@ Niche: **Sakina** (Umrah and modest wear) at sakinaeg.com. Other niches get thei
 | `packages/core` | Shared rules: niche validation, cart totals, promos, commission tiers, payouts and reserve, Arabic search, phone validation | Done, tested |
 | `supabase/migrations` | Postgres schema for all niches. `0002` makes the database the only source of truth: order numbers, version checks, wallet transactions, one cashback/refund/spend/payout per order or cycle | Apply 0001 then 0002 |
 | `apps/web/src/lib/store` | Storage layer: `SupabaseStore` (production; every request reads/writes the database, so restarts and several processes are safe) and `MemoryStore` (local demo + tests, same rules) | Done, tested against real Postgres (PGlite) |
-| `apps/web/src/lib/bosta.ts` + `fulfillment.ts` | One Bosta shipment per seller when they accept, cash split across shipments, waybill PDF to the seller's Telegram, `/api/bosta` webhook for delivered / returned | Done in demo mode; verify field names with Bosta |
+| `apps/web/src/lib/bosta.ts` + `bosta-areas.ts` + `fulfillment.ts` | Ported from shop.wheretospot.com's live Bosta code: checkout area picker on Bosta's district list, one Bosta shipment per seller when they accept (cash split across shipments), waybill PDF to the seller's Telegram, per-shipment `/api/bosta` webhook (delivered → order delivered, returned → refused, failed attempt / cancelled → needs attention), 2-hourly sync for missed updates, a Bosta account per store | Done, tested against a fake Bosta; needs Sakina's API key |
 | `apps/web` | Next.js storefront, multi-domain (one domain per niche): home, search, product, bundle, cart, checkout, order. Demo data until Supabase keys arrive | Done |
 | `apps/web/src/bot` | Telegram seller bot: apply, add product (with required attributes + seller share), receive orders, accept / not available / handed to courier, numbers, payout, price check. Pure engine + `/api/telegram` webhook | Done, tested; needs the bot token |
 | Customer accounts | Phone + password created inside checkout; scrypt-hashed passwords, signed session cookie, 5-attempt lock, saved address, order pages visible to their owner only | Done, tested |
@@ -82,10 +82,7 @@ curl "https://api.telegram.org/bot$TELEGRAM_BOT_TOKEN/setWebhook?url=https://YOU
 
 **How data is kept safe:** the database is the only source of truth. Order changes use version checks (a change based on an old copy is retried, never lost); an order and its wallet spend are saved in one transaction; the database allows one cashback, refund and spend per order and one payout per seller per cycle; Telegram retries and repeated Bosta webhooks are handled once. Checkout and sign-in are rate-limited per visitor, and a phone can place at most 5 orders a day.
 
-**Bosta**
-1. Set `BOSTA_API_KEY`. Each seller needs their pickup location id in `sellers.bosta_location_id`.
-2. In the Bosta dashboard, set the webhook URL to `https://YOUR_DOMAIN/api/bosta` with the Authorization header value = `BOSTA_WEBHOOK_SECRET`.
-3. Before the first real order, check every line marked `VERIFY` in `apps/web/src/lib/bosta.ts` against Bosta's API docs (endpoint paths, field names, state codes).
+**Bosta**: see DEPLOY.md step 5 (API key per store, webhook secret, sellers' pickup location ids).
 
 ## Accounts needed before the next steps
 

@@ -13,6 +13,7 @@ import { walletOf } from '@/lib/wallet';
 import { notifyOrder } from '@/bot/engine';
 import { deliver } from '@/bot/transport';
 import { GOVERNORATES } from '@/lib/eta';
+import { checkDistrict } from '@/lib/bosta';
 import { isBlocked } from '@/lib/blocklist';
 import { allow, clientIp } from '@/lib/rate-limit';
 import { store } from '@/lib/store';
@@ -45,6 +46,8 @@ export interface CheckoutForm {
   name: string;
   governorate: string;
   area: string;
+  /** Bosta district picked from the area list (checkout area picker). */
+  districtId?: string;
   address: string;
   landmark: string;
   payment: 'cod' | 'instapay';
@@ -87,6 +90,9 @@ export async function placeOrder(niche: string, cart: CartLine[], form: Checkout
   if (form.name.trim().length < 2) errors.name = s.t('err.name');
   if (!GOVERNORATES.includes(form.governorate)) errors.governorate = s.t('err.gov');
   if (form.area.trim().length < 2) errors.area = s.t('err.area');
+  // The area must be one of Bosta's districts for the governorate (when Bosta's list is reachable).
+  const district = errors.area || errors.governorate ? null : await checkDistrict(form.governorate, form.area, form.districtId);
+  if (district === 'pick') errors.area = s.t('err.areaPick');
   if (form.address.trim().length < 5) errors.address = s.t('err.address');
   if (!Array.isArray(cart) || !cart.length) errors.cart = s.t('err.cartEmpty');
   if (Object.keys(errors).length) return { ok: false, errors };
@@ -94,6 +100,7 @@ export async function placeOrder(niche: string, cart: CartLine[], form: Checkout
   const today = await store().listOrders({ phone: phone!, since: new Date(Date.now() - 864e5).toISOString(), limit: MAX_ORDERS_PER_PHONE_PER_DAY });
 
   const details = { name: form.name.trim().slice(0, 80), governorate: form.governorate, area: form.area.trim().slice(0, 80), address: form.address.trim().slice(0, 200), landmark: form.landmark.trim().slice(0, 120) };
+  const districtId = typeof district === 'string' && district !== 'pick' ? district : undefined;
   // Sent twice (double tap, network resend)? Hand back the first order instead of making a second.
   const dup = findDuplicate(today, { cart, customer: { ...details, phone: phone! } });
   if (dup) {
@@ -129,7 +136,7 @@ export async function placeOrder(niche: string, cart: CartLine[], form: Checkout
       status: cfg.risk.requireWhatsappConfirm ? 'awaiting_confirm' : 'confirmed',
       type: previous.length ? 'repeat' : 'new',
       payment: form.payment === 'instapay' ? 'instapay' : 'cod',
-      customer: { ...details, phone: phone! },
+      customer: { ...details, phone: phone!, ...(districtId ? { districtId } : {}) },
       cart,
       quote: q,
       promoCode: q.promoDiscount > 0 ? form.promoCode.trim().toUpperCase() : undefined,

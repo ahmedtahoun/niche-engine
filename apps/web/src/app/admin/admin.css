@@ -288,3 +288,4 @@ a.above { text-decoration: none; }
 .order-toast button { border: 0; background: none; font-size: 20px; line-height: 1; color: var(--a-muted); cursor: pointer; padding: 0 4px; }
 @keyframes toast-in { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: none; } }
 @media (prefers-reduced-motion: reduce) { .order-toast { animation: none; } }
+.area-fix { display: grid; gap: 8px; margin-top: 10px; }

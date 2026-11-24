@@ -1,4 +1,6 @@
 // Shared test setup: a fresh in-process store seeded with the demo catalog.
+// Bosta points at a closed port unless a test starts its fake Bosta (test/bosta-fake.ts): no test reaches the internet.
+process.env.BOSTA_API_BASE ??= 'http://127.0.0.1:9';
 import { catalog, invalidateCatalog } from '../src/lib/catalog.ts';
 import { PRODUCTS, SELLERS } from '../src/lib/demo-data.ts';
 import { getNiche } from '../src/lib/niches.ts';

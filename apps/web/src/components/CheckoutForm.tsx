@@ -11,6 +11,7 @@ import { track } from './Pixel';
 import { trackSite } from './SiteTracker';
 
 const pixelData = (q: Quote) => ({ content_ids: [...new Set(q.items.map((i) => i.productId))], content_type: 'product_group' as const, value: q.total, num_items: q.items.reduce((a, i) => a + i.qty, 0) });
+import { AreaPicker } from './AreaPicker';
 import { writeCart } from './cart-store';
 import { Summary, useQuote } from './CartView';
 import { useSpeak } from './I18n';
@@ -86,7 +87,11 @@ export function CheckoutForm({ niche, governorates, initialPromo, openBeforePay,
       <label className="field">{t('name')}<input value={form.name} onChange={set('name')} autoComplete="name" {...inv('name')} />{err('name')}</label>
       <div className="two">
         <label className="field">{t('governorate')}<select value={form.governorate} onChange={set('governorate')}>{governorates.map((g) => <option key={g} value={g}>{gov(g)}</option>)}</select></label>
-        <label className="field">{t('area')}<input value={form.area} onChange={set('area')} {...inv('area')} />{err('area')}</label>
+        <div>
+          <AreaPicker governorate={form.governorate} value={{ area: form.area, districtId: form.districtId }} onChange={(v) => setForm((f) => ({ ...f, area: v.area, districtId: v.districtId }))}
+            label={t('area')} placeholder={t('area.ph')} noneText={t('area.none')} en={s.en} invalid={Boolean(errors.area)} describedBy={errors.area ? 'area-err' : undefined} />
+          {err('area')}
+        </div>
       </div>
       <label className="field">{t('street')}<input value={form.address} onChange={set('address')} autoComplete="street-address" {...inv('address')} />{err('address')}</label>
       <label className="field">{t('landmark')}<input value={form.landmark} onChange={set('landmark')} placeholder={t('landmarkPh')} /></label>

@@ -1,9 +1,13 @@
 import Link from 'next/link';
+import { after } from 'next/server';
+import { bostaEnabled } from '@/lib/bosta';
+import { maybeSyncBosta } from '@/lib/fulfillment';
+import { allNiches } from '@/lib/niches';
 import { blockedList } from '@/lib/blocklist';
 import { utmLabel, type Order } from '@/lib/orders';
 import { customerKey } from '@/lib/session';
 import { store } from '@/lib/store';
-import { unblockPhone } from '../../actions';
+import { syncBostaNow, unblockPhone } from '../../actions';
 import { ago, EGP, NicheTabs, Pill, pct, pickNiche, plural, STATUS } from '../shared';
 import { OrderActions } from './OrderActions';
 
@@ -40,12 +44,17 @@ export default async function Orders({ searchParams }: { searchParams: Promise<{
   const done = month.filter((o) => o.status === 'delivered').length, refused = month.filter((o) => o.status === 'refused').length;
   const action = base.filter(TABS[1][2]).length;
 
+  const bostaOn = Object.keys(allNiches()).some((id) => bostaEnabled(id));
+  // Shipments whose webhook was missed catch up here (at most every 2 hours), after the page is sent.
+  if (bostaOn) after(maybeSyncBosta);
+
   return (
     <>
       <div className="adm-top">
         <div><h1>Orders</h1><p className="sub">Click an order for items, customer, address and delivery. Bosta updates move orders automatically once connected.</p></div>
         <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
           <NicheTabs base="/admin/orders" current={niche} />
+          {bostaOn && <form action={syncBostaNow}><button className="mini" title="Ask Bosta for the latest state of every open shipment (also runs by itself every 2 hours)">↻ Sync with Bosta</button></form>}
           <Link href="/admin/orders/new" className="btn-save" style={{ textDecoration: 'none' }}>＋ New order</Link>
         </div>
       </div>

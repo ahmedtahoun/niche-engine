@@ -136,6 +136,14 @@ details p { margin: 6px 0 0; color: var(--muted); }
 .field input, .field select { font: inherit; font-size: 16px; color: var(--ink); background: var(--surface-2); border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; width: 100%; }
 .field input[aria-invalid="true"] { border-color: var(--bad); }
 .ferr { color: var(--bad); font-size: 12.5px; }
+/* Checkout area picker (Bosta districts) */
+.area-pick { position: relative; }
+.area-pick .area-ok { position: absolute; inset-inline-end: 12px; top: 33px; color: var(--ok, #2e7d32); font-weight: 700; pointer-events: none; }
+.area-list { position: absolute; z-index: 20; top: 100%; inset-inline: 0; margin: 4px 0 0; padding: 4px; list-style: none; background: var(--surface, #fff); border: 1px solid var(--line); border-radius: 10px; box-shadow: 0 8px 24px rgb(0 0 0 / .12); max-height: 280px; overflow: auto; }
+.area-list li { display: grid; gap: 1px; padding: 8px 10px; border-radius: 8px; cursor: pointer; color: var(--ink); font-size: 15px; }
+.area-list li small { color: var(--muted); font-size: 12.5px; }
+.area-list li.on { background: var(--surface-2); }
+.area-list li.none { cursor: default; color: var(--muted); font-size: 13px; }
 .two { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 .radio { display: flex; gap: 10px; border: 1.5px solid var(--line); border-radius: 12px; padding: 10px 12px; font-size: 14px; cursor: pointer; }
 .radio:has(input:checked) { border-color: var(--primary); background: var(--primary-soft); }

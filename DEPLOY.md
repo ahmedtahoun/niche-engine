@@ -58,14 +58,15 @@ curl "https://api.telegram.org/bot$TELEGRAM_BOT_TOKEN/setWebhook?url=https://sak
 
 One bot serves all niches; any of your domains works as the webhook URL.
 
-Bosta:
-1. Dashboard → webhooks: URL `https://sakinaeg.com/api/bosta`, Authorization header = your `BOSTA_WEBHOOK_SECRET`.
-2. For each seller, create a pickup location under your Bosta account and put its id in `sellers.bosta_location_id` (Supabase table editor).
-3. Check every line marked `VERIFY` in `apps/web/src/lib/bosta.ts` against Bosta's API docs before the first real order.
+Bosta (one business account per store; Sakina has its own):
+1. In Bosta: Settings → API integration → create an API key. Put it in `BOSTA_API_KEY_UMRAH` (Sakina) or `BOSTA_API_KEY_COFFEE` (Cairo Roast); `BOSTA_API_KEY` is the fallback for a store without its own. Set `BOSTA_WEBHOOK_SECRET` to a random string of 20+ characters. Restart.
+2. No webhook to set in Bosta's dashboard: every shipment carries `https://<store domain>/api/bosta` and the secret, so Bosta reports each status change by itself. Missed updates are caught by a sync every 2 hours (and the "Sync with Bosta" button in Admin → Orders).
+3. For each seller, create a pickup location in Bosta (Pickup locations) and paste its id in Admin → Sellers → "Bosta pickup location id". Empty = the account's default location.
+4. Checkout asks for the area from Bosta's own district list (same as shop.wheretospot.com), so shipments go out with Bosta's exact district. An older order without one shows "Bosta area" on its admin page: pick it there and the shipment is created.
 
 ## 6. Check it is live
 
-- `https://sakinaeg.com/api/health` shows `"database":"supabase"`, `"telegram":true`, `"bosta":true`.
+- `https://sakinaeg.com/api/health` shows `"database":"supabase"`, `"telegram":true`, `"bosta":{"umrah":true,…}`.
 - The storefront has no orange "demo" bar (it only shows on demo data).
 - `/admin` asks for the password.
 - Place one real order to yourself: it appears in `/admin/orders`, the seller's Telegram gets it, accepting creates a Bosta waybill.

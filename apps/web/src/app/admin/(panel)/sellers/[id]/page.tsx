@@ -79,6 +79,7 @@ export default async function SellerEditor({ params, searchParams }: { params: P
               <label className="fld"><span>Instagram (for your review; never shown in the store)</span><input name="instagram" defaultValue={s?.instagram ?? ''} dir="ltr" maxLength={60} placeholder="@handle" /></label>
               <div className="fld"><span>Check</span>{s?.instagram ? <a href={`https://instagram.com/${s.instagram.replace(/^@/, '')}`} target="_blank" rel="noreferrer" className="mini" style={{ textAlign: 'center', textDecoration: 'none' }}>Open their Instagram ↗</a> : <span className="sub">no Instagram given</span>}</div>
               <label className="fld" style={{ gridColumn: '1 / -1' }}><span>Pickup address (for Bosta)</span><input name="pickupAddress" defaultValue={s?.pickupAddress ?? ''} dir="rtl" maxLength={200} /></label>
+              <label className="fld" style={{ gridColumn: '1 / -1' }}><span>Bosta pickup location id</span><input name="bostaLocationId" defaultValue={s?.bostaLocationId ?? ''} dir="ltr" maxLength={60} placeholder="From Bosta → Pickup locations. Empty = the account's default location" /></label>
             </div>
           </section>
 

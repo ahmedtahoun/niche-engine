@@ -8,7 +8,9 @@ import { customerKey } from '@/lib/session';
 import { waLink } from '@/lib/site';
 import { store } from '@/lib/store';
 import { EGP, Pill, STATUS } from '../../shared';
-import { addReviewAction } from '../../../actions';
+import { addReviewAction, shipNow } from '../../../actions';
+import { bostaEnabled, stateLabel, trackingLink } from '@/lib/bosta';
+import { AreaFix } from './AreaFix';
 import { OrderActions } from '../OrderActions';
 
 export const metadata = { title: 'Order' };
@@ -39,6 +41,10 @@ export default async function OrderPage({ params }: { params: Promise<{ id: stri
   const toCollect = q.total - (q.depositRequired && o.payment === 'cod' ? q.deposit : 0);
   const address = [o.customer.governorate, o.customer.area, o.customer.address].filter(Boolean).join('، ') + (o.customer.landmark ? ` (${o.customer.landmark})` : '');
   const brand = cfg?.brand.nameAr ?? '';
+  const bostaOn = bostaEnabled(o.niche);
+  // Accepted seller parts with no shipment (or one cancelled at Bosta): the team can create it from here.
+  const missing = Object.entries(o.sellerState).filter(([sid, part]) => ['accepted', 'handed'].includes(part) && (!o.shipments?.[sid] || o.shipments[sid].status === 'cancelled'));
+  const canShip = bostaOn && missing.length > 0 && ['confirmed', 'accepted', 'picked'].includes(o.status);
   const message = `أهلاً ${o.customer.name.split(' ')[0]}، معاك ${brand} بخصوص طلبك رقم #${o.id} (${Math.round(q.total)} ج). نأكد العنوان: ${address}؟`;
 
   return (
@@ -94,9 +100,20 @@ export default async function OrderPage({ params }: { params: Promise<{ id: stri
               <div key={sid} className="ship-row">
                 <b className="ar">{cat.sellerById(sid)?.nameEn ?? cat.sellerById(sid)?.name ?? sid}</b>
                 <Pill kind={PART[part]?.[1] ?? 'mute'}>{PART[part]?.[0] ?? part}</Pill>
-                {o.shipments?.[sid] ? <span className="sub">Bosta {o.shipments[sid].tracking} · COD {EGP(o.shipments[sid].cod)} · {o.shipments[sid].status}</span> : <span className="sub">no shipment yet</span>}
+                {o.shipments?.[sid] ? (() => {
+                  const sh = o.shipments[sid];
+                  const demo = sh.tracking.startsWith('DEMO');
+                  return (
+                    <span className="sub">
+                      Bosta {demo ? sh.tracking : <a href={trackingLink(sh.tracking)} target="_blank" rel="noreferrer">{sh.tracking}</a>} · COD {EGP(sh.cod)} · {sh.state !== undefined ? stateLabel(sh.state) : sh.status}
+                      {sh.note ? ` · ${sh.note}` : ''}{sh.updatedAt ? ` · ${new Date(sh.updatedAt).toLocaleString('en-GB', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}` : ''}
+                      {!demo && <> · <a href={`/admin/waybill/${encodeURIComponent(sh.tracking)}`} target="_blank" rel="noreferrer">waybill PDF</a></>}
+                    </span>
+                  );
+                })() : <span className="sub">no shipment yet</span>}
               </div>
             ))}
+            {canShip && <form action={shipNow.bind(null, o.id)}><button className="mini pri">📦 Create Bosta shipment{missing.length > 1 ? 's' : ''} now</button></form>}
           </section>
         </div>
 
@@ -134,6 +151,7 @@ export default async function OrderPage({ params }: { params: Promise<{ id: stri
           <section className="panel">
             <h2>Delivery address</h2>
             <p className="ar addr">{address}</p>
+            {bostaOn && !['delivered', 'refused', 'cancelled'].includes(o.status) && <AreaFix id={o.id} governorate={o.customer.governorate} area={o.customer.area} districtId={o.customer.districtId} />}
           </section>
           <section className="panel">
             <h2>Payment</h2>

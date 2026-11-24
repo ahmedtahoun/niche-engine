@@ -127,6 +127,14 @@
       "namedRegex": "^/admin/sellers/(?<nxtPid>[^/]+?)(?:/)?$"
     },
     {
+      "page": "/admin/waybill/[tracking]",
+      "regex": "^/admin/waybill/([^/]+?)(?:/)?$",
+      "routeKeys": {
+        "nxtPtracking": "nxtPtracking"
+      },
+      "namedRegex": "^/admin/waybill/(?<nxtPtracking>[^/]+?)(?:/)?$"
+    },
+    {
       "page": "/[niche]",
       "regex": "^/([^/]+?)(?:/)?$",
       "routeKeys": {

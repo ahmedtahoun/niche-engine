@@ -193,6 +193,14 @@
       "namedRegex": "^/(?<nxtPniche>[^/]+?)/guide/(?<nxtPslug>[^/]+?)(?:/)?$"
     },
     {
+      "page": "/[niche]/notes",
+      "regex": "^/([^/]+?)/notes(?:/)?$",
+      "routeKeys": {
+        "nxtPniche": "nxtPniche"
+      },
+      "namedRegex": "^/(?<nxtPniche>[^/]+?)/notes(?:/)?$"
+    },
+    {
       "page": "/[niche]/order/[id]",
       "regex": "^/([^/]+?)/order/([^/]+?)(?:/)?$",
       "routeKeys": {

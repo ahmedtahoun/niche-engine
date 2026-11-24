@@ -88,7 +88,8 @@
     "depositAboveEgp": 1500,
     "depositEgp": 75,
     "requireWhatsappConfirm": false,
-    "openBeforePay": true
+    "openBeforePay": true,
+    "autoAccept": true
   },
   "returnsPolicy": "coffee",
   "wallet": {

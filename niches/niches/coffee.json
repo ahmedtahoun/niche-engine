@@ -18,13 +18,13 @@
       "en": "Specialty coffee from Egyptian roasters ☕"
     },
     "about": {
-      "ar": "محمصة القاهرة متجر قهوة مختصة: بنختار القهوة من محامص مصرية زي بوندز. التحميص بيتم عند المحمصة نفسها، وإحنا بنوصّلهالك مقفولة وأصلية لحد باب البيت.",
-      "en": "Cairo Roast is a specialty coffee store: we pick coffee from Egyptian roasters such as Bonds. The roasting is done at the roastery, and we deliver it sealed and original to your door."
+      "ar": "محمصة القاهرة متجر قهوة مختصة: بنختار كل قهوة بنفسنا من محامص مختصة شريكة في مصر، وبنوصّلهالك طازة في كيس محمصة القاهرة لحد باب البيت.",
+      "en": "Cairo Roast is a specialty coffee store: we pick every coffee ourselves from partner specialty roasteries in Egypt, and deliver it fresh in a Cairo Roast bag to your door."
     },
     "ogImage": "/brands/coffee/og.png",
     "description": {
-      "ar": "محمصة القاهرة متجر قهوة مختصة أونلاين في مصر: حبوب قهوة من محامص مختارة زي بوندز، بلندات وقهوة أحادية المصدر بوزن 250 جم و1 كجم، والدفع عند الاستلام مع توصيل لكل مصر.",
-      "en": "Cairo Roast is an online specialty coffee store in Egypt: whole-bean coffee from selected roasters such as Bonds, blends and single origins in 250 g and 1 kg, with cash on delivery across Egypt."
+      "ar": "محمصة القاهرة متجر قهوة مختصة أونلاين في مصر: حبوب قهوة مختصة مختارة، بلندات وقهوة أحادية المصدر بوزن 250 جم و1 كجم، والدفع عند الاستلام مع توصيل لكل مصر.",
+      "en": "Cairo Roast is an online specialty coffee store in Egypt: selected whole-bean specialty coffee, blends and single origins in 250 g and 1 kg, with cash on delivery across Egypt."
     },
     "pickSeal": {
       "ar": "اختيار محمصة القاهرة",
@@ -108,9 +108,7 @@
     "brazil": "برازيل",
     "برازيلي": "برازيل",
     "شيكولاته": "شوكولاته",
-    "chocolate": "شوكولاته",
-    "bonds": "بوندز",
-    "بوند": "بوندز"
+    "chocolate": "شوكولاته"
   },
   "optionAxes": [
     {
@@ -127,27 +125,27 @@
   "bundles": [
     {
       "id": "discovery_box",
-      "nameAr": "صندوق الاكتشاف: 3 قهوات من بوندز",
+      "nameAr": "صندوق الاكتشاف: 3 قهوات مختصة",
       "parts": [
         {
-          "product": "bonds-chrome",
+          "product": "chrome",
           "qty": 1,
           "variant": "250 جم"
         },
         {
-          "product": "bonds-ethiopia-limu",
+          "product": "ethiopia-limu",
           "qty": 1,
           "variant": "250 جم"
         },
         {
-          "product": "bonds-brazil-red-catuai",
+          "product": "brazil-red-catuai",
           "qty": 1,
           "variant": "250 جم"
         }
       ],
       "discountEgp": 60,
       "image": "/products/coffee/discovery-box.webp",
-      "nameEn": "Discovery box: 3 Bonds coffees"
+      "nameEn": "Discovery box: 3 specialty coffees"
     }
   ],
   "promos": [
@@ -172,8 +170,8 @@
     "en": "🎁 First time? Start here"
   },
   "homeSection": {
-    "ar": "قهوات بوندز ☕",
-    "en": "Bonds coffees ☕"
+    "ar": "قهوات محمصة القاهرة ☕",
+    "en": "Cairo Roast coffees ☕"
   },
   "popularSearches": {
     "ar": [
@@ -258,8 +256,8 @@
       "en": "Specialty coffee, from the roastery to your door ☕"
     },
     "subtitle": {
-      "ar": "قهوة مختصة من بوندز: بلندات وقهوة أحادية المصدر من إثيوبيا والبرازيل وكولومبيا والسلفادور. حبوب كاملة طازة في أكياس مقفولة. ادفع عند الاستلام.",
-      "en": "Specialty coffee from Bonds: blends and single origins from Ethiopia, Brazil, Colombia and El Salvador. Fresh whole beans in sealed bags. Pay on delivery."
+      "ar": "قهوة مختصة مختارة: بلندات وقهوة أحادية المصدر من إثيوبيا والبرازيل وكولومبيا والسلفادور. حبوب كاملة طازة في أكياس مقفولة. ادفع عند الاستلام.",
+      "en": "Selected specialty coffee: blends and single origins from Ethiopia, Brazil, Colombia and El Salvador. Fresh whole beans in sealed bags. Pay on delivery."
     },
     "cta": {
       "ar": "اختار قهوتك",
@@ -469,8 +467,8 @@
         "en": "Where can I buy specialty coffee online in Egypt?"
       },
       "a": {
-        "ar": "من محمصة القاهرة: قهوات مختصة من محامص مختارة زي بوندز، بلندات وقهوة أحادية المصدر بوزن 250 جم و1 كجم، مع توصيل لكل محافظات مصر والدفع عند الاستلام.",
-        "en": "At Cairo Roast: specialty coffee from selected roasters such as Bonds, blends and single origins in 250 g and 1 kg, delivered across Egypt with cash on delivery."
+        "ar": "من محمصة القاهرة: قهوات مختصة مختارة، بلندات وقهوة أحادية المصدر بوزن 250 جم و1 كجم، مع توصيل لكل محافظات مصر والدفع عند الاستلام.",
+        "en": "At Cairo Roast: selected specialty coffee, blends and single origins in 250 g and 1 kg, delivered across Egypt with cash on delivery."
       }
     },
     {
@@ -537,11 +535,11 @@
       },
       {
         "emoji": "🔥",
-        "ar": "اتحمصت عند {roaster}",
-        "en": "Roasted by {roaster}",
+        "ar": "اتحمصت في محمصة شريكة",
+        "en": "Roasted at a partner roastery",
         "text": {
-          "ar": "محمصة شريكة لمحمصة القاهرة",
-          "en": "A Cairo Roast partner roastery"
+          "ar": "محمصة مختصة في مصر، وإحنا بنختار كل قهوة",
+          "en": "A specialty roastery in Egypt; we pick every coffee"
         }
       },
       {

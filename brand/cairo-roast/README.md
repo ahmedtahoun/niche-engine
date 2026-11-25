@@ -28,26 +28,47 @@ The mark says *Cairo + coffee* without a pyramid cliché, and it stays readable 
 SVGs carry their fonts inside, so they look the same on any computer. For a printing shop, send the PNG, or the SVG opened and exported as PDF from Chrome.
 
 ## Bag labels
-`labels/`: rebuild with `node brand/cairo-roast/labels.mjs`. Review sheet: `labels/all-labels.png`.
+`labels/`: rebuild with `node brand/cairo-roast/labels.mjs`. Previews: `labels/preview-all-bags.png`, `labels/preview-bag-guji.png`.
 
-**The idea:** simple and premium on a white bag. A white label with a gold-foil arch frame, the logo, and one framed window. In the window: soft contour lines of the origin's hills (the journey) under a small still life of what the coffee tastes like. The notes are **drawn, never written**. English first, Arabic in support, lots of white space. Nothing about times of day, nothing religious.
+**The idea:** one bold label per coffee on the white 13 × 20 cm bag. It has a solid deep colour per coffee, cream type, and gold lines. It also has one framed window. In the window: soft contour lines of the origin's hills (the journey) under a small still life of what the coffee tastes like. The notes are **drawn, never written**. English comes first, with Arabic in support. Nothing about times of day, nothing religious. One sticker per bag, no back label.
 
-| N° | Coffee | Still life |
-|---|---|---|
-| 01 | Ethiopia Guji Hambela | apricot, orange blossom, berries, coffee cherries |
-| 02 | Ethiopia Limu | dark chocolate, orange slice, tea leaves |
-| 03 | Brazil Red Catuai | hazelnuts, walnut, sugar cane |
-| 04 | Colombia Castillo | tangerine, mango, caramel, oak leaf |
-| 05 | Amber Blend | molasses dipper, dark chocolate, hazelnuts |
-| 06 | Chrome Blend | caramel, dark chocolate, nuts |
-| 07 | El Salvador San Agustín | a coffee branch with cherries (the coffee itself) |
+| N° | Coffee | Colour | Still life |
+|---|---|---|---|
+| 01 | Ethiopia Guji Hambela | plum `#5A2C48` | apricot, orange blossom, berries, coffee cherries |
+| 02 | Ethiopia Limu | forest `#1E4536` | dark chocolate, orange slice, tea leaves |
+| 03 | Brazil Red Catuai | caramel brown `#7A4A1C` | hazelnuts, walnut, sugar cane |
+| 04 | Colombia Castillo | deep teal `#16454F` | tangerine, mango, caramel, oak leaf |
+| 05 | Amber Blend | brick `#7E2A19` | molasses dipper, dark chocolate, hazelnuts |
+| 06 | Chrome Blend | graphite `#2A2F38` | caramel, dark chocolate, nuts |
+| 07 | El Salvador San Agustín | indigo `#2D2A66` | a coffee branch with cherries (the coffee itself) |
 
-- **Front** (95 × 135 mm, arch-shaped die cut, 3 mm bleed): logo, CAIRO ROAST, window, origin, name (English + Arabic), one journey line (origin ┈ ≈ km ┈ Cairo), N° and weight.
-- **Back** (60 × 90 mm, rounded corners, 3 mm bleed): name, roast-date box, grind ticks, QR (tasting notes, brew guide and Coffee Passport stamp on the website), website and WhatsApp.
+The label shows, from top to bottom:
+- the logo, CAIRO ROAST and محمصة القاهرة;
+- the window;
+- the origin and the name in English and Arabic;
+- one journey line (origin ┈ ≈ km ┈ Cairo);
+- the N° and weight;
+- a "ROASTED ____" line to write or stamp the roast date.
 
-**Print:** `labels/front-<coffee>.svg` / `back-<coffee>.svg` (vector, fonts embedded) and 300 dpi PNGs; die lines `labels/dieline-front.svg`, `labels/dieline-back.svg`. Gold (#B08D57) = gold foil (outer frame, window frames, logo arch). Matte white sticker; soft-touch laminate optional. Front arch top about 5 cm below the bag's top edge, under the valve. Distances are approximate (origin region to Cairo, rounded to 100 km).
+**Print spec:**
+- **Size:** 110 × 180 mm, arch top and 3 mm corners. The artboard is 116 × 186 mm with 3 mm bleed. Keep text 5 mm inside the cut.
+- **Ink:** full colour (CMYK). The gold `#D9B77E` is printed as ink, not foil. Cream `#F6EFE6`, soft `#E7D9C7`.
+- **Material:** matte white paper sticker so the roast date can be written in pen. A matte laminate is optional, but a pen won't write on it; use a stamp instead.
 
-**Before printing:** replace the dashed QR box with each coffee's QR code (`cairoroast.com/p/<coffee>`); check the weight (250 g) matches the bag.
+**Files** (one set per coffee, `label-0N-<coffee>`):
+- `.pdf`: exact size, vector, fonts embedded. Send this one to the printer.
+- `.svg`: vector, fonts embedded.
+- `.png`: 300 dpi, 1370 × 2197 px.
+- `all-labels.pdf`: all 7 in one file, one page each.
+- `dieline.pdf` / `dieline.svg`: magenta cut line, blue bleed, grey safe area.
+
+Distances are approximate: origin region to Cairo, rounded to 100 km.
+
+**Before printing:**
+- Check where the bag's degassing valve and zip sit. An 18 cm label on a 20 cm bag reaches the zip line. If the valve is on the front, the label must not cover it: move the label below it or add a hole in the die line.
+- Check the weight (250 g) matches the bag.
+
+**Later (option 3):** a round Coffee Passport seal sticker and the vertical CAIRO ROAST wordmark on the bag.
 
 ## Colors
 

@@ -1,10 +1,9 @@
-// Cairo Roast bag labels, v3: simple and premium on a white bag.
+// Cairo Roast bag labels, v4: one print-ready colour label per coffee, for the 13 × 20 cm white bag.
 //   node brand/cairo-roast/labels.mjs
-// FRONT (95 × 135 mm, arch die cut): the logo, the name, and one framed window. In the window: the
-// fine contour lines of the coffee's origin (the journey) under a small still life of what it tastes
-// like (the notes are drawn, never written). One quiet journey line. Lots of white space.
-// BACK (60 × 90 mm): roast date, grind, QR (notes, brew guide and passport stamp on the website).
-// Print: SVG (fonts embedded) and 300 dpi PNG, 3 mm bleed; die lines separate; gold = gold foil.
+// LABEL: 110 × 180 mm, arch top, 3 mm bleed (artboard 116 × 186 mm), 5 mm safe area. A solid deep colour
+// per coffee, cream type, gold printed as ink (no foil). In the window: the contour lines of the origin
+// under a small still life of the notes (drawn, never written). Out: PDF + SVG (fonts embedded) +
+// 300 dpi PNG per coffee, all-labels.pdf, dieline.pdf/svg, and bag previews. Labels go to ./labels.
 import { execFileSync } from 'node:child_process';
 import { existsSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
@@ -112,120 +111,92 @@ const COFFEES = [
     art: () => `${coffeeBranch(50.5, 66, 1.25)}${bean(40, 79, -20)}${bean(45, 80.6, 24, 0.85)}${bean(60, 79.6, 10)}` },
 ];
 
-// ---------- front label ----------
-function front(c, id = '') {
-  const m = 50.5;
+
+// ---------- v4 print label: 110 × 180 mm on a solid colour ----------
+// Sheet coordinates in mm: 116 × 186 with 3 mm bleed, trim 3..113 × 3..183, safe area 5 mm inside trim.
+const PW = 116, PH = 186;
+const TRIM4 = 'M3 180 Q3 183 6 183 H110 Q113 183 113 180 V52 C113 29 91 13 58 3 C25 13 3 29 3 52 Z';
+const BLEED4 = 'M0 186 V52 C0 26 23 9.5 58 0 C93 9.5 116 26 116 52 V186 Z';
+const FRAME4 = 'M6.6 176.6 Q6.6 179.4 9.4 179.4 H106.6 Q109.4 179.4 109.4 176.6 V52.4 C109.4 32 89.5 17.6 58 8.3 C26.5 17.6 6.6 32 6.6 52.4 Z';
+const DEEP = { 'bonds-ethiopia-guji': '#5A2C48', 'bonds-ethiopia-limu': '#1E4536', 'bonds-brazil-red-catuai': '#7A4A1C', 'bonds-colombia-castillo': '#16454F', 'bonds-amber': '#7E2A19', 'bonds-chrome': '#2A2F38', 'bonds-el-salvador': '#2D2A66' };
+const CREAM = '#F6EFE6', SOFT = '#E7D9C7', GOLD = '#D9B77E';
+// The illustrated window keeps the art's own coordinates (WIN, 65 mm wide) and is scaled up to 80 mm.
+const K = 80 / 65, TX = 18 - 18 * K, TY = 42 - 33.2 * K;
+
+/** One label, print size. `size` is 'mm' (print files) or 'px' (300 dpi PNG). */
+function label(c, id, size = 'mm') {
+  const m = 58, deep = DEEP[c.slug];
   const dist = c.from ? km(c.from.at) : null;
-  const nameSize = c.name.length > 10 ? 5.4 : c.name.length > 6 ? 6.2 : 7.2;
-  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 101 141" width="1193" height="1665">
-${STYLE}
-<defs><linearGradient id="bg${id}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${c.bg[1]}"/><stop offset="1" stop-color="${c.bg[0]}"/></linearGradient><clipPath id="w${id}"><path d="${WIN}"/></clipPath></defs>
-<path d="${BLEED}" fill="${C.white}"/>
-<path d="${FRAME}" fill="none" stroke="${C.foil}" stroke-width="0.3"/>
-${logo(m - 3.6, 10.6, 0.036)}
-<text x="${m}" y="23.8" text-anchor="middle" class="l5" font-size="1.85" letter-spacing="1.15" fill="${C.espresso}">CAIRO ROAST</text>
-<text x="${m}" y="27" text-anchor="middle" class="a6" font-size="2" fill="${C.roast}">محمصة القاهرة</text>
-
-<g clip-path="url(#w${id})">
-  <rect x="15" y="30" width="71" height="60" fill="url(#bg${id})"/>
-  ${contours(c.contour[0], c.contour[1], c.tint, c.contour[2])}
-  ${c.art(id)}
+  const name = c.name.toUpperCase();
+  const ns = name.length > 10 ? 7.4 : name.length > 6 ? 8.6 : 10;
+  const wh = size === 'mm' ? 'width="116mm" height="186mm"' : 'width="1370" height="2197"';
+  const t = (x, y, cls, fs, ls, fill, s, extra = '') => `<text x="${x}" y="${y}" text-anchor="middle" class="${cls}" font-size="${fs}" letter-spacing="${ls}" fill="${fill}"${extra}>${s}</text>`;
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${PW} ${PH}" ${wh}>${STYLE}
+<defs><clipPath id="w${id}"><path d="${WIN}"/></clipPath><linearGradient id="bg${id}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${c.bg[1]}"/><stop offset="1" stop-color="${c.bg[0]}"/></linearGradient></defs>
+<path d="${BLEED4}" fill="${deep}"/>
+<path d="${FRAME4}" fill="none" stroke="${GOLD}" stroke-width="0.4"/>
+${logo(m - 4.6, 13.4, 0.046).replaceAll(C.foil, GOLD)}
+${t(m, 29.6, 'l5', 2.5, 1.5, CREAM, 'CAIRO ROAST')}
+${t(m, 34, 'a6', 2.7, 0, GOLD, 'محمصة القاهرة')}
+<g transform="translate(${TX.toFixed(3)} ${TY.toFixed(3)}) scale(${K.toFixed(4)})">
+<g clip-path="url(#w${id})"><rect x="15" y="30" width="71" height="60" fill="url(#bg${id})"/>${contours(c.contour[0], c.contour[1], c.tint, c.contour[2])}${c.art(id)}</g>
+<path d="${WIN}" fill="none" stroke="${GOLD}" stroke-width="${(0.55 / K).toFixed(3)}"/><path d="${WIN_OUT}" fill="none" stroke="${GOLD}" stroke-width="${(0.25 / K).toFixed(3)}"/>
 </g>
-<path d="${WIN}" fill="none" stroke="${C.foil}" stroke-width="0.42"/>
-<path d="${WIN_OUT}" fill="none" stroke="${C.foil}" stroke-width="0.18"/>
-
-<text x="${m}" y="96" text-anchor="middle" class="l5" font-size="1.6" letter-spacing="0.9" fill="${c.accent}">${c.origin}</text>
-<text x="${m}" y="${(96 + 3.2 + nameSize * 0.72).toFixed(2)}" text-anchor="middle" class="l2" font-size="${nameSize}" letter-spacing="${(nameSize * 0.07).toFixed(2)}" fill="${C.espresso}">${c.name.toUpperCase()}</text>
-<text x="${m}" y="${(96 + 7.6 + nameSize * 0.72).toFixed(2)}" text-anchor="middle" class="a6" font-size="2.5" fill="${C.muted}">${c.ar}</text>
-
-<circle cx="25" cy="117.4" r="0.6" fill="${c.accent}"/>
-<path d="M26.4 117.4 H74.6" stroke="${C.espresso}" stroke-width="0.2" stroke-dasharray="0.45 0.9" stroke-linecap="round"/>
-${logo(74.9, 115.6, 0.0145)}
-<text x="25" y="120.6" text-anchor="middle" class="l5" font-size="1.25" letter-spacing="0.45" fill="${C.muted}">${c.from ? c.from.en : 'THE FARMS'}</text>
-<text x="76.4" y="120.6" text-anchor="middle" class="l5" font-size="1.25" letter-spacing="0.45" fill="${C.muted}">CAIRO</text>
-<text x="${m}" y="116" text-anchor="middle" class="l4" font-size="1.3" letter-spacing="0.5" fill="${C.muted}">${dist ? `≈ ${dist.toLocaleString('en-US')} KM` : 'SELECTED ORIGINS'}</text>
-
-<text x="${m}" y="131" text-anchor="middle" class="l4" font-size="1.4" letter-spacing="0.8" fill="${C.espresso}">N° 0${c.n}  ·  250 G</text>
+${t(m, 120.4, 'l5', 2.2, 1.3, GOLD, c.origin)}
+${t(m, (123.8 + ns * 0.72).toFixed(2), 'l3', ns, (ns * 0.07).toFixed(2), CREAM, name)}
+${t(m, (131.2 + ns * 0.72).toFixed(2), 'a6', 3.6, 0, SOFT, c.ar)}
+${t(m, 151.6, 'l4', 1.9, 0.7, SOFT, dist ? '≈ ' + dist.toLocaleString('en-US') + ' KM' : 'SELECTED ORIGINS')}
+<circle cx="24" cy="154.6" r="0.8" fill="${GOLD}"/><path d="M26 154.6 H89.6" stroke="${SOFT}" stroke-width="0.26" stroke-dasharray="0.55 1.1" stroke-linecap="round"/>
+${logo(89.9, 152.2, 0.019).replaceAll(C.foil, GOLD)}
+${t(24, 158.8, 'l5', 1.8, 0.6, SOFT, c.from ? c.from.en : 'THE FARMS')}
+${t(91.8, 158.8, 'l5', 1.8, 0.6, SOFT, 'CAIRO')}
+${t(m, 169.4, 'l4', 2.1, 1.1, CREAM, `N° 0${c.n}  ·  250 G`)}
+<text x="40" y="174" class="l4" font-size="1.7" letter-spacing="0.7" fill="${SOFT}">ROASTED</text><path d="M55.4 174.2 H76" stroke="${SOFT}" stroke-width="0.22"/>
 </svg>`;
 }
 
-// ---------- back label: 60 × 90 mm, 3 mm bleed ----------
-const BACK_TRIM = 'M6 3 H60 Q63 3 63 6 V90 Q63 93 60 93 H6 Q3 93 3 90 V6 Q3 3 6 3 Z';
-function back(c) {
-  const m = 33;
-  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 66 96" width="780" height="1134">
-${STYLE}
-<rect width="66" height="96" fill="${C.white}"/>
-<path d="M5.2 5.2 H60.8 V90.8 H5.2 Z" fill="none" stroke="${C.foil}" stroke-width="0.25"/>
-${logo(m - 2.6, 9, 0.026)}
-<text x="${m}" y="18.6" text-anchor="middle" class="l5" font-size="1.45" letter-spacing="0.9" fill="${C.espresso}">CAIRO ROAST</text>
-<text x="${m}" y="25" text-anchor="middle" class="l2" font-size="3.4" letter-spacing="0.25" fill="${C.espresso}">${c.name.toUpperCase()}</text>
-<text x="${m}" y="28.6" text-anchor="middle" class="a6" font-size="1.9" fill="${C.muted}">${c.ar}</text>
-
-<text x="${m}" y="35.6" text-anchor="middle" class="l5" font-size="1.25" letter-spacing="0.7" fill="${c.accent}">ROASTED ON</text>
-<rect x="11" y="37.4" width="44" height="8" rx="1" fill="none" stroke="${C.espresso}" stroke-width="0.25"/>
-
-<text x="${m}" y="51.4" text-anchor="middle" class="l5" font-size="1.25" letter-spacing="0.7" fill="${c.accent}">GRIND</text>
-<text x="${m}" y="55.4" text-anchor="middle" class="l4" font-size="1.5" fill="${C.espresso}">○ WHOLE BEAN      ○ GROUND FOR ________</text>
-
-<line x1="21" y1="59.4" x2="45" y2="59.4" stroke="${C.foil}" stroke-width="0.22"/>
-<rect x="25.5" y="62.4" width="15" height="15" rx="0.8" fill="#FFFFFF" stroke="${C.espresso}" stroke-width="0.25" stroke-dasharray="0.7 0.5"/>
-<text x="${m}" y="70.6" text-anchor="middle" class="l5" font-size="1.8" fill="${C.espresso}">QR</text>
-<text x="${m}" y="81" text-anchor="middle" class="l5" font-size="1.3" letter-spacing="0.6" fill="${C.espresso}">SCAN FOR THE TASTING NOTES</text>
-<text x="${m}" y="83.4" text-anchor="middle" class="l4" font-size="1.2" fill="${C.muted}">brew guide and your Coffee Passport stamp</text>
-<text x="${m}" y="88.4" text-anchor="middle" class="l5" font-size="1.2" letter-spacing="0.6" fill="${C.espresso}">CAIROROAST.COM  ·  0110 920 0150</text>
-</svg>`;
+// ---------- the bag (white flat-bottom pouch, 130 × 200 mm) with the label on it ----------
+const inner = (s) => s.replace(/^<svg[^>]*>/, '').replace(/<\/svg>\s*$/, '').replace(STYLE, '');
+function onBag(c, i) {
+  return `<g transform="translate(${-16 + i * 168} 0)"><defs>
+<filter id="sh${i}" x="-20%" y="-20%" width="140%" height="140%"><feDropShadow dx="1.2" dy="3" stdDeviation="3.2" flood-color="#3A2A1E" flood-opacity=".18"/></filter>
+<linearGradient id="gus${i}" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#E9E6E1"/><stop offset=".07" stop-color="#FBFAF8"/><stop offset=".5" stop-color="#FFFFFF"/><stop offset=".93" stop-color="#F7F5F2"/><stop offset="1" stop-color="#E4E0DA"/></linearGradient>
+<linearGradient id="base${i}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FFFFFF" stop-opacity="0"/><stop offset="1" stop-color="#E7E3DD"/></linearGradient>
+<clipPath id="tc${i}"><path d="${TRIM4}"/></clipPath></defs>
+<g transform="translate(16 14)">
+<path d="M3 4 H127 Q130 4 130 7 L131 194 Q131 200 125 200 H5 Q-1 200 -1 194 L0 7 Q0 4 3 4 Z" fill="url(#gus${i})" filter="url(#sh${i})"/>
+<path d="M0 12 H130" stroke="#ECE8E2" stroke-width="0.5"/>
+<path d="M0 18 l2.4 1.4 -2.4 1.4 M130 18 l-2.4 1.4 2.4 1.4" fill="none" stroke="#D9D4CC" stroke-width="0.4"/>
+<rect x="-1" y="176" width="132" height="24" fill="url(#base${i})"/>
+<g transform="translate(7 11)"><g clip-path="url(#tc${i})">${inner(label(c, 'p' + i))}</g></g>
+</g></g>`;
 }
 
-// ---------- previews on the white 13 × 20 cm bag ----------
-const BAG = `<path d="M4 2 H126 Q130 2 130 6 V196 Q130 200 126 200 H4 Q0 200 0 196 V6 Q0 2 4 2 Z" fill="#FFFFFF" filter="url(#sh)"/>
-<path d="M0 22 H130" stroke="#E6E2DB" stroke-width="0.6"/><path d="M0 25 H130" stroke="#EFECE6" stroke-width="0.4"/>
-<circle cx="65" cy="40" r="5.6" fill="#FAF9F7" stroke="#E6E1D9" stroke-width="0.6"/><circle cx="65" cy="40" r="2.2" fill="none" stroke="#DCD6CC" stroke-width="0.5"/>`;
-const inner = (s) => s.replace(/^<svg[^>]*>/, '').replace(/<\/svg>$/, '').replace(STYLE, '');
-const bagSvg = (body, extraDefs = '') => `<svg xmlns="http://www.w3.org/2000/svg" viewBox="-14 -12 158 228" width="948" height="1368">
-${STYLE}<defs><filter id="sh" x="-20%" y="-20%" width="140%" height="140%"><feDropShadow dx="0" dy="2.4" stdDeviation="2.8" flood-color="#3A2A1E" flood-opacity=".16"/></filter>${extraDefs}</defs>
-<rect x="-14" y="-12" width="158" height="228" fill="#EFEBE5"/>${BAG}${body}</svg>`;
-const frontOnBag = (c, id = 'b') => bagSvg(`<g transform="translate(14.5 52)"><g clip-path="url(#tc${id})">${inner(front(c, id))}</g><path d="${TRIM}" fill="none" stroke="#0000000F" stroke-width="0.25"/></g>`, `<clipPath id="tc${id}"><path d="${TRIM}"/></clipPath>`);
-const backOnBag = (c) => bagSvg(`<g transform="translate(32 72)"><g clip-path="url(#bt)">${inner(back(c))}</g><path d="${BACK_TRIM}" fill="none" stroke="#0000000F" stroke-width="0.25"/></g>`, `<clipPath id="bt"><path d="${BACK_TRIM}"/></clipPath>`);
+// ---------- write: print SVG + PDF + 300 dpi PNG per coffee, die line, all-in-one PDF, bag previews ----------
+const CHROME = '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome';
+const tmp = path.join(dir, '.r.html');
+const html = (body, page) => `<!doctype html><meta charset="utf-8"><style>@page{size:${page};margin:0}html,body{margin:0;padding:0}svg{display:block}.pg{break-after:page}</style>${body}`;
+const pdf = (body, page, out) => { writeFileSync(tmp, html(body, page)); execFileSync(CHROME, ['--headless=new', '--disable-gpu', '--no-pdf-header-footer', '--print-to-pdf=' + path.join(dir, out), 'file://' + tmp], { stdio: 'ignore' }); };
+const png = (svg, w, h, out) => { writeFileSync(tmp, html(svg, 'auto')); execFileSync(CHROME, ['--headless=new', '--disable-gpu', '--hide-scrollbars', '--force-device-scale-factor=1', `--window-size=${w},${h}`, '--screenshot=' + path.join(dir, out), 'file://' + tmp], { stdio: 'ignore' }); };
 
-function sheet() {
-  const per = 4, cw = 168, ch = 246;
-  const cards = [...COFFEES.map((c, i) => ({ svg: frontOnBag(c, `s${i}`), cap: `N° 0${c.n} · ${c.origin} · ${c.name}` })), { svg: backOnBag(COFFEES[0]), cap: 'BACK LABEL · 60 × 90 MM' }];
-  const body = cards.map((x, i) => `<g transform="translate(${(i % per) * cw + 10} ${Math.floor(i / per) * ch + 44})"><svg viewBox="-14 -12 158 228" width="158" height="228">${inner(x.svg).replace(/id="sh"/g, `id="sh${i}"`).replace(/url\(#sh\)/g, `url(#sh${i})`).replace(/id="bt"/g, `id="bt${i}"`).replace(/url\(#bt\)/g, `url(#bt${i})`)}</svg>
-    <text x="79" y="236" text-anchor="middle" class="l5" font-size="4.4" letter-spacing="1" fill="${C.espresso}">${x.cap.toUpperCase()}</text></g>`).join('');
-  const w = per * cw + 6, h = 2 * ch + 52;
-  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${w} ${h}" width="${w * 3}" height="${h * 3}">${STYLE}
-<rect width="${w}" height="${h}" fill="#F6F3EE"/>
-<text x="${w / 2}" y="22" text-anchor="middle" class="l2" font-size="12" letter-spacing="3" fill="${C.espresso}">CAIRO ROAST</text>
-<text x="${w / 2}" y="32" text-anchor="middle" class="l4" font-size="4.6" letter-spacing="1.2" fill="${C.muted}">BAG LABELS · FRONT 95 × 135 MM · BACK 60 × 90 MM</text>${body}</svg>`;
-}
+const die = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${PW} ${PH}" width="116mm" height="186mm"><rect x="0.1" y="0.1" width="115.8" height="185.8" fill="none" stroke="#00A0E0" stroke-width="0.2" stroke-dasharray="1 1"/><path d="${TRIM4}" fill="none" stroke="#E5007E" stroke-width="0.25"/><path d="M8 175 V53 C8 33.5 27.5 19.5 58 8.4 C88.5 19.5 108 33.5 108 53 V175 Q108 178 105 178 H11 Q8 178 8 175 Z" fill="none" stroke="#999" stroke-width="0.15" stroke-dasharray="0.6 0.6"/>
+<g font-family="sans-serif" fill="#E5007E" text-anchor="middle"><text x="58" y="88" font-size="3">DIE CUT · 110 × 180 mm</text><text x="58" y="93" font-size="2">arch top, 3 mm corners · magenta = cut line</text><text x="58" y="97" font-size="2" fill="#00A0E0">blue = 3 mm bleed (116 × 186 mm)</text><text x="58" y="101" font-size="2" fill="#777">grey = 5 mm safe area</text></g></svg>`;
 
-const dieFront = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 101 141" width="101mm" height="141mm"><path d="${TRIM}" fill="none" stroke="#E5007E" stroke-width="0.25"/><text x="50.5" y="139.8" text-anchor="middle" font-family="sans-serif" font-size="1.5" fill="#E5007E">FRONT · die cut (magenta) 95 × 135 mm, arch top · 3 mm bleed · gold foil: outer frame, window frames, logo arch</text></svg>`;
-const dieBack = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 66 96" width="66mm" height="96mm"><path d="${BACK_TRIM}" fill="none" stroke="#E5007E" stroke-width="0.25"/><text x="33" y="95.2" text-anchor="middle" font-family="sans-serif" font-size="1.3" fill="#E5007E">BACK · die cut 60 × 90 mm, 3 mm corners · 3 mm bleed</text></svg>`;
-
-// ---------- write and render ----------
-const print = {}, previews = {};
 for (const c of COFFEES) {
-  print[`front-${c.slug}.svg`] = front(c);
-  print[`back-${c.slug}.svg`] = back(c);
-  previews[`bag-front-${c.slug}.svg`] = frontOnBag(c);
+  const n = `label-${String(c.n).padStart(2, '0')}-${c.slug.replace('bonds-', '')}`;
+  const svg = label(c, 'l');
+  writeFileSync(path.join(dir, n + '.svg'), svg);
+  pdf(svg, '116mm 186mm', n + '.pdf');
+  png(label(c, 'l', 'px'), 1370, 2197, n + '.png');
+  execFileSync('sips', ['-s', 'dpiWidth', '300', '-s', 'dpiHeight', '300', path.join(dir, n + '.png')], { stdio: 'ignore' }); // 1370 × 2197 px = 116 × 186 mm
 }
-previews['bag-back.svg'] = backOnBag(COFFEES[0]);
-previews['all-labels.svg'] = sheet();
-print['dieline-front.svg'] = dieFront;
-print['dieline-back.svg'] = dieBack;
-for (const [n, b] of Object.entries({ ...print, ...previews })) writeFileSync(path.join(dir, n), b);
-
-const CHROME = ['/Applications/Google Chrome.app/Contents/MacOS/Google Chrome', '/Applications/Brave Browser.app/Contents/MacOS/Brave Browser'].find(existsSync);
-if (CHROME) {
-  const tmp = path.join(dir, '.render.html');
-  for (const [name, body] of Object.entries({ ...print, ...previews })) {
-    if (name.startsWith('dieline')) continue;
-    const [, w, h] = body.match(/width="(\d+)" height="(\d+)"/);
-    writeFileSync(tmp, `<!doctype html><meta charset="utf-8"><style>html,body{margin:0;background:transparent}</style>${body}`);
-    execFileSync(CHROME, ['--headless=new', '--disable-gpu', '--hide-scrollbars', '--force-device-scale-factor=1', `--window-size=${w},${h}`, `--screenshot=${path.join(dir, name.replace('.svg', '.png'))}`, `file://${tmp}`], { stdio: 'ignore' });
-  }
-  rmSync(tmp);
-  for (const n of Object.keys(previews)) rmSync(path.join(dir, n));
-  console.log(`Labels: ${readdirSync(dir).length} files in brand/cairo-roast/labels`);
-} else console.log('Chrome not found: SVGs written, PNGs skipped');
+writeFileSync(path.join(dir, 'dieline.svg'), die);
+pdf(die, '116mm 186mm', 'dieline.pdf');
+pdf(COFFEES.map((c, i) => `<div class="pg">${label(c, 'a' + i)}</div>`).join(''), '116mm 186mm', 'all-labels.pdf');
+// Bag previews: the seven bags in a row, and one large.
+const row = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${7 * 168 - 8} 236" width="${(7 * 168 - 8) * 2}" height="472">${STYLE}<rect width="100%" height="100%" fill="#EDE8E1"/>${COFFEES.map(onBag).join('')}</svg>`;
+png(row, (7 * 168 - 8) * 2, 472, 'preview-all-bags.png');
+const one = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 236" width="960" height="1416">${STYLE}<rect width="100%" height="100%" fill="#EDE8E1"/>${onBag(COFFEES[0], 0)}</svg>`;
+png(one, 960, 1416, 'preview-bag-guji.png');
+rmSync(tmp);
+console.log('wrote', readdirSync(dir).length, 'files to', dir);

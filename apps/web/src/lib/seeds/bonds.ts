@@ -14,16 +14,18 @@ import type { Product, Seller, Variant } from '../types.ts';
 export const BONDS: Seller = {
   id: 'bonds',
   niche: 'coffee',
-  name: 'بوندز لتحميص القهوة',
-  nameEn: 'Bonds Coffee Roasters',
+  // Shown on the store as Cairo Roast itself (the coffee is sold under the Cairo Roast brand, in its own
+  // bags): the product page then hides the "by …" chip and the roaster card (isHouseSeller).
+  name: 'محمصة القاهرة',
+  nameEn: 'Cairo Roast',
   about: {
-    ar: 'محمصة قهوة مختصة وشريك محمصة القاهرة. بتحمص بلندات وقهوة أحادية المصدر من إثيوبيا والبرازيل وكولومبيا والسلفادور، وكل كيس بيوصلك عن طريقنا مقفول وأصلي.',
-    en: 'A specialty coffee roaster and Cairo Roast partner. They roast blends and single origins from Ethiopia, Brazil, Colombia and El Salvador, and every bag reaches you through us, sealed and original.',
+    ar: 'محمصة القاهرة بتختار قهوة مختصة من محامص شريكة في مصر: بلندات وقهوة أحادية المصدر من إثيوبيا والبرازيل وكولومبيا والسلفادور، بتوصلك طازة في كيس محمصة القاهرة.',
+    en: 'Cairo Roast picks specialty coffee from partner roasteries in Egypt: blends and single origins from Ethiopia, Brazil, Colombia and El Salvador, delivered fresh in a Cairo Roast bag.',
   },
   area: 'القاهرة',
   rating: 0,
   status: 'active',
-  logo: '/sellers/bonds/mark.webp',
+  logo: '/brands/coffee/mark.svg',
   governorate: 'القاهرة',
 };
 
@@ -34,12 +36,12 @@ const weights = (p1000: number, stock = 20): Variant[] => [
 ];
 
 const FAQ: [string, string][] = [
-  ['مين بيحمص القهوة؟', 'بوندز لتحميص القهوة، شريكنا. القهوة جاية من المحمصة على طول، أصلية ومقفولة.'],
+  ['مين بيحمص القهوة؟', 'محامص مختصة شريكة في مصر. إحنا بنختار كل قهوة بنفسنا، وبتوصلك طازة في كيس محمصة القاهرة.'],
   ['حبوب ولا مطحونة؟', 'حالياً حبوب كاملة بس، علشان تحافظ على ريحتها أطول. اطحن على قد الكوباية، أو اطحنها عند أي محل بن قريب منك على طريقة تحضيرك.'],
   ['أحفظها إزاي؟', 'في الكيس مقفول، في مكان ناشف بعيد عن الشمس والتلاجة. أحلى طعم خلال 4 أسابيع من الفتح.'],
 ];
 const FAQ_EN: [string, string][] = [
-  ['Who roasts the coffee?', 'Bonds Coffee Roasters, our partner. The coffee comes straight from the roastery, original and sealed.'],
+  ['Who roasts the coffee?', 'Partner specialty roasteries in Egypt. We pick every coffee ourselves, and it reaches you fresh in a Cairo Roast bag.'],
   ['Beans or ground?', 'For now whole beans only, so they keep their aroma longest. Grind just enough for each cup, or have a local coffee shop grind them for your brewing method.'],
   ['How do I store it?', 'In the closed bag, somewhere dry, away from sunlight and the fridge. Best within 4 weeks of opening.'],
 ];
@@ -52,7 +54,9 @@ const photosOf = (o: { photo?: string; photos?: string[] }) => {
 };
 
 const coffee = (o: Pick<Product, 'slug' | 'category' | 'color' | 'nameAr' | 'leadAr' | 'attributes' | 'profile'> & { kg: number; photo?: string; photos?: string[]; en: En }): Product => ({
-  id: o.slug, niche: 'coffee', slug: o.slug, sellerId: BONDS.id, category: o.category, art: 'coffee', color: o.color,
+  // The id keeps the first name (bonds-…): past orders, stock and the Meta catalog use it. The web
+  // address (slug) has no supplier name; old addresses redirect (catalog.productBySlug finds the id).
+  id: `bonds-${o.slug}`, niche: 'coffee', slug: o.slug, sellerId: BONDS.id, category: o.category, art: 'coffee', color: o.color,
   nameAr: o.nameAr, leadAr: o.leadAr, price: Math.round(o.kg / 4), attributes: { ...o.attributes, 'الشكل': 'حبوب كاملة' },
   variants: weights(o.kg), status: 'live', views: 0, reviews: [], faq: FAQ,
   en: { name: o.en.name, lead: o.en.lead, attributes: { ...o.en.attributes, Form: 'Whole beans' }, faq: FAQ_EN },
@@ -62,52 +66,52 @@ const coffee = (o: Pick<Product, 'slug' | 'category' | 'color' | 'nameAr' | 'lea
 
 export const BONDS_PRODUCTS: Product[] = [
   coffee({
-    slug: 'bonds-chrome', category: 'blends', color: '#7C8B5A', nameAr: 'قهوة كروم بلند', kg: 900, photo: 'chrome',
+    slug: 'chrome', category: 'blends', color: '#7C8B5A', nameAr: 'قهوة كروم بلند', kg: 900, photo: 'chrome',
     profile: { notes: ['كراميل', 'شوكولاتة داكنة', 'مكسرات محمصة'], notesEn: ['Caramel', 'Dark chocolate', 'Roasted nuts'], family: 'chocolate', scales: { body: 5, acidity: 2 } },
     leadAr: 'بلند بقوام غني وممتلئ وحموضة خفيفة: كراميل، شوكولاتة داكنة ومكسرات محمصة. حلوة سادة أو باللبن.',
     attributes: { 'النكهات': 'كراميل، شوكولاتة داكنة، مكسرات محمصة', 'القوام': 'غني وممتلئ', 'الحموضة': 'خفيفة', 'النوع': 'بلند' },
     en: { name: 'Chrome Blend', lead: 'A blend with a full, rich body and mild acidity: caramel, dark chocolate and roasted nuts. Great black or with milk.', attributes: { 'Tasting notes': 'Caramel, dark chocolate, roasted nuts', Body: 'Full and rich', Acidity: 'Mild', Type: 'Blend' } },
   }),
   coffee({
-    slug: 'bonds-amber', category: 'blends', color: '#7C8B5A', nameAr: 'قهوة أمبر بلند', kg: 980, photo: 'amber',
+    slug: 'amber', category: 'blends', color: '#7C8B5A', nameAr: 'قهوة أمبر بلند', kg: 980, photo: 'amber',
     profile: { notes: ['شوكولاتة داكنة', 'عسل أسود', 'بندق محمص'], notesEn: ['Dark chocolate', 'Molasses', 'Roasted hazelnut'], family: 'chocolate', scales: { body: 4, acidity: 1 } },
     leadAr: 'بلند بحموضة منخفضة وقوام غني: شوكولاتة داكنة، عسل أسود وبندق محمص.',
     attributes: { 'النكهات': 'شوكولاتة داكنة، عسل أسود، بندق محمص', 'القوام': 'غني', 'الحموضة': 'منخفضة', 'النوع': 'بلند' },
     en: { name: 'Amber Blend', lead: 'A low-acidity blend with a rich body: dark chocolate, molasses and roasted hazelnut.', attributes: { 'Tasting notes': 'Dark chocolate, molasses, roasted hazelnut', Body: 'Rich', Acidity: 'Low', Type: 'Blend' } },
   }),
   coffee({
-    slug: 'bonds-ethiopia-guji', category: 'single-origin', color: '#4F5A36', nameAr: 'إثيوبيا جوجي', kg: 2000, photos: ['ethiopia-guji', 'ethiopia-guji-roasting'],
+    slug: 'ethiopia-guji', category: 'single-origin', color: '#4F5A36', nameAr: 'إثيوبيا جوجي', kg: 2000, photo: 'ethiopia-guji',
     profile: { notes: ['توت', 'زهور', 'مشمش', 'زهر البرتقال'], notesEn: ['Berries', 'Floral', 'Apricot', 'Orange blossom'], family: 'fruity', scales: { body: 3, acidity: 3 } },
     leadAr: 'قهوة أحادية المصدر من جوجي هامبيلا في إثيوبيا، معالجة طبيعية: توت، زهور، مشمش وزهر البرتقال، بحموضة ناعمة وقوام رقيق ومدوّر.',
     attributes: { 'النكهات': 'توت، زهور، مشمش، زهر البرتقال', 'المنشأ': 'إثيوبيا · جوجي هامبيلا', 'السلالة': 'هيرلوم', 'المعالجة': 'طبيعية', 'الارتفاع': '1400–1800 متر', 'الحموضة': 'ناعمة', 'القوام': 'رقيق ومدوّر', 'النوع': 'أحادية المصدر' },
     en: { name: 'Ethiopia Guji', lead: 'Single-origin coffee from Guji Hambela, Ethiopia, natural process: berries, florals, apricot and orange blossom, with smooth acidity and a delicate, round body.', attributes: { 'Tasting notes': 'Berries, floral, apricot, orange blossom', Origin: 'Ethiopia · Guji Hambela', Variety: 'Heirloom', Process: 'Natural', Altitude: '1,400–1,800 m', Acidity: 'Smooth', Body: 'Delicate and round', Type: 'Single origin' } },
   }),
   coffee({
-    slug: 'bonds-ethiopia-limu', category: 'single-origin', color: '#9A5B34', nameAr: 'إثيوبيا ليمو', kg: 1200, photos: ['ethiopia-limu', 'bonds-shelf'],
+    slug: 'ethiopia-limu', category: 'single-origin', color: '#9A5B34', nameAr: 'إثيوبيا ليمو', kg: 1200, photo: 'ethiopia-limu',
     profile: { notes: ['شوكولاتة داكنة', 'شاي أسود', 'برتقال'], notesEn: ['Dark chocolate', 'Black tea', 'Orange'], family: 'fruity' },
     leadAr: 'قهوة أحادية المصدر من ليمو في إثيوبيا، معالجة طبيعية: شوكولاتة داكنة، شاي أسود، سكر بني ولمسة برتقال.',
     attributes: { 'النكهات': 'شوكولاتة داكنة، مكسرات محمصة، شاي أسود، سكر بني، برتقال', 'المنشأ': 'إثيوبيا · ليمو', 'السلالة': 'هيرلوم', 'المعالجة': 'طبيعية', 'النوع': 'أحادية المصدر' },
     en: { name: 'Ethiopia Limu', lead: 'Single-origin coffee from Limu, Ethiopia, natural process: dark chocolate, black tea, brown sugar and a touch of orange.', attributes: { 'Tasting notes': 'Dark chocolate, roasted nuts, black tea, brown sugar, orange', Origin: 'Ethiopia · Limu', Variety: 'Heirloom', Process: 'Natural', Type: 'Single origin' } },
   }),
   coffee({
-    slug: 'bonds-brazil-red-catuai', category: 'single-origin', color: '#B07D6E', nameAr: 'البرازيل ريد كاتواي', kg: 1300, photo: 'brazil-red-catuai',
+    slug: 'brazil-red-catuai', category: 'single-origin', color: '#B07D6E', nameAr: 'البرازيل ريد كاتواي', kg: 1300, photo: 'brazil-red-catuai',
     profile: { notes: ['بندق محمص', 'قصب السكر', 'عين جمل'], notesEn: ['Roasted hazelnut', 'Sugar cane', 'Walnut'], family: 'chocolate', scales: { body: 4, acidity: 1 } },
     leadAr: 'قهوة أحادية المصدر من موجيانا في البرازيل، سلالة ريد كاتواي ومعالجة طبيعية: بندق محمص، قصب السكر وعين جمل، بحموضة منخفضة وقوام كريمي.',
     attributes: { 'النكهات': 'بندق محمص، قصب السكر، عين جمل', 'المنشأ': 'البرازيل · موجيانا', 'السلالة': 'ريد كاتواي', 'المعالجة': 'طبيعية', 'الحموضة': 'منخفضة', 'القوام': 'كريمي', 'النوع': 'أحادية المصدر' },
     en: { name: 'Brazil Red Catuai', lead: 'Single-origin coffee from Mogiana, Brazil, Red Catuai variety, natural process: roasted hazelnut, sugar cane and walnut, with low acidity and a creamy body.', attributes: { 'Tasting notes': 'Roasted hazelnut, sugar cane, walnut', Origin: 'Brazil · Mogiana', Variety: 'Red Catuai', Process: 'Natural', Acidity: 'Low', Body: 'Creamy', Type: 'Single origin' } },
   }),
   coffee({
-    slug: 'bonds-colombia-castillo', category: 'single-origin', color: '#6B4A33', nameAr: 'كولومبيا كاستيو', kg: 1500, photos: ['colombia-castillo', 'bonds-shelf'],
+    slug: 'colombia-castillo', category: 'single-origin', color: '#6B4A33', nameAr: 'كولومبيا كاستيو', kg: 1500, photo: 'colombia-castillo',
     profile: { notes: ['فواكه استوائية', 'كراميل باللبن', 'يوسفي', 'خشب البلوط'], notesEn: ['Tropical fruit', 'Milk caramel', 'Tangerine', 'Oak'], family: 'fruity' },
     leadAr: 'قهوة أحادية المصدر من فالي ديل كاوكا في كولومبيا، سلالة كاستيو: فواكه استوائية، كراميل باللبن، يوسفي ولمسة خشب البلوط.',
     attributes: { 'النكهات': 'فواكه استوائية، كراميل باللبن، يوسفي، خشب البلوط', 'المنشأ': 'كولومبيا · فالي ديل كاوكا', 'السلالة': 'كاستيو', 'النوع': 'أحادية المصدر' },
     en: { name: 'Colombia Castillo', lead: 'Single-origin coffee from Valle del Cauca, Colombia, Castillo variety: tropical fruit, milk caramel, tangerine and a touch of oak.', attributes: { 'Tasting notes': 'Tropical fruit, milk caramel, tangerine, oak', Origin: 'Colombia · Valle del Cauca', Variety: 'Castillo', Type: 'Single origin' } },
   }),
   coffee({
-    slug: 'bonds-el-salvador', category: 'single-origin', color: '#5E3B25', nameAr: 'السلفادور سان أجوستين', kg: 1800, photo: 'el-salvador',
-    leadAr: 'قهوة أحادية المصدر من سان أجوستين في السلفادور، من تحميص بوندز.',
+    slug: 'el-salvador', category: 'single-origin', color: '#5E3B25', nameAr: 'السلفادور سان أجوستين', kg: 1800, photo: 'el-salvador',
+    leadAr: 'قهوة أحادية المصدر من سان أجوستين في السلفادور.',
     attributes: { 'المنشأ': 'السلفادور · سان أجوستين', 'النوع': 'أحادية المصدر' },
-    en: { name: 'El Salvador San Agustín', lead: 'Single-origin coffee from San Agustín, El Salvador, roasted by Bonds.', attributes: { Origin: 'El Salvador · San Agustín', Type: 'Single origin' } },
+    en: { name: 'El Salvador San Agustín', lead: 'Single-origin coffee from San Agustín, El Salvador.', attributes: { Origin: 'El Salvador · San Agustín', Type: 'Single origin' } },
   }),
 ];
 
@@ -116,5 +120,5 @@ export const BONDS_RETIRED = ['bonds-sienna', 'bonds-brazil-cerrado'];
 
 /** Adds private wholesale costs (kg price per slug; 250 g at a quarter) to products, e.g. from costs.local.json. */
 export function withCosts(products: Product[], costKg: Record<string, number>): Product[] {
-  return products.map((p) => (costKg[p.slug] ? { ...p, cost: { '250 جم': Math.round(costKg[p.slug] / 4), '1 كجم': costKg[p.slug] } } : p));
+  return products.map((p) => { const kg = costKg[p.id] ?? costKg[p.slug]; return kg ? { ...p, cost: { '250 جم': Math.round(kg / 4), '1 كجم': kg } } : p; });
 }

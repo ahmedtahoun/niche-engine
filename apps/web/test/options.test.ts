@@ -109,7 +109,7 @@ test('Cairo Roast: the Bonds seed SQL loads into real Postgres, re-runs keep sto
   assert.equal(q.shipping, 0);
   assert.equal(q.shippingWaived, coffeeCfg.shippingEgp);
   assert.equal(q.total, 1990);
-  assert.deepEqual(live.search(coffeeCfg, { q: 'بن اثيوبي' }).map((p) => p.slug).sort(), ['bonds-ethiopia-guji', 'bonds-ethiopia-limu']);
+  assert.deepEqual(live.search(coffeeCfg, { q: 'بن اثيوبي' }).map((p) => p.slug).sort(), ['ethiopia-guji', 'ethiopia-limu']);
   assert.deepEqual(products.find((p) => p.id === 'bonds-ethiopia-guji')!.variants.map((v) => v.price), [500, 2000]);
   assert.equal(products.find((p) => p.id === 'bonds-amber')!.images?.[0], '/products/coffee/amber.webp');
   assert.deepEqual(products.find((p) => p.id === 'bonds-amber')!.variants.map((v) => v.price), [245, 880], 'the admin price is kept');

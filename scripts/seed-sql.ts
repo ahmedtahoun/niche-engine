@@ -1,7 +1,7 @@
 // Writes supabase/seed/coffee-bonds.sql from apps/web/src/lib/seeds/bonds.ts.
 //   node scripts/seed-sql.ts
 // Run the SQL once in Supabase → SQL Editor. Running it again updates names, texts,
-// photos and prices, and puts listed coffees live; it keeps stock, views and the seller's Telegram chat.
+// photos, web addresses and prices, and puts listed coffees live; it keeps stock, views and the seller's Telegram chat.
 import { existsSync, writeFileSync } from 'node:fs';
 import { BONDS, BONDS_PRODUCTS, BONDS_RETIRED } from '../apps/web/src/lib/seeds/bonds.ts';
 import { productToRow, sellerToRow } from '../apps/web/src/lib/store/rows.ts';
@@ -41,7 +41,7 @@ on conflict (id) do nothing;
 
 ${insert('sellers', seller, ['store_name', 'name_en', 'about', 'instagram', 'logo_url', 'area', 'governorate'])}
 
-${products.map((r) => insert('products', r, ['name_ar', 'lead_ar', 'category', 'art', 'color', 'attributes', 'faq', 'en', 'profile', 'images', 'status']).replace('profile = excluded.profile', "profile = coalesce(excluded.profile, '{}'::jsonb) || jsonb_strip_nulls(jsonb_build_object('ribbon', products.profile->'ribbon'))")).join('\n\n')}
+${products.map((r) => insert('products', r, ['slug', 'name_ar', 'lead_ar', 'category', 'art', 'color', 'attributes', 'faq', 'en', 'profile', 'images', 'status']).replace('profile = excluded.profile', "profile = coalesce(excluded.profile, '{}'::jsonb) || jsonb_strip_nulls(jsonb_build_object('ribbon', products.profile->'ribbon'))")).join('\n\n')}
 -- (A ribbon set in the admin is kept inside "profile" on a re-run.)
 
 -- Prices and stock are managed in the admin (Products) once a coffee exists: a re-run never

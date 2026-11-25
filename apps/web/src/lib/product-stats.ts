@@ -93,7 +93,7 @@ export function productStats(products: Product[], orders: Order[], now = Date.no
     // Choices (grind…) are kept on the cart line, per product slug.
     for (const l of o.cart) {
       if (l.kind !== 'item' || !l.choice) continue;
-      const p = products.find((x) => x.slug === l.slug);
+      const p = products.find((x) => x.slug === l.slug || x.id === l.slug);
       const s = p && out[p.id];
       if (!s) continue;
       for (const value of Object.values(l.choice)) s.choices[value] = (s.choices[value] ?? 0) + l.qty;

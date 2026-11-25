@@ -7,7 +7,7 @@ import { BoxCard } from '@/components/BoxCard';
 import { Footer } from '@/components/Footer';
 import { ProductCard } from '@/components/ProductCard';
 import { MiniCart, QuickAddSheet } from '@/components/QuickAdd';
-import { catalog } from '@/lib/catalog';
+import { catalog, isHouseSeller } from '@/lib/catalog';
 import { guidesFor, readMinutes } from '@/lib/guides';
 import { speaker } from '@/lib/lang';
 import { getNiche } from '@/lib/niches';
@@ -35,7 +35,7 @@ export default async function Home({ params }: P) {
   const hero = cfg.bundles[0] ? cat.bundleView(cfg, cfg.bundles[0].id) : null;
   const products = cat.search(cfg, { sort: 'best' });
   const text = (b?: { ar: string; en?: string }) => (b ? (s.en && b.en) || b.ar : '');
-  const sellers = [...new Map(products.map((p) => [p.sellerId, cat.sellerOf(p)])).values()].filter((x) => x.about);
+  const sellers = [...new Map(products.map((p) => [p.sellerId, cat.sellerOf(p)])).values()].filter((x) => x.about && !isHouseSeller(x, cfg));
   const guides = [...guidesFor(cfg.id)].sort((a, b) => b.updated.localeCompare(a.updated)); // newest first
   const families = (cfg.tasteFamilies ?? []).filter((f) => products.some((p) => p.profile?.family === f.id));
   // Filter chips on the home page: taste families first, then categories (only when a niche has taste families).

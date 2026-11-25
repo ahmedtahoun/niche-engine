@@ -4,8 +4,10 @@
 // per coffee, cream type, gold printed as ink (no foil). In the window: the contour lines of the origin
 // under a small still life of the notes (drawn, never written). Out: PDF + SVG (fonts embedded) +
 // 300 dpi PNG per coffee, all-labels.pdf, dieline.pdf/svg, and bag previews. Labels go to ./labels.
+// It also writes the store's bag photos to apps/web/public/products/coffee (see the end).
 import { execFileSync } from 'node:child_process';
 import { existsSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
+import { createRequire } from 'node:module';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -157,20 +159,25 @@ ${t(m, 169.4, 'l4', 2.1, 1.1, CREAM, `N° 0${c.n}  ·  250 G`)}
 
 // ---------- the bag (white flat-bottom pouch, 130 × 200 mm) with the label on it ----------
 const inner = (s) => s.replace(/^<svg[^>]*>/, '').replace(/<\/svg>\s*$/, '').replace(STYLE, '');
-function onBag(c, i) {
-  return `<g transform="translate(${-16 + i * 168} 0)"><defs>
+/** The bag at (x, y), scale s, label on: the pouch spans x -1..131, y 4..200 in its own units. */
+function bagAt(c, i, x, y, s = 1) {
+  return `<g transform="translate(${x} ${y}) scale(${s})"><defs>
 <filter id="sh${i}" x="-20%" y="-20%" width="140%" height="140%"><feDropShadow dx="1.2" dy="3" stdDeviation="3.2" flood-color="#3A2A1E" flood-opacity=".18"/></filter>
 <linearGradient id="gus${i}" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#E9E6E1"/><stop offset=".07" stop-color="#FBFAF8"/><stop offset=".5" stop-color="#FFFFFF"/><stop offset=".93" stop-color="#F7F5F2"/><stop offset="1" stop-color="#E4E0DA"/></linearGradient>
 <linearGradient id="base${i}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FFFFFF" stop-opacity="0"/><stop offset="1" stop-color="#E7E3DD"/></linearGradient>
 <clipPath id="tc${i}"><path d="${TRIM4}"/></clipPath></defs>
-<g transform="translate(16 14)">
 <path d="M3 4 H127 Q130 4 130 7 L131 194 Q131 200 125 200 H5 Q-1 200 -1 194 L0 7 Q0 4 3 4 Z" fill="url(#gus${i})" filter="url(#sh${i})"/>
 <path d="M0 12 H130" stroke="#ECE8E2" stroke-width="0.5"/>
 <path d="M0 18 l2.4 1.4 -2.4 1.4 M130 18 l-2.4 1.4 2.4 1.4" fill="none" stroke="#D9D4CC" stroke-width="0.4"/>
 <rect x="-1" y="176" width="132" height="24" fill="url(#base${i})"/>
 <g transform="translate(7 11)"><g clip-path="url(#tc${i})">${inner(label(c, 'p' + i))}</g></g>
-</g></g>`;
+</g>`;
 }
+/** Mix two hex colours: t = share of a. */
+const mix = (a, b, t) => '#' + [1, 3, 5].map((k) => Math.round(parseInt(a.slice(k, k + 2), 16) * t + parseInt(b.slice(k, k + 2), 16) * (1 - t)).toString(16).padStart(2, '0')).join('');
+/** A soft studio backdrop tinted with the coffee's colour, and a floor shadow under each bag. */
+const backdrop = (w, h, tint, id) => `<defs><radialGradient id="bd${id}" cx="50%" cy="40%" r="75%"><stop offset="0" stop-color="${mix(tint, '#FBF8F4', 0.05)}"/><stop offset="1" stop-color="${mix(tint, '#EFE8DF', 0.14)}"/></radialGradient><filter id="fl${id}"><feGaussianBlur stdDeviation="3"/></filter></defs><rect width="${w}" height="${h}" fill="url(#bd${id})"/>`;
+const floor = (cx, y, w, id) => `<ellipse cx="${cx}" cy="${y}" rx="${w / 2}" ry="3.2" fill="#3A2A1E" opacity=".16" filter="url(#fl${id})"/>`;
 
 // ---------- write: print SVG + PDF + 300 dpi PNG per coffee, die line, all-in-one PDF, bag previews ----------
 const CHROME = '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome';
@@ -194,9 +201,30 @@ writeFileSync(path.join(dir, 'dieline.svg'), die);
 pdf(die, '116mm 186mm', 'dieline.pdf');
 pdf(COFFEES.map((c, i) => `<div class="pg">${label(c, 'a' + i)}</div>`).join(''), '116mm 186mm', 'all-labels.pdf');
 // Bag previews: the seven bags in a row, and one large.
-const row = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${7 * 168 - 8} 236" width="${(7 * 168 - 8) * 2}" height="472">${STYLE}<rect width="100%" height="100%" fill="#EDE8E1"/>${COFFEES.map(onBag).join('')}</svg>`;
+const row = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${7 * 168 - 8} 236" width="${(7 * 168 - 8) * 2}" height="472">${STYLE}<rect width="100%" height="100%" fill="#EDE8E1"/>${COFFEES.map((c, i) => bagAt(c, i, i * 168, 14)).join('')}</svg>`;
 png(row, (7 * 168 - 8) * 2, 472, 'preview-all-bags.png');
-const one = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 236" width="960" height="1416">${STYLE}<rect width="100%" height="100%" fill="#EDE8E1"/>${onBag(COFFEES[0], 0)}</svg>`;
+const one = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 236" width="960" height="1416">${STYLE}<rect width="100%" height="100%" fill="#EDE8E1"/>${bagAt(COFFEES[0], 0, 16, 14)}</svg>`;
 png(one, 960, 1416, 'preview-bag-guji.png');
+
+// ---------- store photos for cairoroast.com: apps/web/public/products/coffee (same names as before) ----------
+// One 900 × 1125 (4:5) photo per coffee, and the group shot for the home banner (900 × 990).
+// Then run `node scripts/photo-sizes.mjs` for the -sm / -md copies, and scripts/make-box-photo.mjs.
+const sharp = createRequire(path.join(root, 'apps/web/package.json'))('sharp');
+const shop = path.join(root, 'apps/web/public/products/coffee');
+const photo = async (svg, w, h, name) => {
+  png(svg, w, h, '.shot.png');
+  await sharp(path.join(dir, '.shot.png')).webp({ quality: 86 }).toFile(path.join(shop, name + '.webp'));
+  rmSync(path.join(dir, '.shot.png'));
+};
+for (const [i, c] of COFFEES.entries()) {
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 250" width="900" height="1125">${STYLE}${backdrop(200, 250, DEEP[c.slug], 's' + i)}${floor(100, 226, 126, 's' + i)}${bagAt(c, 's' + i, 34.5, 22)}</svg>`;
+  await photo(svg, 900, 1125, c.slug.replace('bonds-', ''));
+}
+{
+  const by = (s) => COFFEES.find((c) => c.slug === 'bonds-' + s);
+  const back = [['amber', 70], ['ethiopia-guji', 150], ['colombia-castillo', 230]].map(([s, cx], i) => `${floor(cx, 184, 84, 'g')}${bagAt(by(s), 'gb' + i, cx - 46, 40, 0.7)}`).join('');
+  const front = [['chrome', 100], ['brazil-red-catuai', 200]].map(([s, cx], i) => `${floor(cx, 294, 104, 'g')}${bagAt(by(s), 'gf' + i, cx - 56.5, 120, 0.86)}`).join('');
+  await photo(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 330" width="900" height="990">${STYLE}${backdrop(300, 330, '#B4552D', 'g')}${back}${front}</svg>`, 900, 990, 'lifestyle-bags');
+}
 rmSync(tmp);
-console.log('wrote', readdirSync(dir).length, 'files to', dir);
+console.log('wrote', readdirSync(dir).length, 'files to', dir, '+ store photos to', shop);

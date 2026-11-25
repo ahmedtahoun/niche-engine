@@ -4,6 +4,8 @@ export type ArtKind = 'abaya' | 'niqab' | 'khimar' | 'hijab' | 'ihram' | 'bag' |
 
 export interface Seller {
   id: string;
+  /** Set by the catalog: the seller is the store's own brand, so no "by …" line is shown. */
+  house?: boolean;
   niche: string;
   name: string;
   area: string;

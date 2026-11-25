@@ -29,14 +29,14 @@ export function ProductCard({ p, seller: sl, s, tags, quick }: { p: Product; sel
         {out ? <span className="ribbon r-out">{s.t('soldOutNow')}</span> : p.ribbon ? <span className={`ribbon r-${p.ribbon}`}>{s.t(`ribbon.${p.ribbon}` as 'ribbon.new')}</span> : sale.off > 0 ? <span className="ribbon r-sale">{s.t('off', { n: sale.off })}</span> : null}
       </div>
       <div className="pname">{s.product(p)}</div>
-      <div className="pby">{s.t('by', { name: s.seller(sl) })}</div>
+      {!sl.house && <div className="pby">{s.t('by', { name: s.seller(sl) })}</div>}
       <Notes p={p} s={s} cfg={cfg} />
       <div className="pmeta">{options.length ? <>⚖️ {options.map((o, i) => <span key={o.label}>{i ? ' · ' : ''}{o.gone ? <s title={s.t('soldOut')}>{o.label}</s> : o.label}</span>)}</> : <>{sl.rating ? `⭐ ${sl.rating}` : s.t('newSeller')} · 🚚 {s.t('arrives', { day: s.weekday(etaDate('القاهرة')) })}</>}</div>
       <div className="pprice num">{r.min !== r.max ? s.t('from', { price: s.egp(r.min) }) : s.egp(r.min)}{sale.compareMin && <s className="was">{s.egp(sale.compareMin)}</s>}{p.ribbon && sale.off > 0 && <span className="off">{s.t('off', { n: sale.off })}</span>}</div>
     </Link>
     {quick && cfg && !out && (
       <QuickAddButton item={{
-        slug: p.slug, id: p.id, name: s.product(p), by: s.t('by', { name: s.seller(sl) }), image: p.images?.[0], art: p.art, color: p.color, price: p.price,
+        slug: p.slug, id: p.id, name: s.product(p), by: sl.house ? '' : s.t('by', { name: s.seller(sl) }), image: p.images?.[0], art: p.art, color: p.color, price: p.price,
         variants: p.variants, choices: choicesFor(cfg, p), notes: fam ? `${fam.emoji} ${(s.en && fam.labelEn) || fam.labelAr}` : undefined,
       }} />
     )}

@@ -36,12 +36,12 @@ test('an English cart shows English titles while the order items stay Arabic for
   const opts = { isFirstOrder: true, walletBalance: 0, useWallet: false };
   const en = cat.quote(cfg, [{ kind: 'item', slug: 'bonds-ethiopia-limu', variant: '1 كجم', qty: 1, choice: { grind: 'beans' } }], { ...opts, lang: 'en' });
   assert.equal(en.lines[0].title, 'Ethiopia Limu · 1 kg · Whole beans');
-  assert.equal(en.lines[0].by, 'Bonds Coffee Roasters');
+  assert.equal(en.lines[0].by, ''); // the store's own brand: no "by …" line
   assert.equal(en.items[0].name, 'إثيوبيا ليمو');
   assert.equal(en.items[0].variant, '1 كجم · حبوب كاملة');
   const ar = cat.quote(cfg, [{ kind: 'item', slug: 'bonds-ethiopia-limu', variant: '1 كجم', qty: 1, choice: { grind: 'beans' } }], opts);
   assert.equal(ar.lines[0].title, 'إثيوبيا ليمو · 1 كجم · حبوب كاملة');
   assert.equal(en.total, ar.total);
   // English search finds products by their English names too.
-  assert.equal(cat.search(cfg, { q: 'catuai' })[0]?.slug, 'bonds-brazil-red-catuai');
+  assert.equal(cat.search(cfg, { q: 'catuai' })[0]?.slug, 'brazil-red-catuai');
 });

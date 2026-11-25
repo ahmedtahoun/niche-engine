@@ -51,6 +51,6 @@ await compose(1200, 840, 1, { dir, name: 'discovery-box.webp' });
 const ads = path.join(root, 'marketing/images');
 (await import('node:fs')).mkdirSync(ads, { recursive: true });
 // No price in the picture (it would go stale); the ad text and the store carry the price.
-const words = { title: 'صندوق الاكتشاف', sub: 'تلات قهوات مختصة من بوندز في طلب واحد', cta: 'الدفع عند الاستلام' };
+const words = { title: 'صندوق الاكتشاف', sub: 'تلات قهوات مختصة في طلب واحد', cta: 'الدفع عند الاستلام' };
 await compose(1080, 1080, 0.92, { dir: ads, name: 'discovery-box-1080x1080.webp' });
 await compose(1080, 1350, 0.95, { dir: ads, name: 'discovery-box-1080x1350.webp' }, words);

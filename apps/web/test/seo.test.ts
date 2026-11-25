@@ -38,7 +38,7 @@ test('IndexNow: stable key from the secret, own key allowed, only this domain, p
 test('public URLs for IndexNow: home, products, box, guides, in Arabic and English', async () => {
   freshStore();
   const urls = await publicUrls(coffee);
-  for (const u of ['https://cairoroast.com/', 'https://cairoroast.com/?lang=en', 'https://cairoroast.com/p/bonds-chrome', 'https://cairoroast.com/guide/ethiopian-coffee?lang=en', 'https://cairoroast.com/guide/specialty-coffee-prices-egypt']) assert.ok(urls.includes(u), u);
+  for (const u of ['https://cairoroast.com/', 'https://cairoroast.com/?lang=en', 'https://cairoroast.com/p/chrome', 'https://cairoroast.com/guide/ethiopian-coffee?lang=en', 'https://cairoroast.com/guide/specialty-coffee-prices-egypt']) assert.ok(urls.includes(u), u);
   assert.ok(urls.some((u) => u.includes('/b/')));
   assert.ok(!urls.some((u) => /\/(cart|checkout|admin|order)/.test(u)));
 });
@@ -57,4 +57,19 @@ test('guides: 12 complete answer pages, both languages, unique slugs, FAQ on eac
     assert.ok(!/best (coffee )?in egypt|أحسن (بن|قهوة)[^.،"]{0,25} في مصر/i.test(JSON.stringify(x)), `${x.slug}: no "best in Egypt" claims`);
   }
   assert.ok(g.find((x) => x.slug === 'specialty-coffee-prices-egypt')?.priceTable);
+});
+
+test('no supplier name on the store: product addresses, seller name and texts; old addresses still find the coffee', async () => {
+  freshStore();
+  const { catalog, isHouseSeller } = await import('../src/lib/catalog.ts');
+  const cat = await catalog();
+  const urls = await publicUrls(coffee);
+  assert.ok(!urls.some((u) => /bonds/i.test(u)), 'a public URL names the supplier');
+  const chrome = cat.productBySlug('coffee', 'chrome')!;
+  assert.equal(chrome.id, 'bonds-chrome'); // ids stay: past orders, stock, Meta catalog
+  assert.equal(cat.productBySlug('coffee', 'bonds-chrome')?.slug, 'chrome'); // old link or saved cart → redirect target
+  const seller = cat.sellerOf(chrome);
+  assert.ok(isHouseSeller(seller, coffee));
+  const text = JSON.stringify([coffee, seller, cat.productsOf('coffee').map((p) => [p.slug, p.nameAr, p.leadAr, p.en, p.faq, p.images])]);
+  assert.ok(!/bonds|بوندز/i.test(text.replace(/"bonds-[a-z-]+"/g, '').replace(/"id":"bonds"/g, '').replace(/"sellerId":"bonds"/g, '')), 'a store text names the supplier');
 });

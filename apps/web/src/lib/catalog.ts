@@ -10,6 +10,9 @@ import { getNiche } from './niches.ts';
 import { store } from './store/index.ts';
 import type { CartLine, OrderItem, PricedLine, Product, Quote, Seller } from './types.ts';
 
+/** True when the seller is the store's own brand (e.g. Cairo Roast selling under its own name). */
+export const isHouseSeller = (s: Seller, cfg: NicheConfig) => s.nameEn === cfg.brand.nameEn || s.name === cfg.brand.nameAr;
+
 export type SortKey = 'best' | 'low' | 'high' | 'rating';
 export type PriceBand = 'all' | 'lt300' | 'mid' | 'gt900';
 const BANDS: Record<PriceBand, [number, number]> = { all: [0, Infinity], lt300: [0, 299], mid: [300, 900], gt900: [901, Infinity] };
@@ -123,7 +126,7 @@ export class Catalog {
   constructor(sellers: Seller[], products: Product[]) {
     this.sellers = sellers;
     this.products = products;
-    this.sellerMap = new Map(sellers.map((s) => [s.id, s]));
+    this.sellerMap = new Map(sellers.map((s) => { const cfg = getNiche(s.niche); return [s.id, cfg && isHouseSeller(s, cfg) ? { ...s, house: true } : s]; }));
   }
 
   sellerById = (id: string) => this.sellerMap.get(id) ?? null;
@@ -143,8 +146,10 @@ export class Catalog {
     return this.products.filter((p) => p.niche === niche && this.visible(p));
   }
 
+  /** By the web address; an old address (the product id, e.g. a cart saved before a rename) still finds it. */
   productBySlug(niche: string, slug: string): Product | null {
-    return this.productsOf(niche).find((p) => p.slug === slug) ?? null;
+    const list = this.productsOf(niche);
+    return list.find((p) => p.slug === slug) ?? list.find((p) => p.id === slug) ?? null;
   }
 
   search(cfg: NicheConfig, opts: { q?: string; cat?: string; sort?: SortKey; price?: PriceBand; family?: string }): Product[] {
@@ -210,7 +215,7 @@ export class Catalog {
         const label = [line.variant, ...extra].join(' · ');
         coreLines.push({ sellerId: p.sellerId, unitPrice: unit, qty, ...(costOf(p, line.variant) !== undefined ? { unitCost: costOf(p, line.variant) } : {}) });
         items.push({ sellerId: p.sellerId, productId: p.id, name: p.nameAr, variant: label, qty, unitPrice: unit, ...(costOf(p, line.variant) !== undefined ? { unitCost: costOf(p, line.variant) } : {}) });
-        priced.push({ key: `${i}`, title: [sp.product(p), sp.variant(p, line.variant), ...shownChoices(p, line.choice)].join(' · '), by: this.sellerOf(p) ? sp.seller(this.sellerOf(p)) : '', art: p.art, color: p.color, qty, amount: unit * qty, isBundle: false, ...(p.images?.[0] ? { image: p.images[0] } : {}), ...(variant.stock < qty ? { left: Math.max(0, variant.stock) } : {}) });
+        priced.push({ key: `${i}`, title: [sp.product(p), sp.variant(p, line.variant), ...shownChoices(p, line.choice)].join(' · '), by: this.sellerOf(p) && !this.sellerOf(p).house ? sp.seller(this.sellerOf(p)) : '', art: p.art, color: p.color, qty, amount: unit * qty, isBundle: false, ...(p.images?.[0] ? { image: p.images[0] } : {}), ...(variant.stock < qty ? { left: Math.max(0, variant.stock) } : {}) });
       } else {
         const bv = this.bundleView(cfg, line.id);
         if (!bv) return void problems.push(`bundle_unavailable:${line.id}`);
@@ -228,7 +233,7 @@ export class Catalog {
         const full = rows.reduce((a, r) => a + r.unitPrice * r.qty, 0);
         const picked = shownChoices(bv.parts[0].product, line.choice);
         bundleDiscount += bv.bundle.discountEgp * qty;
-        priced.push({ key: `${i}`, title: [sp.bundle(bv.bundle), line.variant, ...picked].filter(Boolean).join(' · '), by: ((n) => (n === 1 ? sp.t('by', { name: sp.seller(this.sellerOf(bv.parts[0].product)) }) : sp.en ? `from ${n} sellers` : `من ${n} بائعين`))(new Set(bv.parts.map((x) => x.product.sellerId)).size), art: 'kit', color: '', qty, amount: full, isBundle: true, parts: bv.parts.map((x) => ({ art: x.product.art, color: x.product.color })), ...(bv.bundle.image ? { image: bv.bundle.image } : {}) });
+        priced.push({ key: `${i}`, title: [sp.bundle(bv.bundle), line.variant, ...picked].filter(Boolean).join(' · '), by: ((n) => (n === 1 ? (this.sellerOf(bv.parts[0].product).house ? '' : sp.t('by', { name: sp.seller(this.sellerOf(bv.parts[0].product)) })) : sp.en ? `from ${n} sellers` : `من ${n} بائعين`))(new Set(bv.parts.map((x) => x.product.sellerId)).size), art: 'kit', color: '', qty, amount: full, isBundle: true, parts: bv.parts.map((x) => ({ art: x.product.art, color: x.product.color })), ...(bv.bundle.image ? { image: bv.bundle.image } : {}) });
       }
     });
 

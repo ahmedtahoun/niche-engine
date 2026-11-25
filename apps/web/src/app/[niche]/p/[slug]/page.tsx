@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { notFound } from 'next/navigation';
+import { notFound, permanentRedirect } from 'next/navigation';
 import { AddToCart } from '@/components/AddToCart';
 import { EtaPicker } from '@/components/Eta';
 import { Art, PickSeal } from '@/components/Art';
@@ -9,7 +9,7 @@ import { noteInfo } from '@/lib/notes';
 import { TrackOnView } from '@/components/Pixel';
 import { BoxCard } from '@/components/BoxCard';
 import { ProductCard } from '@/components/ProductCard';
-import { catalog, choicesFor, similarTo, freshnessOf, isSoldOut, priceRange, saleOf } from '@/lib/catalog';
+import { catalog, isHouseSeller, choicesFor, similarTo, freshnessOf, isSoldOut, priceRange, saleOf } from '@/lib/catalog';
 import { speaker } from '@/lib/lang';
 import { getNiche } from '@/lib/niches';
 import { jsonLd, pageMeta, siteUrl, waLink } from '@/lib/site';
@@ -36,7 +36,9 @@ export default async function ProductPage({ params }: P) {
   const p = cfg && cat.productBySlug(niche, slug);
   if (!cfg || !p) notFound();
   const s = await speaker(cfg);
+  if (p.slug !== slug) permanentRedirect(s.href(`/p/${p.slug}`)); // an old address
   const seller = cat.sellerOf(p);
+  const house = isHouseSeller(seller, cfg); // the store's own brand: no "by …" chip or roaster card
   const finder = p.category === 'abaya' ? 'size' : null;
   const choices = choicesFor(cfg, p);
   const range = priceRange(p);
@@ -127,12 +129,12 @@ export default async function ProductPage({ params }: P) {
       <div style={{ display: 'grid', gap: 8 }}>
         {p.ribbon && <span className={`ribbon inline r-${p.ribbon}`}>{s.t(`ribbon.${p.ribbon}` as 'ribbon.new')}</span>}
         <h1 className="title">{name}</h1>
-        <a className="roaster-chip" href="#sec-roaster">
+        {!house && <a className="roaster-chip" href="#sec-roaster">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <span className="av" aria-hidden="true">{seller.logo ? <img src={seller.logo} alt="" /> : s.seller(seller).slice(0, 1)}</span>
           <span>{s.t('by', { name: '' })}<b>{s.seller(seller)}</b></span>
           <span className="muted small">· {seller.rating ? `⭐ ${seller.rating}` : s.t('partnerOf', { brand: s.brand(cfg) })}</span>
-        </a>
+        </a>}
         <div className="pprice num" style={{ fontSize: 21 }}>{range.min !== range.max ? s.t('from', { price: s.egp(range.min) }) : s.egp(range.min)}{sale.compareMin && <s className="was">{s.egp(sale.compareMin)}</s>}{sale.off > 0 && <span className="off">{s.t('off', { n: sale.off })}</span>}</div>
         {freshText && <div className="small" style={{ color: 'var(--ok)', fontWeight: 700 }}>{freshText}</div>}
       </div>
@@ -201,7 +203,7 @@ export default async function ProductPage({ params }: P) {
           {faq.map(([q, a]) => <details key={q}><summary>{q}</summary><p>{a}</p></details>)}
         </section>
       )}
-      <section id="sec-roaster" className="roaster" aria-label={s.t('meetRoaster')}>
+      {!house && <section id="sec-roaster" className="roaster" aria-label={s.t('meetRoaster')}>
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <div className="av">{seller.logo ? <img src={seller.logo} alt={s.t('alt.logo', { name: s.seller(seller) })} /> : s.seller(seller).slice(0, 1)}</div>
         <div>
@@ -209,7 +211,7 @@ export default async function ProductPage({ params }: P) {
           <b style={{ display: 'block' }}>{s.seller(seller)}</b>
           {seller.about && <p>{(s.en && seller.about.en) || seller.about.ar}</p>}
         </div>
-      </section>
+      </section>}
     </main>
   );
 }

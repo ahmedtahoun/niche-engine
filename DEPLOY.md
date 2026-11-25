@@ -1,5 +1,7 @@
 # Deploying niche-engine
 
+**Live hosting is Cloudflare Workers: see `DEPLOY-CLOUDFLARE.md`.** This file describes the generic Node/Docker setup.
+
 One Docker image runs everything: every niche's storefront, the admin panel, and the Telegram and Bosta webhooks.
 
 Supabase is the only source of truth: every request reads and writes it, and money changes are database transactions. The app can restart or run as several instances without losing or mixing data. Any Node/Docker host works (Railway, Render, Fly.io, a VPS, or cPanel: see `DEPLOY-CPANEL.md`).

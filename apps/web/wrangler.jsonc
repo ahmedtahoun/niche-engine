@@ -11,6 +11,10 @@
   "workers_dev": true,
   "preview_urls": true,
   "observability": { "enabled": true },
+  "routes": [
+    { "pattern": "cairoroast.com", "custom_domain": true },
+    { "pattern": "www.cairoroast.com", "custom_domain": true }
+  ],
   "assets": { "directory": ".open-next/assets", "binding": "ASSETS" },
   "services": [{ "binding": "WORKER_SELF_REFERENCE", "service": "cairoroast" }],
   "vars": {

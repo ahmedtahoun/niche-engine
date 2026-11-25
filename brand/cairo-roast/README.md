@@ -27,36 +27,27 @@ The mark says *Cairo + coffee* without a pyramid cliché, and it stays readable 
 
 SVGs carry their fonts inside, so they look the same on any computer. For a printing shop, send the PNG, or the SVG opened and exported as PDF from Chrome.
 
-## Bag labels: "CAIRO HOURS · ساعات القاهرة"
+## Bag labels
 `labels/`: rebuild with `node brand/cairo-roast/labels.mjs`. Review sheet: `labels/all-labels.png`.
 
-**The idea:** premium on a white bag. White labels that almost disappear into the bag, gold-foil arch frames and logo, English first with Arabic in support, and lots of white space. In the middle sits a small framed window onto Cairo: the same skyline on every bag, at a different hour, with the sun or moon drawn from the coffee's main tasting note. Under it, the journey from origin to Cairo ("≈ 2,800 KM TO YOUR CUP") and one story line, so people feel the trip before they taste. Numbered N° 01–07 as a collection.
+**The idea:** simple and premium on a white bag. A white label with a gold-foil arch frame, the logo, and one framed window. In the window: soft contour lines of the origin's hills (the journey) under a small still life of what the coffee tastes like. The notes are **drawn, never written**. English first, Arabic in support, lots of white space. Nothing about times of day, nothing religious.
 
-| N° | Coffee | Hour | Sun / moon |
-|---|---|---|---|
-| 01 | Ethiopia Guji Hambela | Dawn · 5:30 AM | apricot, orange blossom |
-| 02 | Ethiopia Limu | Morning · 8:00 AM | orange slice, tea steam |
-| 03 | Brazil Red Catuai | Noon · 12:00 PM | hazelnut, sugar cane |
-| 04 | Colombia Castillo | Afternoon · 3:30 PM | tangerine, felucca |
-| 05 | Amber Blend | Sunset · 5:30 PM | molasses-amber sun |
-| 06 | Chrome Blend | Night · 10:00 PM | chrome-silver moon |
-| 07 | El Salvador San Agustín | Late evening · 12:00 AM | coffee-bean moon |
+| N° | Coffee | Still life |
+|---|---|---|
+| 01 | Ethiopia Guji Hambela | apricot, orange blossom, berries, coffee cherries |
+| 02 | Ethiopia Limu | dark chocolate, orange slice, tea leaves |
+| 03 | Brazil Red Catuai | hazelnuts, walnut, sugar cane |
+| 04 | Colombia Castillo | tangerine, mango, caramel, oak leaf |
+| 05 | Amber Blend | molasses dipper, dark chocolate, hazelnuts |
+| 06 | Chrome Blend | caramel, dark chocolate, nuts |
+| 07 | El Salvador San Agustín | a coffee branch with cherries (the coffee itself) |
 
-**Front for desire, back for use.**
-- **Front** (95 × 135 mm, arch-shaped die cut, 3 mm bleed): brand, hour, the Cairo window, origin and name, the journey and story, tasting notes, process/variety/altitude and weight.
-- **Back** (60 × 90 mm, 3 mm rounded corners, 3 mm bleed): roast-date box, grind ticks, a two-line brew recipe, QR ("scan to taste the journey": tasting game, brew coach, Coffee Passport), the passport stamp, WhatsApp and storage.
+- **Front** (95 × 135 mm, arch-shaped die cut, 3 mm bleed): logo, CAIRO ROAST, window, origin, name (English + Arabic), one journey line (origin ┈ ≈ km ┈ Cairo), N° and weight.
+- **Back** (60 × 90 mm, rounded corners, 3 mm bleed): name, roast-date box, grind ticks, QR (tasting notes, brew guide and Coffee Passport stamp on the website), website and WhatsApp.
 
-**Print:**
-- Files: `labels/front-<coffee>.svg` and `labels/back-<coffee>.svg` (vector, fonts embedded), plus 300 dpi PNGs. Die lines: `labels/dieline-front.svg`, `labels/dieline-back.svg`.
-- **Gold (#B08D57) = gold foil**: outer frame, window frames, logo arch. Without foil, print it as the brass colour.
-- Stock: matte white sticker, so it melts into the white bag. A soft-touch laminate makes it feel premium in the hand.
-- Placement: the front arch top about 5 cm below the bag's top edge (under the degassing valve); the back label centred on the back.
-- Distances are approximate (origin region to Cairo, rounded to 100 km).
+**Print:** `labels/front-<coffee>.svg` / `back-<coffee>.svg` (vector, fonts embedded) and 300 dpi PNGs; die lines `labels/dieline-front.svg`, `labels/dieline-back.svg`. Gold (#B08D57) = gold foil (outer frame, window frames, logo arch). Matte white sticker; soft-touch laminate optional. Front arch top about 5 cm below the bag's top edge, under the valve. Distances are approximate (origin region to Cairo, rounded to 100 km).
 
-**Before printing:**
-- Magenta brackets are placeholders: El Salvador's tasting notes, process, variety and altitude must come from Bonds.
-- The dashed QR box: each code should open its coffee page (`cairoroast.com/p/<coffee>`).
-- Weight is 250 g on every label; change it in `labels.mjs` if the 13 × 20 bag holds a different weight.
+**Before printing:** replace the dashed QR box with each coffee's QR code (`cairoroast.com/p/<coffee>`); check the weight (250 g) matches the bag.
 
 ## Colors
 

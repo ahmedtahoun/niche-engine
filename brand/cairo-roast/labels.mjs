@@ -216,15 +216,30 @@ const photo = async (svg, w, h, name) => {
   await sharp(path.join(dir, '.shot.png')).webp({ quality: 86 }).toFile(path.join(shop, name + '.webp'));
   rmSync(path.join(dir, '.shot.png'));
 };
+// Roasted beans, drawn real size (about 10 mm): shaded, with the crease, a highlight and a soft shadow.
+const beanDefs = (id) => `<defs><radialGradient id="rb${id}" cx="38%" cy="32%" r="80%"><stop offset="0" stop-color="#9A6038"/><stop offset=".55" stop-color="#6A3B20"/><stop offset="1" stop-color="#3B2012"/></radialGradient><filter id="bs${id}" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="0.9"/></filter></defs>`;
+const rbean = (x, y, r, s, id) => `<g transform="translate(${x.toFixed(2)} ${y.toFixed(2)}) rotate(${r.toFixed(1)}) scale(${s.toFixed(2)})"><ellipse cx="0.9" cy="1.6" rx="3.7" ry="4.9" fill="#2A1A10" opacity=".32" filter="url(#bs${id})"/><ellipse rx="3.6" ry="4.9" fill="url(#rb${id})"/><path d="M0.2 -4.4 C-1.4 -2.2 1.5 -0.6 0 1 C-1.3 2.4 0.9 3.4 -0.1 4.5" fill="none" stroke="#24130A" stroke-width="0.75" stroke-linecap="round"/><path d="M-2.3 -2.6 C-2.9 -0.8 -2.7 1.4 -1.9 2.8" fill="none" stroke="#C08A5E" stroke-width="0.45" stroke-linecap="round" opacity=".55"/></g>`;
+// A seeded random so the photos come out the same every run.
+const rnd = (seed) => () => ((seed = (seed * 16807) % 2147483647) - 1) / 2147483646;
+/** A loose pile of beans in an ellipse (cx, cy, rx, ry), back to front. */
+const pile = (cx, cy, rx, ry, n, seed, id, s = 1) => { const R = rnd(seed); return Array.from({ length: n }, () => { const a = R() * Math.PI * 2, d = Math.sqrt(R()); return [cx + Math.cos(a) * rx * d, cy + Math.sin(a) * ry * d, R() * 360, (0.82 + R() * 0.28) * s]; }).sort((p, q) => p[1] - q[1]).map(([x, y, r, sc]) => rbean(x, y, r, sc, id)).join(''); };
+/** The brand arch, large and faint, behind the bag. */
+const archMotif = (cx, top, w, h, color) => `<path d="M${cx - w / 2} ${top + h} V${top + w * 0.55} C${cx - w / 2} ${top + w * 0.22} ${cx - w * 0.2} ${top + w * 0.08} ${cx} ${top} C${cx + w * 0.2} ${top + w * 0.08} ${cx + w / 2} ${top + w * 0.22} ${cx + w / 2} ${top + w * 0.55} V${top + h}" fill="none" stroke="${color}" stroke-width="0.9" opacity=".22"/><path d="M${cx - w / 2 + 5} ${top + h} V${top + w * 0.57} C${cx - w / 2 + 5} ${top + w * 0.26} ${cx - w * 0.17} ${top + w * 0.13} ${cx} ${top + 5.5} C${cx + w * 0.17} ${top + w * 0.13} ${cx + w / 2 - 5} ${top + w * 0.26} ${cx + w / 2 - 5} ${top + w * 0.57} V${top + h}" fill="none" stroke="${color}" stroke-width="0.35" opacity=".2"/>`;
+const sand = (w, h, id) => `<defs><radialGradient id="sd${id}" cx="50%" cy="38%" r="78%"><stop offset="0" stop-color="#FAF3E8"/><stop offset=".7" stop-color="#EFE2CD"/><stop offset="1" stop-color="#E4D2B6"/></radialGradient><linearGradient id="fl2${id}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#E9D9BF" stop-opacity="0"/><stop offset="1" stop-color="#D9C3A1" stop-opacity=".55"/></linearGradient></defs><rect width="${w}" height="${h}" fill="url(#sd${id})"/><rect y="${h * 0.84}" width="${w}" height="${h * 0.16}" fill="url(#fl2${id})"/>`;
+
 for (const [i, c] of COFFEES.entries()) {
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 250" width="900" height="1125">${STYLE}${backdrop(200, 250, DEEP[c.slug], 's' + i)}${floor(100, 226, 126, 's' + i)}${bagAt(c, 's' + i, 34.5, 22)}</svg>`;
+  const id = 's' + i;
+  // Store cards show the centre square (y 25–225): the bag and the beans sit inside it; the product page shows it all.
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 250" width="900" height="1125">${STYLE}${sand(200, 250, id)}${beanDefs(id)}${archMotif(100, 14, 168, 226, C.roast)}${floor(100, 196, 106, id)}
+${pile(44, 186, 17, 8, 22, 11 + i, id, 0.9)}${pile(157, 187, 17, 8, 22, 29 + i, id, 0.9)}${bagAt(c, id, 46.8, 30.5, 0.82)}
+${pile(50, 203, 22, 6, 20, 47 + i, id, 0.9)}${pile(152, 204, 21, 6, 18, 83 + i, id, 0.9)}${pile(100, 214, 50, 5, 9, 101 + i, id, 0.85)}${pile(100, 234, 70, 6, 8, 131 + i, id, 0.85)}</svg>`;
   await photo(svg, 900, 1125, c.slug.replace('bonds-', ''));
 }
 {
   const by = (s) => COFFEES.find((c) => c.slug === 'bonds-' + s);
   const back = [['amber', 70], ['ethiopia-guji', 150], ['colombia-castillo', 230]].map(([s, cx], i) => `${floor(cx, 184, 84, 'g')}${bagAt(by(s), 'gb' + i, cx - 46, 40, 0.7)}`).join('');
   const front = [['chrome', 100], ['brazil-red-catuai', 200]].map(([s, cx], i) => `${floor(cx, 294, 104, 'g')}${bagAt(by(s), 'gf' + i, cx - 56.5, 120, 0.86)}`).join('');
-  await photo(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 330" width="900" height="990">${STYLE}${backdrop(300, 330, '#B4552D', 'g')}${back}${front}</svg>`, 900, 990, 'lifestyle-bags');
+  await photo(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 330" width="900" height="990">${STYLE}${sand(300, 330, 'g')}${beanDefs('g')}${archMotif(150, 10, 270, 320, C.roast)}${back}${pile(40, 288, 26, 10, 30, 7, 'g')}${pile(262, 290, 26, 10, 30, 13, 'g')}${front}${pile(60, 312, 40, 8, 28, 17, 'g')}${pile(244, 313, 40, 8, 28, 19, 'g')}${pile(150, 318, 50, 5, 10, 23, 'g', 0.95)}</svg>`, 900, 990, 'lifestyle-bags');
 }
 rmSync(tmp);
 console.log('wrote', readdirSync(dir).length, 'files to', dir, '+ store photos to', shop);

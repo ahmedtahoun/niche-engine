@@ -11,8 +11,10 @@ if (process.env.NODE_ENV === 'production') {
   for (const w of warnings) console.warn(`[env] ${w}`);
   if (errors.length) {
     console.error(`[env] The server cannot start:\n- ${errors.join('\n- ')}`);
-    // Exit instead of serving errors: the host marks the deploy as failed and shows this log.
-    process.exit(1);
+    // On a Node host, exit instead of serving errors: the host marks the deploy as failed and shows this log.
+    // Cloudflare Workers can't exit; there the error stays in the logs and /api/health reports it.
+    const onWorkers = typeof navigator !== 'undefined' && navigator.userAgent === 'Cloudflare-Workers';
+    if (!onWorkers) process.exit(1);
   }
 }
 

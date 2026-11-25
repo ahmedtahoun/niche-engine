@@ -1,0 +1,24 @@
+// Cloudflare: the niche-engine stores (cairoroast.com) as the "cairoroast" Worker.
+// Build: `npm run cf:build` (Next.js → OpenNext → .open-next/). Deploy: `npm run cf:deploy`.
+// Settings that are not secret are below in "vars". Secrets (never in git) are set in Cloudflare:
+//   ADMIN_PASSWORD, SESSION_SECRET, SUPABASE_SERVICE_ROLE_KEY, TELEGRAM_BOT_TOKEN,
+//   TELEGRAM_WEBHOOK_SECRET, BOSTA_API_KEY, BOSTA_WEBHOOK_SECRET, CRON_SECRET (optional)
+{
+  "name": "cairoroast",
+  "main": ".open-next/worker.js",
+  "compatibility_date": "2026-11-01",
+  "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
+  "workers_dev": true,
+  "preview_urls": true,
+  "observability": { "enabled": true },
+  "assets": { "directory": ".open-next/assets", "binding": "ASSETS" },
+  "services": [{ "binding": "WORKER_SELF_REFERENCE", "service": "cairoroast" }],
+  "vars": {
+    "SUPABASE_URL": "https://ywfblcnpridlucljqtbz.supabase.co",
+    "NICHE_IDS": "umrah,coffee",
+    "NICHE_DOMAINS": "cairoroast.com=coffee,www.cairoroast.com=coffee",
+    "DEFAULT_NICHE": "coffee",
+    "ADMIN_TELEGRAM_CHAT_IDS": "5770925631",
+    "TEAM_TELEGRAM_CHAT_IDS": "9184856244"
+  }
+}

@@ -15,3 +15,5 @@ out/
 *.local.json
 *.local.sql
 research/private/
+.open-next/
+.wrangler/

@@ -1,18 +1,16 @@
 // Loads and validates every niche settings file once per server process.
-import { existsSync, readFileSync, readdirSync } from 'node:fs';
-import path from 'node:path';
+// The files (niches/*.json) are bundled into the app by scripts/gen-niches.mjs, because
+// Cloudflare Workers have no file system to read them from at runtime.
 import { validateNiche, type NicheConfig } from '@niche-engine/core';
+import { nicheFiles } from './niche-files.generated.ts';
 
-
-// NICHES_DIR is set in the Docker image; locally the folder is found from the repo or apps/web.
-const DIR = [process.env.NICHES_DIR, path.join(process.cwd(), 'niches'), path.join(process.cwd(), '..', '..', 'niches')].find((d): d is string => Boolean(d) && existsSync(d!)) ?? path.join(process.cwd(), 'niches');
 let cache: Record<string, NicheConfig> | null = null;
 
 export function allNiches(): Record<string, NicheConfig> {
   if (cache) return cache;
   const out: Record<string, NicheConfig> = {};
-  for (const f of readdirSync(DIR).filter((x) => x.endsWith('.json'))) {
-    const cfg = JSON.parse(readFileSync(path.join(DIR, f), 'utf8')) as NicheConfig;
+  for (const [f, raw] of Object.entries(nicheFiles)) {
+    const cfg = structuredClone(raw) as NicheConfig;
     const problems = validateNiche(cfg);
     if (problems.length) throw new Error(`niches/${f} is invalid:\n- ${problems.join('\n- ')}`);
     out[cfg.id] = cfg;

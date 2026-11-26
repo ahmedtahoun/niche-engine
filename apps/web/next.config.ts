@@ -32,8 +32,6 @@ export default withSentryConfig(config, {
   silent: !process.env.CI,
   // Upload more source maps for readable stack traces (needs SENTRY_AUTH_TOKEN at build time).
   widenClientFileUpload: true,
-  // Send browser errors through the store's own address, so ad blockers don't drop them.
-  tunnelRoute: '/monitoring',
   // Don't wrap server code with the full Node.js SDK (too big for the Worker); worker.ts covers the server.
   webpack: { autoInstrumentServerFunctions: false, autoInstrumentMiddleware: false, autoInstrumentAppDirectory: false },
 });

@@ -8,6 +8,9 @@ Sentry.init({
   environment: isProd ? 'production' : 'development',
   // No IP addresses or other personal data by default (customers type names, phones and addresses here).
   dataCollection: { userInfo: false },
+  // Send events through the store's own address (/monitoring), so ad blockers don't drop them.
+  // worker.ts forwards them to Sentry (serveTunnelIntegration).
+  tunnel: '/monitoring',
   integrations: [Sentry.replayIntegration()],
   // Tracing: every request locally, 10% in production.
   tracesSampleRate: isProd ? 0.1 : 1.0,

@@ -15,6 +15,8 @@ export default Sentry.withSentry(
     dsn: env.SENTRY_DSN,
     environment: env.SENTRY_ENVIRONMENT ?? 'production',
     dataCollection: { userInfo: false },
+    // Answers the browser's /monitoring requests and forwards them to Sentry (ad blockers block sentry.io).
+    integrations: [Sentry.serveTunnelIntegration({ path: '/monitoring' })],
     // 10% of requests traced in production, all of them anywhere else.
     tracesSampleRate: (env.SENTRY_ENVIRONMENT ?? 'production') === 'production' ? 0.1 : 1.0,
   }),

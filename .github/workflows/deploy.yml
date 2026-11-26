@@ -1,12 +1,16 @@
-# On every push and pull request: run the tests, check the niche settings and make sure the
-# Cloudflare build works. Deploying is done by Cloudflare Workers Builds (see DEPLOY-CLOUDFLARE.md),
-# which builds and publishes main to cairoroast.com. The old cPanel `deploy` branch is no longer updated.
-name: Test
+# On every push and pull request: run the tests, check the niche settings and build for Cloudflare.
+# On main only, it then publishes to Cloudflare (Worker "cairoroast", cairoroast.com).
+# Needs the repository secret CLOUDFLARE_API_TOKEN (Cloudflare → My Profile → API Tokens, template "Edit Cloudflare Workers").
+name: Test and deploy
 
 on:
   push:
   pull_request:
   workflow_dispatch:
+
+concurrency:
+  group: ${{ github.ref == 'refs/heads/main' && 'deploy-main' || github.run_id }}
+  cancel-in-progress: false
 
 jobs:
   test:
@@ -24,3 +28,10 @@ jobs:
         run: npm run cf:build --workspace @niche-engine/web
         env:
           NEXT_TELEMETRY_DISABLED: '1'
+      - name: Deploy to Cloudflare
+        if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+        working-directory: apps/web
+        run: npx wrangler deploy
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: 4f5d12c07701edca8597825d6e4e929a

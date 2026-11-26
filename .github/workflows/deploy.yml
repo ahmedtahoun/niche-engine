@@ -35,7 +35,8 @@ jobs:
         if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
         working-directory: apps/web
         run: |
-          npx wrangler deploy --outdir dist --upload-source-maps --var "SENTRY_RELEASE:$GITHUB_SHA"
+          # Maps go to Sentry only: when Cloudflare also has them, it rewrites stack lines and Sentry can't match them.
+          npx wrangler deploy --outdir dist --var "SENTRY_RELEASE:$GITHUB_SHA"
           # Server source maps: readable stack traces in Sentry for errors in the Worker.
           if [ -n "$SENTRY_AUTH_TOKEN" ]; then
             npx sentry-cli releases new "$GITHUB_SHA"

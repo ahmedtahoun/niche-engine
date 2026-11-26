@@ -25,7 +25,7 @@ If a test fails, nothing is deployed. Every deploy is listed in the repository's
 
 ## GitHub secret (once)
 
-The workflow `.github/workflows/deploy.yml` needs the repository secret **`CLOUDFLARE_API_TOKEN`**
+The workflow `.github/workflows/deploy.yml` needs the repository secrets **`CLOUDFLARE_API_TOKEN`** and **`SENTRY_AUTH_TOKEN`** (Sentry organization token, uploads source maps so error stack traces are readable). For `CLOUDFLARE_API_TOKEN`:
 (Cloudflare → My Profile → API Tokens → template "Edit Cloudflare Workers"). The account ID is in the workflow; it is not secret.
 
 ## By hand from a Mac

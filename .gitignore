@@ -18,3 +18,4 @@ research/private/
 .open-next/
 .wrangler/
 .dev.vars
+apps/web/dist/

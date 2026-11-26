@@ -17,3 +17,4 @@ out/
 research/private/
 .open-next/
 .wrangler/
+.dev.vars

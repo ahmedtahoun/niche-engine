@@ -1,4 +1,5 @@
 import type { NextConfig } from 'next';
+import { withSentryConfig } from '@sentry/nextjs/config';
 
 const security = [
   { key: 'Strict-Transport-Security', value: 'max-age=63072000; includeSubDomains; preload' },
@@ -24,4 +25,15 @@ const config: NextConfig = {
   },
 };
 
-export default config;
+export default withSentryConfig(config, {
+  org: 'where-to-spot-ph',
+  project: 'cairo-roast',
+  // Only print source-map upload logs in CI.
+  silent: !process.env.CI,
+  // Upload more source maps for readable stack traces (needs SENTRY_AUTH_TOKEN at build time).
+  widenClientFileUpload: true,
+  // Send browser errors through the store's own address, so ad blockers don't drop them.
+  tunnelRoute: '/monitoring',
+  // Don't wrap server code with the full Node.js SDK (too big for the Worker); worker.ts covers the server.
+  webpack: { autoInstrumentServerFunctions: false, autoInstrumentMiddleware: false, autoInstrumentAppDirectory: false },
+});

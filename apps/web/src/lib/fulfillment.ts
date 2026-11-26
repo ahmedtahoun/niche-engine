@@ -53,7 +53,8 @@ export async function shipSellerPart(orderId: number, sellerId: string): Promise
   const existing = o?.shipments?.[sellerId];
   if (!o || (existing && existing.status !== 'cancelled')) return [];
   const cfg = getNiche(o.niche)!;
-  const seller = (await catalog()).sellerById(sellerId);
+  const cat = await catalog();
+  const seller = cat.sellerById(sellerId);
   const items = itemsOfSeller(o, sellerId);
   const cod = codSplit(o)[sellerId] ?? 0;
   // Demo mode (no key) needs no Bosta area; with a key Bosta needs its exact district.
@@ -74,6 +75,7 @@ export async function shipSellerPart(orderId: number, sellerId: string): Promise
     address: { line: o.customer.address, landmark: o.customer.landmark },
     pickupLocationId: seller?.bostaLocationId,
     allowOpenPackage: cfg.risk.openBeforePay,
+    images: items.flatMap((i) => (cat.productById(i.productId)?.images ?? []).slice(0, 1)).map((u) => (/^https?:\/\//.test(u) ? u : `${origin(cfg)}${u.startsWith('/') ? '' : '/'}${u}`)),
     webhookUrl: webhookUrl(cfg),
   });
   const shipment: Shipment = { deliveryId: res.deliveryId, tracking: res.tracking, status: 'created', cod, state: res.state, updatedAt: new Date().toISOString() };

@@ -113,6 +113,8 @@ export interface DeliveryInput {
   /** Seller's pickup location under the store's Bosta account; empty = the account's default. */
   pickupLocationId?: string;
   allowOpenPackage: boolean;
+  /** Absolute photo addresses of the goods. Bosta requires 1-10 when the customer may open the parcel. */
+  images?: string[];
   webhookUrl: string;
 }
 
@@ -126,14 +128,18 @@ const splitName = (full: string): [string, string] => {
 /** Bosta's create-delivery payload, the same fields the shop sends. */
 export function deliveryPayload(i: DeliveryInput) {
   const [firstName, lastName] = splitName(i.receiver.name);
-  const notes = [i.address.landmark && `علامة مميزة: ${i.address.landmark}`, i.allowOpenPackage ? 'يسمح بفتح الشحنة قبل الدفع' : ''].filter(Boolean).join(' · ');
+  const images = [...new Set((i.images ?? []).filter((u) => /^https:\/\//.test(u)))].slice(0, 10);
+  // Bosta refuses "open before paying" without photos of the goods (error 2150), so without photos we ship it closed.
+  const open = i.allowOpenPackage && images.length > 0;
+  const notes = [i.address.landmark && `علامة مميزة: ${i.address.landmark}`, open ? 'يسمح بفتح الشحنة قبل الدفع' : ''].filter(Boolean).join(' · ');
   return {
     type: 10, // forward delivery
     specs: { packageType: 'Parcel', size: 'SMALL', packageDetails: { itemsCount: Math.max(1, i.itemsCount), description: i.description.slice(0, 500) } },
     goodsInfo: { amount: Math.round(i.goodsValue * 100) / 100 },
     ...(notes ? { notes: notes.slice(0, 500) } : {}),
     cod: Math.round(i.cod * 100) / 100,
-    allowToOpenPackage: i.allowOpenPackage,
+    allowToOpenPackage: open,
+    ...(open ? { deliveryImages: [{ type: 'ALLOW_TO_OPEN_THE_PACKAGE', images }] } : {}),
     dropOffAddress: {
       city: i.district.cityEn,
       districtId: i.district.id,

@@ -4,7 +4,7 @@ import { after, before, test } from 'node:test';
 import assert from 'node:assert/strict';
 import { startFakeBosta, PDF, type FakeBosta } from './bosta-fake.ts';
 import { freshStore, makeOrder } from './helpers.ts';
-import { checkDistrict, getWaybillPdf, parseWebhook, resolveDistrict, webhookAuthorized } from '../src/lib/bosta.ts';
+import { checkDistrict, deliveryPayload, getWaybillPdf, parseWebhook, resolveDistrict, webhookAuthorized } from '../src/lib/bosta.ts';
 import { citiesForGovernorate, exactArea, indexAreas, parseBostaCities, searchAreas } from '../src/lib/bosta-areas.ts';
 import { AREAS } from './bosta-fake.ts';
 import { applyTracking, autoAccept, queueShipment, settleShipments, shipSellerPart, syncOpenShipments } from '../src/lib/fulfillment.ts';
@@ -83,6 +83,21 @@ test('shipment: Sakina\'s key, exact district, COD, pickup location, per-shipmen
   assert.equal(saved.shipments!.s1.state, 10);
   assert.equal(msgs[0].file?.base64, PDF, 'the seller gets the real waybill PDF');
   assert.equal(await getWaybillPdf('umrah', saved.shipments!.s1.tracking), PDF);
+  if (b.allowToOpenPackage) {
+    assert.equal(b.deliveryImages[0].type, 'ALLOW_TO_OPEN_THE_PACKAGE', 'Bosta needs photos when the customer may open the parcel');
+    assert.ok(b.deliveryImages[0].images.length >= 1 && b.deliveryImages[0].images.every((u: string) => u.startsWith('https://')));
+  }
+});
+
+test('shipment: open-before-paying sends 1-10 absolute photos; without photos the parcel ships closed', () => {
+  const base = { niche: 'coffee', businessReference: '1-s1', cod: 100, goodsValue: 100, itemsCount: 1, description: 'x', receiver: { name: 'منى علي', phone: '01012345678' }, district: { id: 'd', ar: '', en: '', zoneId: '', zoneAr: '', zoneEn: '', cityId: '', cityAr: '', cityEn: 'Cairo' }, address: { line: '14 شارع الطيران', landmark: '' }, allowOpenPackage: true, webhookUrl: 'https://x/api/bosta' };
+  const many = Array.from({ length: 12 }, (_, n) => `https://cairoroast.com/p${n}.webp`);
+  const p = deliveryPayload({ ...base, images: [...many, many[0], '/relative.webp'] }) as Record<string, any>;
+  assert.equal(p.allowToOpenPackage, true);
+  assert.deepEqual(p.deliveryImages, [{ type: 'ALLOW_TO_OPEN_THE_PACKAGE', images: many.slice(0, 10) }]);
+  const none = deliveryPayload({ ...base, images: [] }) as Record<string, any>;
+  assert.equal(none.allowToOpenPackage, false);
+  assert.equal(none.deliveryImages, undefined);
 });
 
 test('shipment: an area Bosta can\'t place waits for the team instead of guessing', async () => {

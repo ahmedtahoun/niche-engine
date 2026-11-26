@@ -1,11 +1,18 @@
 // Photos stored on the site (public/products/…) have smaller copies made by
 // scripts/photo-sizes.mjs: name-sm.webp (480 px) and name-md.webp (720 px). The browser
 // picks the smallest one that is sharp enough. Other photos (e.g. Supabase) are used as they are.
+//
+// Browsers keep these photos for 30 days (next.config.ts). After replacing photos under the same
+// names, raise PHOTO_VERSION so every browser downloads the new ones instead of its old copy.
+export const PHOTO_VERSION = 2;
+const v = (src: string) => `${src}?v=${PHOTO_VERSION}`;
+
 export function responsive(src: string, sizes: string): { src: string; srcSet?: string; sizes?: string } {
-  if (!/^\/products\/.+\.webp$/.test(src) || /-(sm|md)\.webp$/.test(src)) return { src };
-  const small = src.replace(/\.webp$/, '-sm.webp');
-  const medium = src.replace(/\.webp$/, '-md.webp');
-  return { src: small, srcSet: `${small} 480w, ${medium} 720w, ${src} 900w`, sizes };
+  if (!/^\/products\/.+\.webp$/.test(src)) return { src };
+  if (/-(sm|md)\.webp$/.test(src)) return { src: v(src) };
+  const small = v(src.replace(/\.webp$/, '-sm.webp'));
+  const medium = v(src.replace(/\.webp$/, '-md.webp'));
+  return { src: small, srcSet: `${small} 480w, ${medium} 720w, ${v(src)} 900w`, sizes };
 }
 
 // Sizes for the photos. Phones have 2–3 screen pixels per point, and a coffee photo looks
